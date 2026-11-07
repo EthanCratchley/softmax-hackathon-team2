@@ -7,7 +7,7 @@ import { Piezas } from '@piezas/sdk';
 import { expect, test } from '@playwright/test';
 import type { VerifiedUser } from '../../lib/domain/types';
 import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE, USER_IDS } from '../../lib/fixtures';
-import { COLLECTIONS, ENTITY_DEFINITIONS, type Collection } from '../../lib/piezas-schema';
+import { COLLECTIONS, entityDefinitionsFor, slugsFor, type Collection } from '../../lib/piezas-schema';
 import { createMockServices } from '../../lib/services/mock';
 import { commitState, loadState, type Clients } from '../../lib/services/record-store';
 
@@ -20,8 +20,8 @@ let clients: Clients;
 test.beforeAll(async () => {
   const apiKey = process.env.PIEZAS_TEST_API_KEY;
   expect(apiKey, 'PIEZAS_TEST_API_KEY must be set (run: npx piezas test --setup)').toBeTruthy();
-  const defined = await new Piezas({ apiKey, apiBaseUrl: process.env.PIEZAS_API_URL }).defineEntities(ENTITY_DEFINITIONS);
-  clients = Object.fromEntries(Object.entries(COLLECTIONS).map(([name, slug]) => [name, defined[slug]])) as Clients;
+  const defined = await new Piezas({ apiKey, apiBaseUrl: process.env.PIEZAS_API_URL }).defineEntities(entityDefinitionsFor(apiKey!));
+  clients = Object.fromEntries(Object.entries(slugsFor(apiKey!)).map(([name, slug]) => [name, defined[slug]])) as Clients;
 });
 
 test.afterAll(() => {

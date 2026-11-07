@@ -11,7 +11,7 @@
 // print them with `npm run demo:accounts`.
 import { Piezas, PiezasError, type EntityClient, type EntityRecord } from '@piezas/sdk';
 import { createDemoState } from '../lib/fixtures';
-import { COLLECTIONS, demoPassword, ENTITY_DEFINITIONS, keyOf, type AccountPayload, type Collection } from '../lib/piezas-schema';
+import { demoPassword, entityDefinitionsFor, keyOf, slugsFor, type AccountPayload, type Collection } from '../lib/piezas-schema';
 
 const live = process.env.SEED_TARGET === 'live';
 const apiKey = live ? process.env.PIEZAS_API_KEY : process.env.PIEZAS_TEST_API_KEY;
@@ -77,8 +77,8 @@ export async function seed() {
   const testPassword = process.env.PIEZAS_TEST_USER_PASSWORD;
   if (!live && testEmail && testPassword) await ensureUser(testEmail, testPassword);
 
-  const clients = await piezas.defineEntities(ENTITY_DEFINITIONS);
-  for (const [name, slug] of Object.entries(COLLECTIONS) as [Collection, (typeof COLLECTIONS)[Collection]][]) {
+  const clients = await piezas.defineEntities(entityDefinitionsFor(apiKey!));
+  for (const [name, slug] of Object.entries(slugsFor(apiKey!)) as [Collection, string][]) {
     await syncCollection(name, clients[slug], name === 'users' ? accounts : (state[name] as object[]));
   }
 }

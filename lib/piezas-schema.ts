@@ -33,9 +33,20 @@ const definition: EntityDefinition = {
   fields: { key: { type: 'text', required: true }, payload: { type: 'longtext', required: true } },
 };
 
-export const ENTITY_DEFINITIONS = Object.fromEntries(
-  Object.values(COLLECTIONS).map((slug) => [slug, definition]),
-) as Record<(typeof COLLECTIONS)[Collection], EntityDefinition>;
+/**
+ * Record type names for the app a key belongs to. Piezas requires type names
+ * to be unique across the organization, while each app (live and its test
+ * copy) only sees its own types, so each uses its own prefix.
+ */
+export function slugsFor(apiKey: string): Record<Collection, string> {
+  const prefix = apiKey.startsWith('sk_test_') ? 'kk_test_' : 'kk_live_';
+  return Object.fromEntries(Object.entries(COLLECTIONS).map(([name, slug]) => [name, slug.replace(/^kk_/, prefix)])) as Record<Collection, string>;
+}
+
+/** defineEntities() input for the app a key belongs to. */
+export function entityDefinitionsFor(apiKey: string): Record<string, EntityDefinition> {
+  return Object.fromEntries(Object.values(slugsFor(apiKey)).map((slug) => [slug, definition]));
+}
 
 /** The stable app id of an item in a collection. */
 export function keyOf(collection: Collection, item: object): string {
