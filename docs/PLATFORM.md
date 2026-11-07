@@ -1,5 +1,27 @@
 # Platform handoff (Dev 1 → Parent, Instructor/Patrol, Desk/Admin)
 
+## Getting started (10 minutes)
+
+1. `git fetch && git switch -c <your branch> origin/main`
+   (Anthony `feature/parent`, Raakin `feature/instructor-patrol`, Noah `feature/desk-admin`).
+2. `npm install`
+3. Create `.env` in the project root with the three values Ethan sends you privately:
+   ```
+   PIEZAS_API_URL=...
+   PIEZAS_TEST_API_KEY=...
+   DEMO_ACCOUNT_SECRET=...
+   ```
+   Never commit `.env` (it is gitignored). You do not need the live key.
+4. `npm run demo:accounts` prints every demo account's email and password.
+5. `npm run dev`, open http://localhost:3000 and sign in.
+6. Build your screens under your routes (see SPEC.md §Main Screens). Use `data-testid` on
+   everything a test needs, and write your scenario tests in `tests/scenarios/`.
+7. Before opening a PR: `npx tsc --noEmit` and `npx playwright test tests/unit tests/frontend.spec.ts tests/smoke.spec.ts`.
+
+Your local app uses the shared TEST copy of the data. `npm run seed` resets it to the
+demo fixtures if something gets into a weird state (it resets it for everyone).
+
+
 ## The rule
 
 Pages and server actions get the user from `requireUser()` and call `services.*`.
@@ -48,9 +70,8 @@ Want a change to the contract? Ask Ethan first — don't edit `lib/` on your bra
 
 ## Demo accounts (all fictional)
 
-Each account has its own password. Ask Ethan for the `.env` values (`PIEZAS_API_KEY`,
-`PIEZAS_API_URL`, `PIEZAS_TEST_API_KEY`, `DEMO_ACCOUNT_SECRET`), then run
-`npm run demo:accounts` to print every account's password. Never commit `.env`.
+Each account has its own password: run `npm run demo:accounts` (needs the `.env` from
+Getting started). Never paste these into GitHub or a public channel.
 
 | Email | Role | Notes |
 | --- | --- | --- |
