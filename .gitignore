@@ -11,3 +11,5 @@ test-results/
 *.log
 .piezas/guard.json
 .piezas/quality-scan/reply-last.json
+# Deploy link holds a deploy token: local only, never commit.
+.piezas/deploy-link.json
