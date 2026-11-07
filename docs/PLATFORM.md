@@ -67,7 +67,7 @@ Each account has its own password. Ask Ethan for the `.env` values (`PIEZAS_API_
 Lesson day for every story: `DEMO_LESSON_DATE` = 2026-12-12. Lily is already checked in;
 her uncle Mark Whitfield (`ADULT_IDS.lilyUncle`) is on her list but inactive.
 
-Data lives in Piezas. Local dev (`npm run dev`) uses the key in your `.env`.
+Data lives in Piezas. Local dev (`npm run dev`) uses the TEST copy (`PIEZAS_TEST_API_KEY`), never live data.
 `npm run seed` resets the TEST copy to these fixtures. No key yet? Put
 `KESTREL_DATA=mock` in `.env` to work on screens against in-memory data
 (resets on restart; never used in production).

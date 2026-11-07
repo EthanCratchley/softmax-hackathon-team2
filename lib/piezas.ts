@@ -9,7 +9,8 @@ const store = globalThis as typeof globalThis & {
 };
 
 export function piezas(): Piezas {
-  const apiKey = process.env.PIEZAS_API_KEY;
+  // Development servers use the TEST copy so local work never touches live data.
+  const apiKey = process.env.NODE_ENV === 'production' ? process.env.PIEZAS_API_KEY : (process.env.PIEZAS_TEST_API_KEY ?? process.env.PIEZAS_API_KEY);
   if (!apiKey) throw new Error('PIEZAS_API_KEY is not set on the server.');
   return (store.__kestrelPiezas ??= new Piezas({ apiKey, apiBaseUrl: process.env.PIEZAS_API_URL }));
 }
