@@ -7,8 +7,19 @@
       "by": "user",
       "via": "user-prompt",
       "at": "2026-11-07T23:25:07.829Z"
+    },
+    {
+      "gate": "quality-accept",
+      "by": "user",
+      "via": "owner-reply",
+      "key": "e1f8a4cf9ef91f0c1edd2501",
+      "scanId": "bfe1dfde0f47",
+      "n": 2,
+      "plain": "Private pickup links for a named adult, the check-in and release emails to parents, the 30-minute headcount prompts with overdue flags, and the \"Instructor not responding\" warning are all missing entirely, even though the owner approved them.",
+      "said": "accept 2",
+      "at": "2026-11-07T23:33:38.984Z"
     }
   ],
   "createdAt": "2026-11-07T19:56:51.889Z",
-  "updatedAt": "2026-11-07T23:25:11.886Z"
+  "updatedAt": "2026-11-07T23:33:38.985Z"
 }

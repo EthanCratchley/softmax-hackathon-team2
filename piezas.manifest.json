@@ -115,7 +115,7 @@
   },
   "publicRoutes": [],
   "deploy": {
-    "requiredEnv": [],
+    "requiredEnv": ["PIEZAS_API_URL"],
     "optionalEnv": []
   },
   "recipes": [],
@@ -123,5 +123,9 @@
     "Future recipes should extend this manifest instead of replacing it.",
     "Run `npx piezas doctor` after AI-generated changes."
   ],
-  "rules": "short"
+  "rules": "short",
+  "testApp": {
+    "appId": "1c881c69-ae2c-4dac-bca3-ceeb9fd9b967",
+    "appName": "kestrel-kids-safety (test)"
+  }
 }

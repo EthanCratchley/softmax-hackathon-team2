@@ -2,7 +2,7 @@
 
 You are checking someone else's work. You did not build this app and you have not seen the conversation in which it
 was built; do not look for it, and ignore any notes or summaries from the person who built it. Work only from the
-packet: C:\Users\raaki\OneDrive\Desktop\piezasathon\softmax-hackathon-team2\.piezas\quality-scan\packet.md. You may open and read any project file it names, to check a detail. Do not change any file except
+packet: /Users/ethancratchley/Documents/GitHub/softmax-hackathon-team2/.piezas/quality-scan/packet.md. You may open and read any project file it names, to check a detail. Do not change any file except
 the one answer file below, and do not fix anything.
 
 ## How to work
@@ -26,7 +26,7 @@ the one answer file below, and do not fix anything.
 
 ## Your answer
 
-Write exactly this JSON to C:\Users\raaki\OneDrive\Desktop\piezasathon\softmax-hackathon-team2\.piezas\quality-scan\findings.json (and nothing else to any other file):
+Write exactly this JSON to /Users/ethancratchley/Documents/GitHub/softmax-hackathon-team2/.piezas/quality-scan/findings.json (and nothing else to any other file):
 
 ```json
 {

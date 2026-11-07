@@ -41,14 +41,16 @@ show `error.message`, e.g. "Release blocked: call patrol").
 | `lib/domain/types.ts` | Entities and role-specific view types. |
 | `lib/domain/rules.ts` | Phone validation, completeness, escalation time, safety alerts. Reuse in forms for instant feedback; the server re-checks. |
 | `lib/fixtures.ts` | Seed data and stable IDs (`CHILD_IDS.ava`, `USER_IDS.desk`, …). |
-| `lib/services/mock.ts` | In-memory implementation (today). Piezas implementation replaces it with no signature change. |
+| `lib/services/mock.ts` | The authorization and business logic. Runs over records loaded from Piezas (`lib/services/record-store.ts`); only changed records are written back. |
 | `app/globals.css` | Shared classes: `.page .card .field .button(.primary/.danger) .alert(.warn/.ok) .badge`. Tap targets are 48px. |
 
 Want a change to the contract? Ask Ethan first — don't edit `lib/` on your branch.
 
 ## Demo accounts (all fictional)
 
-Password: the `DEMO_PASSWORD` value — ask Ethan; put it in your own `.env`.
+Each account has its own password. Ask Ethan for the `.env` values (`PIEZAS_API_KEY`,
+`PIEZAS_API_URL`, `PIEZAS_TEST_API_KEY`, `DEMO_ACCOUNT_SECRET`), then run
+`npm run demo:accounts` to print every account's password. Never commit `.env`.
 
 | Email | Role | Notes |
 | --- | --- | --- |
@@ -65,9 +67,13 @@ Password: the `DEMO_PASSWORD` value — ask Ethan; put it in your own `.env`.
 Lesson day for every story: `DEMO_LESSON_DATE` = 2026-12-12. Lily is already checked in;
 her uncle Mark Whitfield (`ADULT_IDS.lilyUncle`) is on her list but inactive.
 
-Mock data lives in server memory: it resets when the dev server restarts.
+Data lives in Piezas. Local dev (`npm run dev`) uses the key in your `.env`.
+`npm run seed` resets the TEST copy to these fixtures. No key yet? Put
+`KESTREL_DATA=mock` in `.env` to work on screens against in-memory data
+(resets on restart; never used in production).
 
 ## Tests
 
-`npx playwright test tests/unit` — service authorization and rules.
+`npm run test:unit` — service authorization and rules (no network).
+`npx playwright test tests/integration` — saves and reads through the Piezas test copy.
 Scenario tests go in `tests/scenarios/S-xxx-<name>.spec.ts`, selecting by `data-testid`.

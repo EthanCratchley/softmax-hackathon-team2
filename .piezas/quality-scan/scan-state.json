@@ -4,7 +4,7 @@
   "cycle": {
     "id": "57e9b0f34d1b",
     "startedAt": "2026-11-07T22:32:06.743Z",
-    "rounds": 1,
+    "rounds": 3,
     "ended": false,
     "budgetReported": false
   },
@@ -12,28 +12,51 @@
   "hold": null,
   "deployWanted": null,
   "shownList": {
-    "scanId": "8ba123623e25",
+    "scanId": "ea4098c52ce9",
     "items": [
       {
         "n": 1,
-        "key": "7437eb9fb6c9497315781182",
-        "plain": "The app currently shows only starter cards, so parents and staff cannot perform any of the approved child safety journeys yet.",
+        "key": "9b9e80cacb1a83f79ee0d32d",
+        "plain": "After signing in, parents, instructors, desk staff, patrol and Hana land on a summary card whose \"Open my workspace\" button leads to a page that does not exist, so none of the four approved safety journeys can be carried out yet.",
         "severity": "high"
       },
       {
         "n": 2,
-        "key": "21d1a05ff4eb4a29c4d519c8",
-        "plain": "None of the 41 approved child safety checks are implemented, and no full app test run has been recorded.",
-        "severity": "medium"
+        "key": "b3303e27906dce660bd514cf",
+        "plain": "Private pickup links for a named adult, the check-in and release emails to parents, the 30-minute headcount prompts with overdue flags, and the \"Instructor not responding\" warning are all still missing entirely, even though the owner approved them.",
+        "severity": "high"
       },
       {
         "n": 3,
-        "key": "1a1eef46ea490b9c808206cf",
-        "plain": "People cannot report a problem from the first screen, so the existing check for that button will fail.",
+        "key": "31b72af8dfdf9e18b67e69d9",
+        "plain": "All 41 approved safety checks are still empty placeholders that fail on purpose, and no full test run has been recorded, so nothing the owner approved has been shown to work on screen.",
+        "severity": "medium"
+      },
+      {
+        "n": 4,
+        "key": "48474c206fb72047ccb6301c",
+        "plain": "Every demo account still shares one password, so anyone given it to try the parent screens could also sign in as Hana or ski patrol and see children's medical and emergency details.",
+        "severity": "medium"
+      },
+      {
+        "n": 5,
+        "key": "8ff5ab95f9e4d42a6caa4f15",
+        "plain": "Everything parents and staff enter is still held only in the running server's memory, so a restart or redeploy wipes allergies, pickup adults, release records and the audit trail.",
+        "severity": "medium"
+      },
+      {
+        "n": 6,
+        "key": "886427c3f1fe38298031eb48",
+        "plain": "Hana can move children between groups but has no way to assign an instructor to a group, which the owner approved as part of managing groups.",
         "severity": "medium"
       }
     ]
   },
   "waits": null,
-  "deployScanTries": null
+  "deployScanTries": null,
+  "lastStop": {
+    "event": "0c82ec628ff7f7e269ccbdbcc1c5219754033fc3",
+    "at": "2026-11-07T23:34:48.318Z",
+    "answer": null
+  }
 }
