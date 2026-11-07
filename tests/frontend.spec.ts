@@ -1,4 +1,7 @@
+import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+
+if (!process.env.DEMO_PASSWORD && existsSync('.env')) process.loadEnvFile('.env');
 
 test('signed-out visitors land on sign-in, which fits a phone', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
@@ -16,7 +19,7 @@ test('signed-out visitors land on sign-in, which fits a phone', async ({ page })
 
 test('each role signs in and sees only its own authorized summary', async ({ page }) => {
   const password = process.env.DEMO_PASSWORD;
-  test.skip(!password, 'DEMO_PASSWORD not set');
+  expect(password, 'DEMO_PASSWORD must be set (in .env) for the sign-in check').toBeTruthy();
   const cases = [
     ['priya.shah@example.test', 'Priya Shah · Parent', '1 linked child(ren) · 1 need information'],
     ['jordan.lee@example.test', 'Jordan Lee · Instructor', 'Group 14 · 3 children · 1 with safety alerts'],

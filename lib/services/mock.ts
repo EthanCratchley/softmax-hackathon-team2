@@ -74,8 +74,10 @@ export function createMockServices(
       authorizedAdults: state.adults.filter((a) => a.childId === child.id),
       consent: state.consents.find((c) => c.childId === child.id) ?? null,
     };
-    const today = state.attendance.filter((a) => a.childId === child.id && a.clothingToday).at(-1);
-    return structuredClone({ ...parts, clothingToday: today?.clothingToday ?? null, completion: computeCompletion(parts) });
+    const clothing = state.attendance
+      .filter((a) => a.childId === child.id)
+      .map((a) => ({ lessonDate: a.lessonDate, description: a.clothingToday }));
+    return structuredClone({ ...parts, clothing, completion: computeCompletion(parts) });
   };
 
   const deskEntry = (child: Child, date: LessonDate): DeskRosterEntry | null => {
@@ -151,6 +153,8 @@ export function createMockServices(
     });
     if (changes.consent && !changes.consent.typedName?.trim()) errors['consent.typedName'] = 'Type your full name to consent.';
     if (changes.mailingAddress !== undefined && !changes.mailingAddress.trim()) errors.mailingAddress = 'Enter a mailing address.';
+    if (changes.clothingToday && !attendanceFor(child.id, changes.clothingToday.lessonDate))
+      errors.clothingToday = 'This child has no lesson on that day.';
     return errors;
   };
 
@@ -225,9 +229,8 @@ export function createMockServices(
         audit(user, 'consent_given', 'Consent', childId, `Consent given (photos: ${changes.consent.photoConsent ? 'yes' : 'no'})`);
       }
       if (changes.mailingAddress !== undefined) child.mailingAddress = changes.mailingAddress.trim();
-      if (changes.clothingToday !== undefined) {
-        const att = state.attendance.filter((a) => a.childId === childId).at(-1);
-        if (att) att.clothingToday = changes.clothingToday.trim() || null;
+      if (changes.clothingToday) {
+        attendanceFor(childId, changes.clothingToday.lessonDate)!.clothingToday = changes.clothingToday.description.trim() || null;
       }
       child.updatedAt = at;
       return ok(profileOf(child));
@@ -420,6 +423,12 @@ export function createMockServices(
         if (!update.note?.trim()) return fail('invalid', 'Add a note for this action.', { note: 'Add a note for this action.' });
         incident.actions.push({ id: newId('act'), type: update.type, note: update.note.trim(), staffUserId: user.id, occurredAt: at });
         audit(user, 'incident_updated', 'Incident', incident.id, `Action: ${update.type}`);
+        if (update.type === 'shared_with_police_or_rescuers') {
+          const child = findChild(incident.childId)!;
+          const task = { id: newId('tsk'), childId: child.id, childName: `${child.firstName} ${child.lastName}`, incidentId: incident.id, mailingAddress: child.mailingAddress, createdBy: user.id, createdAt: at, status: 'Open' as const };
+          state.noticeTasks.push(task);
+          audit(user, 'notice_task_created', 'NoticeTask', task.id, `Notice task created for incident ${incident.id}`);
+        }
         return ok(structuredClone(incident));
       }
       if (!['Open', 'Located', 'Closed'].includes(update.status)) return fail('invalid', 'Unknown status.');
@@ -490,6 +499,11 @@ export function createMockServices(
       state.corrections.push(correction);
       audit(user, 'pickup_corrected', 'PickupLog', pickupLogId, `Correction added: ${correction.reason}`);
       return ok({ ...correction });
+    },
+
+    async getNoticeTasks(user) {
+      if (!is(user, 'admin')) return FORBIDDEN;
+      return ok(structuredClone(state.noticeTasks.filter((t) => t.status === 'Open')));
     },
 
     async getAuditLog(user) {

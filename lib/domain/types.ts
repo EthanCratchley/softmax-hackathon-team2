@@ -182,6 +182,18 @@ export interface Incident {
   resolvedAt: Timestamp | null;
 }
 
+/** Hana's follow-up to mail the notice required after an emergency disclosure (R-030). */
+export interface NoticeTask {
+  id: Id;
+  childId: Id;
+  childName: string;
+  incidentId: Id;
+  mailingAddress: string | null;
+  createdBy: Id;
+  createdAt: Timestamp;
+  status: 'Open' | 'Done';
+}
+
 export type AuditAction =
   | 'sign_in'
   | 'medical_updated'
@@ -197,6 +209,7 @@ export type AuditAction =
   | 'incident_updated'
   | 'admin_viewed_child_details'
   | 'group_assignment_changed'
+  | 'notice_task_created'
   | 'access_denied';
 
 /** Append-only. `detailsSummary` never contains medical values. */
@@ -246,7 +259,8 @@ export interface ChildProfile {
   emergencyContacts: EmergencyContact[];
   authorizedAdults: AuthorizedAdult[];
   consent: Consent | null;
-  clothingToday: string | null;
+  /** Parent-given jacket/helmet description per lesson day the child attends. */
+  clothing: { lessonDate: LessonDate; description: string | null }[];
   completion: Completion;
 }
 
@@ -384,7 +398,8 @@ export interface ChildProfileChanges {
   authorizedAdults?: (Pick<AuthorizedAdult, 'name' | 'relationship' | 'phone' | 'isActive'> & { id?: Id })[];
   mailingAddress?: string;
   consent?: { typedName: string; photoConsent: boolean };
-  clothingToday?: string;
+  /** Jacket/helmet for one lesson day; the child must be attending that day. */
+  clothingToday?: { lessonDate: LessonDate; description: string };
 }
 
 export type IncidentUpdate =

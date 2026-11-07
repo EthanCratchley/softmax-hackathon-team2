@@ -16,6 +16,7 @@ import type {
   PickupCorrection,
   PickupLog,
   AuditEvent,
+  NoticeTask,
   User,
 } from './domain/types';
 
@@ -90,6 +91,7 @@ export interface DemoState {
   denials: DeniedPickup[];
   incidents: Incident[];
   audit: AuditEvent[];
+  noticeTasks: NoticeTask[];
 }
 
 /** A fresh deep copy of the seed, so mocks and tests never share mutations. */
@@ -161,5 +163,6 @@ export function createDemoState(): DemoState {
     denials: [],
     incidents: [],
     audit: [],
+    noticeTasks: [],
   } satisfies DemoState);
 }

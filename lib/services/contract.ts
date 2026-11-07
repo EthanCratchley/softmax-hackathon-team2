@@ -21,6 +21,7 @@ import type {
   LastSeenDetails,
   LessonDate,
   MyChildSummary,
+  NoticeTask,
   OperationsSnapshot,
   PickupCorrection,
   PickupLog,
@@ -88,6 +89,8 @@ export interface KestrelServices {
   assignChildToGroup(childId: Id, groupId: Id, user: VerifiedUser): Promise<Result<{ childId: Id; groupId: Id }>>;
   /** Adds a correction beside the original; the original pickup log is never changed. */
   addPickupCorrection(pickupLogId: Id, reason: string, note: string, user: VerifiedUser): Promise<Result<PickupCorrection>>;
+  /** Hana's open "mail the notice" tasks, created when patrol records sharing with police or rescuers. */
+  getNoticeTasks(user: VerifiedUser): Promise<Result<NoticeTask[]>>;
   /** Newest first. Entries never contain medical values. */
   getAuditLog(user: VerifiedUser): Promise<Result<AuditEvent[]>>;
 }

@@ -314,3 +314,30 @@ test.describe('admin (S-024 to S-029)', () => {
     expect(errCode(await svc.getAuditLog(as(USER_IDS.desk)))).toBe('forbidden');
   });
 });
+
+test.describe('regressions from quality scan', () => {
+  test('sharing with police creates exactly one notice task for Hana with the mailing address (S-023)', async () => {
+    const patrol = as(USER_IDS.patrol);
+    const { id } = data(await svc.reportMissingChild(CHILD_IDS.owen, DAY, { lastSeenAt: '2026-12-12T14:30:00-07:00', lastSeenLocation: 'Pigeon chair', clothingDescription: '', equipmentDescription: '', notes: '' }, as(USER_IDS.desk)));
+    data(await svc.updateIncident(id, { kind: 'action', type: 'family_contacted', note: 'Called mother' }, patrol));
+    expect(data(await svc.getNoticeTasks(as(USER_IDS.admin)))).toEqual([]);
+    data(await svc.updateIncident(id, { kind: 'action', type: 'shared_with_police_or_rescuers', note: 'RCMP given description' }, patrol));
+    const tasks = data(await svc.getNoticeTasks(as(USER_IDS.admin)));
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0]).toMatchObject({ childId: CHILD_IDS.owen, childName: 'Owen Parr', incidentId: id, mailingAddress: '7 Spruce Court, Pemberton, BC V0N 0A3', createdBy: USER_IDS.patrol, status: 'Open' });
+    for (const u of [USER_IDS.patrol, USER_IDS.desk, USER_IDS.parentOwen]) expect(errCode(await svc.getNoticeTasks(as(u))), u).toBe('forbidden');
+  });
+
+  test('clothing is saved to the named lesson day, and a day with no lesson is rejected', async () => {
+    state.attendance.push({ id: 'att_owen_next', childId: CHILD_IDS.owen, lessonDate: '2026-12-19', status: 'Expected', bibNumber: null, clothingToday: null, checkedInAt: null, checkedInBy: null });
+    const parent = as(USER_IDS.parentOwen);
+    data(await svc.updateChildProfile(CHILD_IDS.owen, { clothingToday: { lessonDate: DAY, description: 'Green jacket, black helmet' } }, parent));
+    expect(state.attendance.find((a) => a.id === 'att_owen')!.clothingToday).toBe('Green jacket, black helmet');
+    expect(state.attendance.find((a) => a.id === 'att_owen_next')!.clothingToday).toBeNull();
+    expect(data(await svc.getChildProfile(CHILD_IDS.owen, parent)).clothing).toEqual([
+      { lessonDate: DAY, description: 'Green jacket, black helmet' },
+      { lessonDate: '2026-12-19', description: null },
+    ]);
+    expect(errCode(await svc.updateChildProfile(CHILD_IDS.owen, { clothingToday: { lessonDate: '2027-01-02', description: 'x' } }, parent))).toBe('invalid');
+  });
+});
