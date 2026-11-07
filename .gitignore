@@ -2,3 +2,5 @@
 .env.*
 !.env.example
 node_modules/
+.piezas/guard.json
+.piezas/quality-scan/reply-last.json
