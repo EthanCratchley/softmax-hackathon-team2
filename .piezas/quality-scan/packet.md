@@ -1,7 +1,7 @@
 # Piezas quality scan packet
 
-Scan code: qs-68b07c392679125172
-Round: 3 of 3
+Scan code: qs-4df4b69c50a32c912c
+Round: 1 of 3
 Project folder: /Users/ethancratchley/Documents/GitHub/softmax-hackathon-team2
 
 ## The app description (what the owner approved)
@@ -550,607 +550,504 @@ says "deploy anyway".
 
 ## The last test run
 
-No test run is recorded yet (`piezas test` has not run).
+Last `piezas test` run: 2026-11-07T23:44:01.282Z; the code has changed since it ran.
+- S-001 A parent cannot open another family's child: not-written
+- S-002 A parent completes a profile from a phone: not-written
+- S-003 Blank medical answers stay incomplete: not-written
+- S-004 A bad phone number is rejected: not-written
+- S-005 A new allergy reaches the assigned instructor: not-written
+- S-006 An unrelated instructor is denied: not-written
+- S-007 The instructor screens work in gloves: not-written
+- S-008 Parent-given clothing reaches patrol: not-written
+- S-009 Desk finds a child by any name and checks them in: not-written
+- S-010 Desk sees the pickup list and no medical details: not-written
+- S-011 Desk cannot change the pickup list: not-written
+- S-012 An unlisted adult is blocked: not-written
+- S-013 A parent authorizes an adult and the release is recorded once: not-written
+- S-014 Medication held at the desk shows without the rest: not-written
+- S-015 An instructor reports a child missing: not-written
+- S-016 Desk reports for an instructor with a dead phone: not-written
+- S-017 After a child is found the desk knows what to say: not-written
+- S-018 Patrol opens an incident from a radio call: not-written
+- S-019 Patrol gets everything on one screen: not-written
+- S-020 Others cannot open the packet: not-written
+- S-021 Patrol logs actions and closes an incident: not-written
+- S-022 The escalation time uses the earlier limit: not-written
+- S-023 Sharing with police creates Hana's notice task: not-written
+- S-024 Hana sees what is missing: not-written
+- S-025 Group limits hold: not-written
+- S-026 Hana sees today's activity: not-written
+- S-027 Corrections add instead of overwrite: not-written
+- S-028 The demo uses only fictional data: not-written
+- S-029 Hana opens medical details only with a logged reason: not-written
+- S-030 A parent creates a private pickup link: not-written
+- S-031 The link page shows the minimum: not-written
+- S-032 A link alone does not release a child: not-written
+- S-033 Cancelled and expired links stop working: not-written
+- S-034 Parents get check-in and release emails: needs-help
+- S-035 A failed email does not stop the desk: not-written
+- S-036 Missing reports do not email parents: not-written
+- S-037 An instructor confirms a headcount: not-written
+- S-038 A short headcount leads to a report: not-written
+- S-039 No headcount prompts during lunch: not-written
+- S-040 An overdue headcount is flagged: not-written
+- S-041 Lost contact prompts a radio call: not-written
 
 ## Problems from the previous scan: check each one again
 
 1. [high] After signing in, parents, instructors, desk staff, patrol and Hana land on a summary card whose "Open my workspace" button leads to a page that does not exist, so none of the four approved safety journeys can be carried out yet. (app/page.tsx)
-2. [high] Private pickup links for a named adult, the check-in and release emails to parents, the 30-minute headcount prompts with overdue flags, and the "Instructor not responding" warning are all missing entirely, even though the owner approved them. (lib/services/contract.ts)
-3. [high] When patrol records that a child's information was shared with police or rescuers, no task is created for Hana to mail the legally required notice to the family. (lib/services/mock.ts)
-4. [medium] All 41 approved safety checks are still empty placeholders that fail on purpose, and no full test run has been recorded, so nothing the owner approved has been shown to work. (tests/scenarios/README.md)
-5. [medium] Every demo account shares one password, so anyone given it to try the parent screens could also sign in as Hana or ski patrol and see children's medical and emergency details. (lib/session.ts)
-6. [medium] The check that each role signs in and sees only its own information is quietly skipped whenever the demo password is not set, so a broken sign-in could pass unnoticed. (tests/frontend.spec.ts)
-7. [medium] Everything parents and staff enter is held only in the running server's memory, so a restart or redeploy wipes allergies, pickup adults, release records and the audit trail. (lib/services/index.ts)
-8. [low] A parent's jacket and helmet colours are saved onto the child's most recent lesson day rather than today, so patrol could be shown an old day's clothing or none at all. (lib/services/mock.ts)
+2. [high] Private pickup links for a named adult, the check-in and release emails to parents, the 30-minute headcount prompts with overdue flags, and the "Instructor not responding" warning are all still missing entirely, even though the owner approved them. (lib/services/contract.ts)
+3. [medium] All 41 approved safety checks are still empty placeholders that fail on purpose, and no full test run has been recorded, so nothing the owner approved has been shown to work on screen. (tests/scenarios/README.md)
+4. [medium] Every demo account still shares one password, so anyone given it to try the parent screens could also sign in as Hana or ski patrol and see children's medical and emergency details. (lib/session.ts)
+5. [medium] Everything parents and staff enter is still held only in the running server's memory, so a restart or redeploy wipes allergies, pickup adults, release records and the audit trail. (lib/services/index.ts)
+6. [medium] Hana can move children between groups but has no way to assign an instructor to a group, which the owner approved as part of managing groups. (lib/services/contract.ts)
+
+## Accepted by the owner: do not list these again
+
+- Private pickup links for a named adult, the check-in and release emails to parents, the 30-minute headcount prompts with overdue flags, and the "Instructor not responding" warning are all missing entirely, even though the owner approved them.
 
 ## The change
 
-Changed since the last scan (2026-11-07T23:27:24.127Z): 6 file(s) added or changed, 0 removed.
+Changed since the last scan (2026-11-07T23:34:55.211Z): 17 file(s) added or changed, 0 removed.
 
-### changed: lib/domain/types.ts
+### added: lib/piezas-schema.ts
 
 ````
-// Shared domain types for Kestrel Kids. Owned by Platform (Dev 1).
-// Change only by team agreement — every screen and service depends on these.
+// Record kinds stored in Piezas Entity Records, shared by the app and the seed
+// script. Each record's title is the app's stable id; `payload` holds the
+// domain object as JSON so nested values (medications, incident actions)
+// round-trip exactly.
+import { createHmac } from 'node:crypto';
+import type { EntityDefinition } from '@piezas/sdk';
+import type { Role } from './domain/types';
+import type { DemoState } from './fixtures';
 
-export type Id = string;
-/** ISO 8601 timestamp, e.g. "2026-12-12T14:30:00-08:00". */
-export type Timestamp = string;
-/** Calendar date, "YYYY-MM-DD". */
-export type LessonDate = string;
+export const COLLECTIONS = {
+  users: 'kk_account',
+  children: 'kk_child',
+  medical: 'kk_medical_profile',
+  contacts: 'kk_emergency_contact',
+  adults: 'kk_authorized_adult',
+  consents: 'kk_consent',
+  groups: 'kk_lesson_group',
+  attendance: 'kk_attendance',
+  pickups: 'kk_pickup_log',
+  corrections: 'kk_pickup_correction',
+  denials: 'kk_denied_pickup',
+  incidents: 'kk_incident',
+  audit: 'kk_audit_event',
+  noticeTasks: 'kk_notice_task',
+} as const satisfies Record<keyof DemoState, string>;
 
-export type Role = 'parent' | 'instructor' | 'desk' | 'patrol' | 'admin';
+export type Collection = keyof typeof COLLECTIONS;
 
-export interface User {
-  id: Id;
+/** Records here are never edited or deleted once written (R-034). */
+export const APPEND_ONLY: ReadonlySet<Collection> = new Set(['pickups', 'corrections', 'denials', 'audit']);
+
+const definition: EntityDefinition = {
+  fields: { key: { type: 'text', required: true }, payload: { type: 'longtext', required: true } },
+};
+
+/**
+ * Record type names for the app a key belongs to. Piezas requires type names
+ * to be unique across the organization, while each app (live and its test
+ * copy) only sees its own types, so each uses its own prefix.
+ */
+export function slugsFor(apiKey: string): Record<Collection, string> {
+  const prefix = apiKey.startsWith('sk_test_') ? 'kk_test_' : 'kk_live_';
+  return Object.fromEntries(Object.entries(COLLECTIONS).map(([name, slug]) => [name, slug.replace(/^kk_/, prefix)])) as Record<Collection, string>;
+}
+
+/** defineEntities() input for the app a key belongs to. */
+export function entityDefinitionsFor(apiKey: string): Record<string, EntityDefinition> {
+  return Object.fromEntries(Object.values(slugsFor(apiKey)).map((slug) => [slug, definition]));
+}
+
+/** The stable app id of an item in a collection. */
+export function keyOf(collection: Collection, item: object): string {
+  const record = item as { id?: string; childId?: string };
+  const key = collection === 'medical' || collection === 'consents' ? record.childId : record.id;
+  if (!key) throw new Error(`${collection} item has no key`);
+  return key;
+}
+
+/** Account record payload: the app user plus the Piezas users-service id it signs in as. */
+export interface AccountPayload {
+  id: string;
   role: Role;
   displayName: string;
   email: string;
+  piezasUserId: string | null;
 }
 
 /**
- * A user whose identity and role the server has verified from the session.
- * Only lib/session.ts produces these; never build one from browser input.
+ * Each demo account gets its own password, derived from one server-side
+ * secret, so knowing one account's password reveals nothing about another's.
  */
-export type VerifiedUser = User & { readonly __verified: true };
+export function demoPassword(secret: string, email: string): string {
+  return `Kk9!${createHmac('sha256', secret).update(email.toLowerCase()).digest('base64url').slice(0, 20)}`;
+}
+````
 
-export type SkiLevel = 'Beginner' | 'Novice' | 'Intermediate' | 'Advanced';
+### added: lib/piezas.ts
 
-export type ProfileStatus = 'Complete' | 'NeedsInformation';
+````
+import 'server-only';
+import { Piezas, type EntityClient } from '@piezas/sdk';
+import { entityDefinitionsFor, slugsFor, type Collection } from './piezas-schema';
 
-export interface Child {
-  id: Id;
-  firstName: string;
-  lastName: string;
-  /** Other names the child is known by, e.g. a hyphenated surname. */
-  otherNames: string[];
-  birthDate: LessonDate;
-  skiLevel: SkiLevel;
-  groupId: Id | null;
-  parentUserIds: Id[];
-  liftPassNumber: string | null;
-  mailingAddress: string | null;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+// The one server-side Piezas client. PIEZAS_API_KEY never leaves the server.
+const store = globalThis as typeof globalThis & {
+  __kestrelPiezas?: Piezas;
+  __kestrelEntities?: Promise<Record<Collection, EntityClient>>;
+};
+
+function apiKey(): string {
+  // Development servers use the TEST copy so local work never touches live data.
+  const key = process.env.NODE_ENV === 'production' ? process.env.PIEZAS_API_KEY : (process.env.PIEZAS_TEST_API_KEY ?? process.env.PIEZAS_API_KEY);
+  if (!key) throw new Error('PIEZAS_API_KEY is not set on the server.');
+  return key;
+}
+
+export function piezas(): Piezas {
+  return (store.__kestrelPiezas ??= new Piezas({ apiKey: apiKey(), apiBaseUrl: process.env.PIEZAS_API_URL }));
+}
+
+/** Defines the record kinds once per server process (idempotent) and returns their clients. */
+export function entities(): Promise<Record<Collection, EntityClient>> {
+  const slugs = slugsFor(apiKey());
+  store.__kestrelEntities ??= piezas()
+    .defineEntities(entityDefinitionsFor(apiKey()))
+    .then((clients) =>
+      Object.fromEntries(Object.entries(slugs).map(([name, slug]) => [name, clients[slug]])) as Record<Collection, EntityClient>,
+    );
+  store.__kestrelEntities.catch(() => (store.__kestrelEntities = undefined));
+  return store.__kestrelEntities;
+}
+````
+
+### added: lib/services/piezas-store.ts
+
+````
+import 'server-only';
+import { entities } from '../piezas';
+import * as store from './record-store';
+
+export type { Loaded } from './record-store';
+
+export const loadState = async () => store.loadState(await entities());
+export const commitState = async (loaded: store.Loaded) => store.commitState(await entities(), loaded);
+export const findAccountByPiezasUser = async (piezasUserId: string) => store.findAccountByPiezasUser(await entities(), piezasUserId);
+````
+
+### added: lib/services/record-store.ts
+
+````
+// Load/save of Kestrel records in Piezas. Takes the entity clients as an
+// argument so the integration tests can run it against the test copy.
+import type { EntityClient, EntityRecord } from '@piezas/sdk';
+import type { DemoState } from '../fixtures';
+import type { User } from '../domain/types';
+import { APPEND_ONLY, COLLECTIONS, keyOf, type AccountPayload, type Collection } from '../piezas-schema';
+
+export type Clients = Record<Collection, EntityClient>;
+
+type Index = Record<Collection, Map<string, { recordId: string; json: string }>>;
+
+export interface Loaded {
+  state: DemoState;
+  index: Index;
+  accounts: AccountPayload[];
+}
+
+const PAGE = 100;
+
+async function listAll(client: EntityClient): Promise<EntityRecord[]> {
+  const all: EntityRecord[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const page = await client.list({ limit: PAGE, offset, sort: 'created_at', order: 'asc' });
+    all.push(...page.data);
+    if (page.data.length < PAGE) return all;
+  }
+}
+
+const payloadOf = (record: EntityRecord) => JSON.parse(String(record.data.payload));
+
+/** Reads every Kestrel record kind from Piezas into the in-memory shape the service logic uses. */
+export async function loadState(clients: Clients): Promise<Loaded> {
+  const names = Object.keys(COLLECTIONS) as Collection[];
+  const lists = await Promise.all(names.map((name) => listAll(clients[name])));
+  const state = {} as Record<Collection, unknown[]>;
+  const index = {} as Index;
+  names.forEach((name, i) => {
+    index[name] = new Map();
+    state[name] = lists[i].map((record) => {
+      const item = payloadOf(record);
+      index[name].set(keyOf(name, item), { recordId: record.id, json: JSON.stringify(item) });
+      return item;
+    });
+  });
+  const accounts = state.users as AccountPayload[];
+  state.users = accounts.map(({ id, role, displayName, email }) => ({ id, role, displayName, email }) satisfies Partial<User>);
+  return { state: state as unknown as DemoState, index, accounts };
 }
 
 /**
- * A medical category answer. `null` = not answered yet; `'none'` = parent
- * explicitly said none. A blank list never counts as "none".
+ * Writes back only what changed. Append-only kinds may gain records but never
+ * have one edited or removed — enforced here because Piezas records are
+ * editable with the server key.
  */
-export type MedicalAnswer<T> = T[] | 'none' | null;
-
-export interface Medication {
-  name: string;
-  /** Where it is kept, e.g. "Jacket left pocket" or "Ski school desk". */
-  location: string;
-  heldAtDesk: boolean;
+export async function commitState(clients: Clients, { state, index }: Loaded): Promise<void> {
+  const writes: Promise<unknown>[] = [];
+  for (const name of Object.keys(COLLECTIONS) as Collection[]) {
+    if (name === 'users') continue; // accounts are managed by the seed script only
+    const seen = new Set<string>();
+    for (const item of state[name] as object[]) {
+      const key = keyOf(name, item);
+      seen.add(key);
+      const json = JSON.stringify(item);
+      const existing = index[name].get(key);
+      if (existing?.json === json) continue;
+      if (existing && APPEND_ONLY.has(name)) throw new Error(`Refused to edit append-only ${name} record ${key}`);
+      const data = { key, payload: json };
+      writes.push(existing ? clients[name].update(existing.recordId, { data }) : clients[name].create({ title: key, data }));
+    }
+    for (const [key, { recordId }] of index[name]) {
+      if (seen.has(key)) continue;
+      if (APPEND_ONLY.has(name)) throw new Error(`Refused to delete append-only ${name} record ${key}`);
+      writes.push(clients[name].delete(recordId));
+    }
+  }
+  await Promise.all(writes);
 }
 
-export interface MedicalProfile {
-  childId: Id;
-  allergies: MedicalAnswer<string>;
-  conditions: MedicalAnswer<string>;
-  medications: MedicalAnswer<Medication>;
-  /** What staff should do, e.g. "Give EpiPen, call patrol". */
-  safetyInstructions: string;
-  updatedBy: Id | null;
-  updatedAt: Timestamp | null;
+export async function findAccountByPiezasUser(clients: Clients, piezasUserId: string): Promise<AccountPayload | null> {
+  const records = await listAll(clients.users);
+  return records.map(payloadOf).find((a: AccountPayload) => a.piezasUserId === piezasUserId) ?? null;
 }
-
-export interface EmergencyContact {
-  id: Id;
-  childId: Id;
-  name: string;
-  relationship: string;
-  phone: string;
-  priority: 1 | 2;
-}
-
-export interface AuthorizedAdult {
-  id: Id;
-  childId: Id;
-  name: string;
-  relationship: string;
-  phone: string | null;
-  isActive: boolean;
-  updatedBy: Id;
-  updatedAt: Timestamp;
-}
-
-export interface Consent {
-  childId: Id;
-  parentUserId: Id;
-  typedName: string;
-  photoConsent: boolean;
-  consentedAt: Timestamp;
-}
-
-export interface LessonGroup {
-  id: Id;
-  groupNumber: number;
-  day: LessonDate;
-  skiLevel: SkiLevel;
-  instructorUserId: Id;
-}
-
-export type AttendanceStatus = 'Expected' | 'CheckedIn' | 'Released';
-
-export interface Attendance {
-  id: Id;
-  childId: Id;
-  lessonDate: LessonDate;
-  status: AttendanceStatus;
-  bibNumber: string | null;
-  /** Parent-given description of today's jacket/helmet. */
-  clothingToday: string | null;
-  checkedInAt: Timestamp | null;
-  checkedInBy: Id | null;
-}
-
-/** Append-only. Never updated or deleted; corrections are separate entries. */
-export interface PickupLog {
-  id: Id;
-  childId: Id;
-  lessonDate: LessonDate;
-  authorizedAdultId: Id;
-  adultNameSnapshot: string;
-  verifiedByUserId: Id;
-  idChecked: true;
-  releasedAt: Timestamp;
-}
-
-export interface PickupCorrection {
-  id: Id;
-  pickupLogId: Id;
-  correctedBy: Id;
-  reason: string;
-  note: string;
-  createdAt: Timestamp;
-}
-
-/** Append-only. */
-export interface DeniedPickup {
-  id: Id;
-  childId: Id;
-  lessonDate: LessonDate;
-  statedAdultName: string;
-  reason: string;
-  staffUserId: Id;
-  occurredAt: Timestamp;
-}
-
-export type IncidentStatus = 'Open' | 'Located' | 'Closed';
-
-export type IncidentActionType =
-  | 'search'
-  | 'note'
-  | 'family_contacted'
-  | 'shared_with_police_or_rescuers'
-  | 'status_change';
-
-export interface IncidentAction {
-  id: Id;
-  type: IncidentActionType;
-  note: string;
-  staffUserId: Id;
-  occurredAt: Timestamp;
-}
-
-export interface Incident {
-  id: Id;
-  childId: Id;
-  lessonDate: LessonDate;
-  reportedBy: Id;
-  reportedAt: Timestamp;
-  lastSeenAt: Timestamp;
-  lastSeenLocation: string;
-  clothingDescription: string;
-  equipmentDescription: string;
-  notes: string;
-  status: IncidentStatus;
-  actions: IncidentAction[];
-  locatedAt: Timestamp | null;
-  resolvedAt: Timestamp | null;
-}
-
-/** Hana's follow-up to mail the notice required after an emergency disclosure (R-030). */
-export interface NoticeTask {
-  id: Id;
-  childId: Id;
-  childName: string;
-  incidentId: Id;
-  mailingAddress: string | null;
-  createdBy: Id;
-  createdAt: Timestamp;
-  status: 'Open' | 'Done';
-}
-
-export type AuditAction =
-  | 'sign_in'
-  | 'medical_updated'
-  | 'contacts_updated'
-  | 'pickup_adults_updated'
-  | 'consent_given'
-  | 'child_checked_in'
-  | 'child_released'
-  | 'pickup_denied'
-  | 'pickup_corrected'
-  | 'incident_reported'
-  | 'incident_packet_viewed'
-  | 'incident_updated'
-  | 'admin_viewed_child_details'
-  | 'group_assignment_changed'
-  | 'notice_task_created'
-  | 'access_denied';
-
-/** Append-only. `detailsSummary` never contains medical values. */
-export interface AuditEvent {
-  id: Id;
-  actorUserId: Id;
-  action: AuditAction;
-  entityType: string;
-  entityId: Id;
-  occurredAt: Timestamp;
-  detailsSummary: string;
-}
-
-// ---------------------------------------------------------------------------
-// Role-specific views returned by services (need-to-know projections)
-// ---------------------------------------------------------------------------
-
-export type MissingField =
-  | 'parent'
-  | 'emergencyContacts'
-  | 'allergies'
-  | 'conditions'
-  | 'medications'
-  | 'pickupAdult'
-  | 'consent'
-  | 'mailingAddress';
-
-export interface Completion {
-  status: ProfileStatus;
-  missing: MissingField[];
-}
-
-/** Parent: summary card on /parent. */
-export interface MyChildSummary {
-  id: Id;
-  firstName: string;
-  lastName: string;
-  groupNumber: number | null;
-  completion: Completion;
-  updatedAt: Timestamp;
-}
-
-/** Parent (own child) or admin (with logged reason): the full editable profile. */
-export interface ChildProfile {
-  child: Child;
-  medical: MedicalProfile;
-  emergencyContacts: EmergencyContact[];
-  authorizedAdults: AuthorizedAdult[];
-  consent: Consent | null;
-  /** Parent-given jacket/helmet description per lesson day the child attends. */
-  clothing: { lessonDate: LessonDate; description: string | null }[];
-  completion: Completion;
-}
-
-/** The only medical information an instructor or patroller sees. */
-export interface SafetyAlert {
-  kind: 'allergy' | 'condition' | 'medication';
-  summary: string;
-  medicationLocation: string | null;
-  instructions: string;
-}
-
-export interface InstructorRosterEntry {
-  childId: Id;
-  firstName: string;
-  lastName: string;
-  age: number;
-  skiLevel: SkiLevel;
-  alerts: SafetyAlert[];
-  hasOpenIncident: boolean;
-}
-
-export interface InstructorRosterGroup {
-  groupId: Id;
-  groupNumber: number;
-  skiLevel: SkiLevel;
-  children: InstructorRosterEntry[];
-}
-
-export type DeskPickupState =
-  | { kind: 'Expected' }
-  | { kind: 'CheckedIn' }
-  /** incidentToday: a resolved incident happened today — refer family questions to the admin. */
-  | { kind: 'Released'; adultName: string; releasedAt: Timestamp; incidentToday: boolean }
-  | { kind: 'OpenIncident' }
-  | { kind: 'IncidentToday' };
-
-export interface DeskRosterEntry {
-  childId: Id;
-  firstName: string;
-  lastName: string;
-  otherNames: string[];
-  groupNumber: number | null;
-  status: AttendanceStatus;
-  bibNumber: string | null;
-  checkedInAt: Timestamp | null;
-  needsInformation: boolean;
-  pickup: DeskPickupState;
-}
-
-/** Desk pickup screen: active adults and state, no medical data. */
-export interface DeskPickupView {
-  entry: DeskRosterEntry;
-  authorizedAdults: Pick<AuthorizedAdult, 'id' | 'name' | 'relationship'>[];
-  /** e.g. "Holds EpiPen for this child" — only for meds kept at the desk. */
-  deskHeldMedications: string[];
-}
-
-export interface LastSeenDetails {
-  lastSeenAt: Timestamp;
-  lastSeenLocation: string;
-  clothingDescription: string;
-  equipmentDescription: string;
-  notes: string;
-}
-
-export interface IncidentListItem {
-  id: Id;
-  childId: Id;
-  childName: string;
-  groupNumber: number | null;
-  status: IncidentStatus;
-  lastSeenAt: Timestamp;
-  lastSeenLocation: string;
-  escalateAt: Timestamp;
-}
-
-/** Patrol's one-screen emergency packet. */
-export interface IncidentPacket {
-  incident: Incident;
-  child: {
-    id: Id;
-    firstName: string;
-    lastName: string;
-    otherNames: string[];
-    age: number;
-    skiLevel: SkiLevel;
-    liftPassNumber: string | null;
-    bibNumber: string | null;
-  };
-  group: { groupNumber: number; instructorName: string } | null;
-  parentClothingToday: string | null;
-  alerts: SafetyAlert[];
-  emergencyContacts: Pick<EmergencyContact, 'name' | 'relationship' | 'phone' | 'priority'>[];
-  /** The earlier of lastSeenAt + 60 minutes or 4:00 p.m. that day. */
-  escalateAt: Timestamp;
-}
-
-/** Patrol search before an incident exists: identity only. */
-export interface ChildSearchResult {
-  childId: Id;
-  firstName: string;
-  lastName: string;
-  age: number;
-  groupNumber: number | null;
-}
-
-export interface CompletionSummaryRow {
-  childId: Id;
-  firstName: string;
-  lastName: string;
-  groupNumber: number | null;
-  missing: MissingField[];
-}
-
-export interface OperationsSnapshot {
-  lessonDate: LessonDate;
-  expected: number;
-  checkedIn: number;
-  released: number;
-  openIncidents: IncidentListItem[];
-  deniedPickups: Pick<DeniedPickup, 'id' | 'childId' | 'statedAdultName' | 'occurredAt'>[];
-}
-
-// ---------------------------------------------------------------------------
-// Inputs
-// ---------------------------------------------------------------------------
-
-export interface ChildProfileChanges {
-  allergies?: MedicalAnswer<string>;
-  conditions?: MedicalAnswer<string>;
-  medications?: MedicalAnswer<Medication>;
-  safetyInstructions?: string;
-  /** Replaces the full list. Exactly two requested. */
-  emergencyContacts?: Omit<EmergencyContact, 'id' | 'childId'>[];
-  /** Upsert by id; omit id to add. Deactivate with isActive:false. */
-  authorizedAdults?: (Pick<AuthorizedAdult, 'name' | 'relationship' | 'phone' | 'isActive'> & { id?: Id })[];
-  mailingAddress?: string;
-  consent?: { typedName: string; photoConsent: boolean };
-  /** Jacket/helmet for one lesson day; the child must be attending that day. */
-  clothingToday?: { lessonDate: LessonDate; description: string };
-}
-
-export type IncidentUpdate =
-  | { kind: 'action'; type: Exclude<IncidentActionType, 'status_change'>; note: string }
-  | { kind: 'status'; status: IncidentStatus; note?: string };
 ````
 
-### changed: lib/fixtures.ts
+### added: next.config.ts
 
 ````
-// Synthetic demo dataset — the ONE shared dataset for all four workstreams.
-// Every person, phone number and address here is invented. Phones use the
-// fictional 555-01xx range; emails use the reserved .test domain.
-// IDs are stable: reference children/users by these constants, never by name.
-import type {
-  Attendance,
-  AuthorizedAdult,
-  Child,
-  Consent,
-  DeniedPickup,
-  EmergencyContact,
-  Incident,
-  LessonDate,
-  LessonGroup,
-  MedicalProfile,
-  PickupCorrection,
-  PickupLog,
-  AuditEvent,
-  NoticeTask,
-  User,
-} from './domain/types';
+import type { NextConfig } from 'next';
 
-export const DEMO_LESSON_DATE: LessonDate = '2026-12-12';
-const SEEDED_AT = '2026-11-07T09:00:00-07:00';
+// `output: 'standalone'` is required by `npx piezas deploy`.
+const config: NextConfig = { output: 'standalone' };
 
-export const USER_IDS = {
-  parentAva: 'usr_parent_shah',
-  parentLily: 'usr_parent_whitfield',
-  parentOwen: 'usr_parent_okafor',
-  parentOther: 'usr_parent_haddad',
-  instructorGroup14: 'usr_instructor_lee',
-  instructorGroup9: 'usr_instructor_rivera',
-  desk: 'usr_desk_morgan',
-  patrol: 'usr_patrol_fournier',
-  admin: 'usr_admin_sato',
-} as const;
+export default config;
+````
 
-export const CHILD_IDS = {
-  ava: 'chd_ava',
-  lily: 'chd_lily',
-  owen: 'chd_owen',
-  noor: 'chd_noor',
-  mateo: 'chd_mateo',
-  ella: 'chd_ella',
-} as const;
+### added: scripts/demo-accounts.ts
 
-export const GROUP_IDS = { group14: 'grp_14', group9: 'grp_09' } as const;
+````
+// Prints each demo account's email and password (derived from DEMO_ACCOUNT_SECRET).
+// Local use only: share these privately, never in the repo or a public channel.
+import { users } from '../lib/fixtures';
+import { demoPassword } from '../lib/piezas-schema';
 
-export const ADULT_IDS = {
-  lilyFather: 'adl_lily_tom',
-  /** Lily's uncle — seeded INACTIVE so Story B starts with a denial. */
-  lilyUncle: 'adl_lily_mark',
-  avaMother: 'adl_ava_priya',
-  owenFather: 'adl_owen_daniel',
-  noorMother: 'adl_noor_leila',
-  mateoGuardian: 'adl_mateo_leila',
-  ellaMother: 'adl_ella_leila',
-} as const;
+const secret = process.env.DEMO_ACCOUNT_SECRET;
+if (!secret) {
+  console.error('DEMO_ACCOUNT_SECRET is missing from .env.');
+  process.exit(1);
+}
+for (const u of users) console.log(`${u.role.padEnd(10)} ${u.email.padEnd(30)} ${demoPassword(secret, u.email)}`);
+````
 
-export const users: User[] = [
-  { id: USER_IDS.parentAva, role: 'parent', displayName: 'Priya Shah', email: 'priya.shah@example.test' },
-  { id: USER_IDS.parentLily, role: 'parent', displayName: 'Dana Whitfield', email: 'dana.whitfield@example.test' },
-  { id: USER_IDS.parentOwen, role: 'parent', displayName: 'Ngozi Okafor', email: 'ngozi.okafor@example.test' },
-  { id: USER_IDS.parentOther, role: 'parent', displayName: 'Leila Haddad', email: 'leila.haddad@example.test' },
-  { id: USER_IDS.instructorGroup14, role: 'instructor', displayName: 'Jordan Lee', email: 'jordan.lee@example.test' },
-  { id: USER_IDS.instructorGroup9, role: 'instructor', displayName: 'Sam Rivera', email: 'sam.rivera@example.test' },
-  { id: USER_IDS.desk, role: 'desk', displayName: 'Casey Morgan', email: 'casey.morgan@example.test' },
-  { id: USER_IDS.patrol, role: 'patrol', displayName: 'Rob Fournier', email: 'rob.fournier@example.test' },
-  { id: USER_IDS.admin, role: 'admin', displayName: 'Hana Sato', email: 'hana.sato@example.test' },
-];
+### added: tests/integration/piezas-store.spec.ts
 
-const child = (c: Omit<Child, 'createdAt' | 'updatedAt'>): Child => ({ ...c, createdAt: SEEDED_AT, updatedAt: SEEDED_AT });
+````
+// Runs against the Piezas TEST copy (PIEZAS_TEST_API_KEY) — never the live app.
+// Proves records written through the service logic persist in Piezas and that
+// append-only records cannot be edited. Re-seeds the test copy afterwards.
+import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { Piezas } from '@piezas/sdk';
+import { expect, test } from '@playwright/test';
+import type { VerifiedUser } from '../../lib/domain/types';
+import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE, USER_IDS } from '../../lib/fixtures';
+import { COLLECTIONS, entityDefinitionsFor, slugsFor, type Collection } from '../../lib/piezas-schema';
+import { createMockServices } from '../../lib/services/mock';
+import { commitState, loadState, type Clients } from '../../lib/services/record-store';
 
-const medical = (m: Omit<MedicalProfile, 'updatedBy' | 'updatedAt'>, updatedBy: string | null = null): MedicalProfile => ({
-  ...m,
-  updatedBy,
-  updatedAt: updatedBy ? SEEDED_AT : null,
+if (!process.env.PIEZAS_TEST_API_KEY && existsSync('.env')) process.loadEnvFile('.env');
+
+test.describe.configure({ mode: 'serial' });
+
+let clients: Clients;
+
+test.beforeAll(async () => {
+  const apiKey = process.env.PIEZAS_TEST_API_KEY;
+  expect(apiKey, 'PIEZAS_TEST_API_KEY must be set (run: npx piezas test --setup)').toBeTruthy();
+  const defined = await new Piezas({ apiKey, apiBaseUrl: process.env.PIEZAS_API_URL }).defineEntities(entityDefinitionsFor(apiKey!));
+  clients = Object.fromEntries(Object.entries(slugsFor(apiKey!)).map(([name, slug]) => [name, defined[slug]])) as Clients;
 });
 
-export interface DemoState {
-  users: User[];
-  children: Child[];
-  medical: MedicalProfile[];
-  contacts: EmergencyContact[];
-  adults: AuthorizedAdult[];
-  consents: Consent[];
-  groups: LessonGroup[];
-  attendance: Attendance[];
-  pickups: PickupLog[];
-  corrections: PickupCorrection[];
-  denials: DeniedPickup[];
-  incidents: Incident[];
-  audit: AuditEvent[];
-  noticeTasks: NoticeTask[];
-}
+test.afterAll(() => {
+  execFileSync('npx', ['tsx', 'scripts/seed.ts'], { stdio: 'ignore', env: process.env });
+});
 
-/** A fresh deep copy of the seed, so mocks and tests never share mutations. */
-export function createDemoState(): DemoState {
-  return structuredClone({
-    users,
-    groups: [
-      { id: GROUP_IDS.group14, groupNumber: 14, day: DEMO_LESSON_DATE, skiLevel: 'Intermediate', instructorUserId: USER_IDS.instructorGroup14 },
-      { id: GROUP_IDS.group9, groupNumber: 9, day: DEMO_LESSON_DATE, skiLevel: 'Novice', instructorUserId: USER_IDS.instructorGroup9 },
-    ],
-    children: [
-      // Story A: starts with medical categories unanswered; parent adds tree-nut allergy.
-      child({ id: CHILD_IDS.ava, firstName: 'Ava', lastName: 'Shah', otherNames: [], birthDate: '2018-03-14', skiLevel: 'Intermediate', groupId: GROUP_IDS.group14, parentUserIds: [USER_IDS.parentAva], liftPassNumber: 'KK-24-1001', mailingAddress: '12 Alder Lane, Squamish, BC V0N 0A1' }),
-      // Story B: complete profile; uncle is not active.
-      child({ id: CHILD_IDS.lily, firstName: 'Lily', lastName: 'Whitfield', otherNames: [], birthDate: '2017-07-02', skiLevel: 'Novice', groupId: GROUP_IDS.group9, parentUserIds: [USER_IDS.parentLily], liftPassNumber: 'KK-24-1002', mailingAddress: '48 Cedar Road, Whistler, BC V0N 0A2' }),
-      // Story C: asthma + inhaler; missing consent so desk sees "Needs information".
-      child({ id: CHILD_IDS.owen, firstName: 'Owen', lastName: 'Parr', otherNames: ['Owen Okafor-Parr', 'Okafor-Parr'], birthDate: '2016-11-20', skiLevel: 'Intermediate', groupId: GROUP_IDS.group14, parentUserIds: [USER_IDS.parentOwen], liftPassNumber: 'KK-24-1003', mailingAddress: '7 Spruce Court, Pemberton, BC V0N 0A3' }),
-      // Complete; glucose gel held at the desk (S-014).
-      child({ id: CHILD_IDS.noor, firstName: 'Noor', lastName: 'Haddad', otherNames: [], birthDate: '2015-05-09', skiLevel: 'Novice', groupId: GROUP_IDS.group9, parentUserIds: [USER_IDS.parentOther], liftPassNumber: 'KK-24-1004', mailingAddress: '3 Birch Way, Whistler, BC V0N 0A4' }),
-      // Story D: missing second contact and consent.
-      child({ id: CHILD_IDS.mateo, firstName: 'Mateo', lastName: 'Silva', otherNames: [], birthDate: '2019-01-25', skiLevel: 'Novice', groupId: GROUP_IDS.group9, parentUserIds: [USER_IDS.parentOther], liftPassNumber: 'KK-24-1005', mailingAddress: '3 Birch Way, Whistler, BC V0N 0A4' }),
-      // Conditions left blank (S-003).
-      child({ id: CHILD_IDS.ella, firstName: 'Ella', lastName: 'Haddad', otherNames: [], birthDate: '2017-09-30', skiLevel: 'Intermediate', groupId: GROUP_IDS.group14, parentUserIds: [USER_IDS.parentOther], liftPassNumber: 'KK-24-1006', mailingAddress: '3 Birch Way, Whistler, BC V0N 0A4' }),
-    ],
-    medical: [
-      medical({ childId: CHILD_IDS.ava, allergies: null, conditions: null, medications: null, safetyInstructions: '' }),
-      medical({ childId: CHILD_IDS.lily, allergies: 'none', conditions: 'none', medications: 'none', safetyInstructions: '' }, USER_IDS.parentLily),
-      medical({ childId: CHILD_IDS.owen, allergies: 'none', conditions: ['Asthma'], medications: [{ name: 'Blue reliever inhaler', location: 'Jacket left chest pocket', heldAtDesk: false }], safetyInstructions: 'If wheezing, help him use the inhaler (2 puffs). Call patrol if no improvement in 5 minutes.' }, USER_IDS.parentOwen),
-      medical({ childId: CHILD_IDS.noor, allergies: 'none', conditions: ['Type 1 diabetes'], medications: [{ name: 'Glucose gel', location: 'Ski school desk', heldAtDesk: true }], safetyInstructions: 'If shaky or pale, bring her to the desk for glucose gel.' }, USER_IDS.parentOther),
-      medical({ childId: CHILD_IDS.mateo, allergies: 'none', conditions: 'none', medications: 'none', safetyInstructions: '' }, USER_IDS.parentOther),
-      medical({ childId: CHILD_IDS.ella, allergies: 'none', conditions: null, medications: 'none', safetyInstructions: '' }, USER_IDS.parentOther),
-    ],
-    contacts: [
-      { id: 'ec_ava_1', childId: CHILD_IDS.ava, name: 'Priya Shah', relationship: 'Mother', phone: '604-555-0101', priority: 1 },
-      { id: 'ec_lily_1', childId: CHILD_IDS.lily, name: 'Dana Whitfield', relationship: 'Mother', phone: '604-555-0111', priority: 1 },
-      { id: 'ec_lily_2', childId: CHILD_IDS.lily, name: 'Tom Whitfield', relationship: 'Father', phone: '604-555-0112', priority: 2 },
-      { id: 'ec_owen_1', childId: CHILD_IDS.owen, name: 'Ngozi Okafor', relationship: 'Mother', phone: '604-555-0121', priority: 1 },
-      { id: 'ec_owen_2', childId: CHILD_IDS.owen, name: 'Daniel Parr', relationship: 'Father', phone: '604-555-0122', priority: 2 },
-      { id: 'ec_noor_1', childId: CHILD_IDS.noor, name: 'Leila Haddad', relationship: 'Mother', phone: '604-555-0131', priority: 1 },
-      { id: 'ec_noor_2', childId: CHILD_IDS.noor, name: 'Karim Haddad', relationship: 'Father', phone: '604-555-0132', priority: 2 },
-      { id: 'ec_mateo_1', childId: CHILD_IDS.mateo, name: 'Leila Haddad', relationship: 'Guardian', phone: '604-555-0131', priority: 1 },
-      { id: 'ec_ella_1', childId: CHILD_IDS.ella, name: 'Leila Haddad', relationship: 'Mother', phone: '604-555-0131', priority: 1 },
-      { id: 'ec_ella_2', childId: CHILD_IDS.ella, name: 'Karim Haddad', relationship: 'Father', phone: '604-555-0132', priority: 2 },
-    ],
-    adults: [
-      { id: ADULT_IDS.avaMother, childId: CHILD_IDS.ava, name: 'Priya Shah', relationship: 'Mother', phone: '604-555-0101', isActive: true, updatedBy: USER_IDS.parentAva, updatedAt: SEEDED_AT },
-      { id: ADULT_IDS.lilyFather, childId: CHILD_IDS.lily, name: 'Tom Whitfield', relationship: 'Father', phone: '604-555-0112', isActive: true, updatedBy: USER_IDS.parentLily, updatedAt: SEEDED_AT },
-      { id: ADULT_IDS.lilyUncle, childId: CHILD_IDS.lily, name: 'Mark Whitfield', relationship: 'Uncle', phone: '604-555-0113', isActive: false, updatedBy: USER_IDS.parentLily, updatedAt: SEEDED_AT },
-      { id: ADULT_IDS.owenFather, childId: CHILD_IDS.owen, name: 'Daniel Parr', relationship: 'Father', phone: '604-555-0122', isActive: true, updatedBy: USER_IDS.parentOwen, updatedAt: SEEDED_AT },
-      { id: ADULT_IDS.noorMother, childId: CHILD_IDS.noor, name: 'Leila Haddad', relationship: 'Mother', phone: '604-555-0131', isActive: true, updatedBy: USER_IDS.parentOther, updatedAt: SEEDED_AT },
-      { id: ADULT_IDS.mateoGuardian, childId: CHILD_IDS.mateo, name: 'Leila Haddad', relationship: 'Guardian', phone: '604-555-0131', isActive: true, updatedBy: USER_IDS.parentOther, updatedAt: SEEDED_AT },
-      { id: ADULT_IDS.ellaMother, childId: CHILD_IDS.ella, name: 'Leila Haddad', relationship: 'Mother', phone: '604-555-0131', isActive: true, updatedBy: USER_IDS.parentOther, updatedAt: SEEDED_AT },
-    ],
-    consents: [
-      { childId: CHILD_IDS.lily, parentUserId: USER_IDS.parentLily, typedName: 'Dana Whitfield', photoConsent: false, consentedAt: SEEDED_AT },
-      { childId: CHILD_IDS.noor, parentUserId: USER_IDS.parentOther, typedName: 'Leila Haddad', photoConsent: true, consentedAt: SEEDED_AT },
-      { childId: CHILD_IDS.ella, parentUserId: USER_IDS.parentOther, typedName: 'Leila Haddad', photoConsent: true, consentedAt: SEEDED_AT },
-    ],
-    attendance: [
-      { id: 'att_ava', childId: CHILD_IDS.ava, lessonDate: DEMO_LESSON_DATE, status: 'Expected', bibNumber: null, clothingToday: null, checkedInAt: null, checkedInBy: null },
-      { id: 'att_lily', childId: CHILD_IDS.lily, lessonDate: DEMO_LESSON_DATE, status: 'CheckedIn', bibNumber: '9', clothingToday: 'Purple jacket, white helmet', checkedInAt: '2026-12-12T09:05:00-07:00', checkedInBy: USER_IDS.desk },
-      { id: 'att_owen', childId: CHILD_IDS.owen, lessonDate: DEMO_LESSON_DATE, status: 'Expected', bibNumber: null, clothingToday: 'Red jacket, blue helmet', checkedInAt: null, checkedInBy: null },
-      { id: 'att_noor', childId: CHILD_IDS.noor, lessonDate: DEMO_LESSON_DATE, status: 'Expected', bibNumber: null, clothingToday: null, checkedInAt: null, checkedInBy: null },
-      { id: 'att_mateo', childId: CHILD_IDS.mateo, lessonDate: DEMO_LESSON_DATE, status: 'Expected', bibNumber: null, clothingToday: null, checkedInAt: null, checkedInBy: null },
-      { id: 'att_ella', childId: CHILD_IDS.ella, lessonDate: DEMO_LESSON_DATE, status: 'Expected', bibNumber: null, clothingToday: null, checkedInAt: null, checkedInBy: null },
-    ],
-    pickups: [],
-    corrections: [],
-    denials: [],
-    incidents: [],
-    audit: [],
-    noticeTasks: [],
-  } satisfies DemoState);
+const parentAva = (users: { id: string }[]): VerifiedUser => ({ ...(users.find((u) => u.id === USER_IDS.parentAva) as VerifiedUser), __verified: true });
+
+test("a parent's allergy update persists in Piezas and reaches the assigned instructor", async () => {
+  const before = await loadState(clients);
+  expect(before.state.children.map((c) => c.id)).toContain(CHILD_IDS.ava);
+
+  const result = await createMockServices(before.state).updateChildProfile(
+    CHILD_IDS.ava,
+    { allergies: ['Tree nuts'], safetyInstructions: 'Give EpiPen, then call patrol.' },
+    parentAva(before.state.users),
+  );
+  expect(result.ok).toBe(true);
+  await commitState(clients, before);
+
+  const after = await loadState(clients);
+  const medical = after.state.medical.find((m) => m.childId === CHILD_IDS.ava)!;
+  expect(medical).toMatchObject({ allergies: ['Tree nuts'], updatedBy: USER_IDS.parentAva });
+  expect(after.state.audit.some((a) => a.action === 'medical_updated' && a.entityId === CHILD_IDS.ava)).toBe(true);
+
+  const instructor = { ...after.state.users.find((u) => u.id === USER_IDS.instructorGroup14)!, __verified: true as const };
+  const roster = await createMockServices(after.state).getInstructorRoster(DEMO_LESSON_DATE, instructor);
+  expect(roster.ok && roster.data.flatMap((g) => g.children).find((c) => c.childId === CHILD_IDS.ava)?.alerts[0]?.summary).toBe('Allergy: Tree nuts');
+});
+
+test('append-only pickup records cannot be edited or deleted', async () => {
+  const loaded = await loadState(clients);
+  loaded.state.pickups.push({
+    id: 'pkp_integration',
+    childId: CHILD_IDS.lily,
+    lessonDate: DEMO_LESSON_DATE,
+    authorizedAdultId: ADULT_IDS.lilyFather,
+    adultNameSnapshot: 'Tom Whitfield',
+    verifiedByUserId: USER_IDS.desk,
+    idChecked: true,
+    releasedAt: '2026-12-12T15:30:00-07:00',
+  });
+  await commitState(clients, loaded);
+
+  const edit = await loadState(clients);
+  edit.state.pickups.find((p) => p.id === 'pkp_integration')!.adultNameSnapshot = 'Someone Else';
+  await expect(commitState(clients, edit)).rejects.toThrow('Refused to edit append-only pickups record pkp_integration');
+
+  const remove = await loadState(clients);
+  remove.state.pickups = remove.state.pickups.filter((p) => p.id !== 'pkp_integration');
+  await expect(commitState(clients, remove)).rejects.toThrow('Refused to delete append-only pickups record pkp_integration');
+
+  const final = await loadState(clients);
+  expect(final.state.pickups.find((p) => p.id === 'pkp_integration')?.adultNameSnapshot).toBe('Tom Whitfield');
+});
+
+test('every collection round-trips: what is loaded equals what was seeded', async () => {
+  const { state } = await loadState(clients);
+  for (const name of Object.keys(COLLECTIONS) as Collection[]) expect(Array.isArray(state[name]), name).toBe(true);
+  expect(state.users).toHaveLength(9);
+  expect(state.users.every((u) => !('piezasUserId' in u))).toBe(true);
+});
+````
+
+### changed: docs/PLATFORM.md
+
+````
+# Platform handoff (Dev 1 → Parent, Instructor/Patrol, Desk/Admin)
+
+## Getting started (10 minutes)
+
+1. `git fetch && git switch -c <your branch> origin/main`
+   (Anthony `feature/parent`, Raakin `feature/instructor-patrol`, Noah `feature/desk-admin`).
+2. `npm install`
+3. Create `.env` in the project root with the three values Ethan sends you privately:
+   ```
+   PIEZAS_API_URL=...
+   PIEZAS_TEST_API_KEY=...
+   DEMO_ACCOUNT_SECRET=...
+   ```
+   Never commit `.env` (it is gitignored). You do not need the live key.
+4. `npm run demo:accounts` prints every demo account's email and password.
+5. `npm run dev`, open http://localhost:3000 and sign in.
+6. Build your screens under your routes (see SPEC.md §Main Screens). Use `data-testid` on
+   everything a test needs, and write your scenario tests in `tests/scenarios/`.
+7. Before opening a PR: `npx tsc --noEmit` and `npx playwright test tests/unit tests/frontend.spec.ts tests/smoke.spec.ts`.
+
+Your local app uses the shared TEST copy of the data. `npm run seed` resets it to the
+demo fixtures if something gets into a weird state (it resets it for everyone).
+
+
+## The rule
+
+Pages and server actions get the user from `requireUser()` and call `services.*`.
+Never read a role, user id, parent id or instructor id from the browser.
+
+```tsx
+// app/desk/page.tsx (server component)
+import { services } from '@/lib/services';
+import { requireUser } from '@/lib/session';
+import { DEMO_LESSON_DATE } from '@/lib/fixtures';
+
+export default async function DeskPage() {
+  const user = await requireUser('desk');            // redirects if not signed in / wrong role
+  const roster = await services.getDeskRoster(DEMO_LESSON_DATE, user);
+  if (!roster.ok) return <p role="alert">{roster.error.message}</p>;
+  return <ul>{roster.data.map((c) => <li key={c.childId} data-testid={`desk-row-${c.childId}`}>{c.firstName}</li>)}</ul>;
 }
+```
+
+```ts
+// a server action (writes)
+'use server';
+export async function releaseChild(childId: string, adultId: string, idChecked: boolean) {
+  const user = await requireUser('desk');
+  return services.recordPickup(childId, adultId, idChecked, DEMO_LESSON_DATE, user);
+  // → { ok: true, data } | { ok: false, error: { code, message, fields? } }
+}
+```
+
+Error codes: `not_found` (missing, or not yours — show "Not found"), `forbidden`,
+`invalid` (show `error.fields[path]` beside the input), `blocked` (business rule —
+show `error.message`, e.g. "Release blocked: call patrol").
+
+## Files
+
+| File | What |
+| --- | --- |
+| `lib/services/contract.ts` | Every service function and its types. **The contract.** |
+| `lib/domain/types.ts` | Entities and role-specific view types. |
+| `lib/domain/rules.ts` | Phone validation, completeness, escalation time, safety alerts. Reuse in forms for instant feedback; the server re-checks. |
+| `lib/fixtures.ts` | Seed data and stable IDs (`CHILD_IDS.ava`, `USER_IDS.desk`, …). |
+| `lib/services/mock.ts` | The authorization and business logic. Runs over records loaded from Piezas (`lib/services/record-store.ts`); only changed records are written back. |
+| `app/globals.css` | Shared classes: `.page .card .field .button(.primary/.danger) .alert(.warn/.ok) .badge`. Tap targets are 48px. |
+
+Want a change to the contract? Ask Ethan first — don't edit `lib/` on your branch.
+
+## Demo accounts (all fictional)
+
+Each account has its own password: run `npm run demo:accounts` (needs the `.env` from
+Getting started). Never paste these into GitHub or a public channel.
+
+| Email | Role | Notes |
+| --- | --- | --- |
+| priya.shah@example.test | Parent | Ava (Story A) |
+| dana.whitfield@example.test | Parent | Lily (Story B) |
+| ngozi.okafor@example.test | Parent | Owen (Story C) |
+| leila.haddad@example.test | Parent | Noor, Mateo, Ella |
+| jordan.lee@example.test | Instructor | Group 14: Ava, Owen, Ella |
+| sam.rivera@example.test | Instructor | Group 9: Lily, Noor, Mateo (the "unrelated instructor" for Ava) |
+| casey.morgan@example.test | Desk | |
+| rob.fournier@example.test | Patrol | |
+| hana.sato@example.test | Admin | |
+
+Lesson day for every story: `DEMO_LESSON_DATE` = 2026-12-12. Lily is already checked in;
+her uncle Mark Whitfield (`ADULT_IDS.lilyUncle`) is on her list but inactive.
+
+Data lives in Piezas. Local dev (`npm run dev`) uses the TEST copy (`PIEZAS_TEST_API_KEY`), never live data.
+`npm run seed` resets the TEST copy to these fixtures. No key yet? Put
+`KESTREL_DATA=mock` in `.env` to work on screens against in-memory data
+(resets on restart; never used in production).
+
+## Tests
+
+`npm run test:unit` — service authorization and rules (no network).
+`npx playwright test tests/integration` — saves and reads through the Piezas test copy.
+Scenario tests go in `tests/scenarios/S-xxx-<name>.spec.ts`, selecting by `data-testid`.
 ````
 
 ### changed: lib/services/contract.ts
@@ -1245,6 +1142,8 @@ export interface KestrelServices {
   openChildDetailsWithReason(childId: Id, reason: string, user: VerifiedUser): Promise<Result<ChildProfile>>;
   /** Blocked if the group already has six children. */
   assignChildToGroup(childId: Id, groupId: Id, user: VerifiedUser): Promise<Result<{ childId: Id; groupId: Id }>>;
+  /** Target must be an instructor account. */
+  assignInstructorToGroup(groupId: Id, instructorUserId: Id, user: VerifiedUser): Promise<Result<{ groupId: Id; instructorUserId: Id }>>;
   /** Adds a correction beside the original; the original pickup log is never changed. */
   addPickupCorrection(pickupLogId: Id, reason: string, note: string, user: VerifiedUser): Promise<Result<PickupCorrection>>;
   /** Hana's open "mail the notice" tasks, created when patrol records sharing with police or rescuers. */
@@ -1252,6 +1151,56 @@ export interface KestrelServices {
   /** Newest first. Entries never contain medical values. */
   getAuditLog(user: VerifiedUser): Promise<Result<AuditEvent[]>>;
 }
+````
+
+### changed: lib/services/index.ts
+
+````
+import 'server-only';
+import { createDemoState } from '../fixtures';
+import type { KestrelServices } from './contract';
+import { createMockServices } from './mock';
+import { commitState, loadState } from './piezas-store';
+
+export type { KestrelServices, Result, ServiceError, ServiceErrorCode } from './contract';
+
+type Method = keyof KestrelServices;
+type Call = (...args: unknown[]) => Promise<unknown>;
+
+/**
+ * Piezas-backed services: each call loads the Kestrel records, runs the same
+ * authorization and business logic the unit tests cover (lib/services/mock.ts),
+ * then writes back only what changed. Calls are serialized within the server
+ * process so two requests never interleave a read-modify-write.
+ */
+function createPiezasServices(): KestrelServices {
+  let queue: Promise<unknown> = Promise.resolve();
+  const methods = Object.keys(createMockServices(createDemoState())) as Method[];
+  return Object.fromEntries(
+    methods.map((method) => [
+      method,
+      (...args: unknown[]) => {
+        const next = queue.then(async () => {
+          const loaded = await loadState();
+          const result = await (createMockServices(loaded.state)[method] as Call)(...args);
+          await commitState(loaded);
+          return result;
+        });
+        queue = next.catch(() => undefined);
+        return next;
+      },
+    ]),
+  ) as unknown as KestrelServices;
+}
+
+// KESTREL_DATA=mock keeps everything in server memory for local UI work
+// without a Piezas key. Never allowed in a production build.
+const useMock = process.env.KESTREL_DATA === 'mock' && process.env.NODE_ENV !== 'production';
+const store = globalThis as typeof globalThis & { __kestrelServices?: KestrelServices };
+
+export const services: KestrelServices = (store.__kestrelServices ??= useMock
+  ? createMockServices(createDemoState())
+  : createPiezasServices());
 ````
 
 ### changed: lib/services/mock.ts
@@ -1747,6 +1696,18 @@ export function createMockServices(
       return ok({ childId, groupId });
     },
 
+    async assignInstructorToGroup(groupId, instructorUserId, user) {
+      if (!is(user, 'admin')) return deny(user, 'LessonGroup', groupId, 'instructor assignment');
+      const group = state.groups.find((g) => g.id === groupId);
+      if (!group) return NOT_FOUND;
+      if (!state.users.some((u) => u.id === instructorUserId && u.role === 'instructor'))
+        return fail('invalid', 'Choose an instructor account.', { instructorUserId: 'Choose an instructor account.' });
+      const from = group.instructorUserId;
+      group.instructorUserId = instructorUserId;
+      audit(user, 'group_assignment_changed', 'LessonGroup', groupId, `Instructor changed from ${from} to ${instructorUserId}`);
+      return ok({ groupId, instructorUserId });
+    },
+
     async addPickupCorrection(pickupLogId, reason, note, user) {
       if (!is(user, 'admin')) return deny(user, 'PickupLog', pickupLogId, 'pickup correction');
       if (!state.pickups.some((p) => p.id === pickupLogId)) return NOT_FOUND;
@@ -1773,13 +1734,275 @@ export function createMockServices(
 }
 ````
 
+### changed: lib/session.ts
+
+````
+import 'server-only';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { PiezasError } from '@piezas/sdk';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import type { Role, User, VerifiedUser } from './domain/types';
+import { users as fixtureUsers } from './fixtures';
+import { piezas } from './piezas';
+import { demoPassword } from './piezas-schema';
+import { findAccountByPiezasUser } from './services/piezas-store';
+
+// Session glue. The ONLY place a VerifiedUser is created. Pages and server
+// actions call requireUser(); they never accept a user, role or id from the
+// browser. Identity comes from the Piezas users service; the role comes from
+// the app's account record, which only the server and seed script write.
+
+const COOKIE = 'kk_session';
+const MAX_AGE_SECONDS = 12 * 60 * 60;
+const ROLES: readonly Role[] = ['parent', 'instructor', 'desk', 'patrol', 'admin'];
+const useMock = process.env.KESTREL_DATA === 'mock' && process.env.NODE_ENV !== 'production';
+
+const verify = (user: User): VerifiedUser => ({ ...user, __verified: true });
+
+export type SignInError = 'invalid_credentials' | 'not_configured';
+
+async function setSessionCookie(token: string) {
+  (await cookies()).set(COOKIE, token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: MAX_AGE_SECONDS,
+  });
+}
+
+// Local mock mode only: in-memory tokens for fixture accounts.
+const mockStore = globalThis as typeof globalThis & { __kestrelSessions?: Map<string, string> };
+const mockSessions = (mockStore.__kestrelSessions ??= new Map());
+
+async function mockSignIn(email: string, password: string): Promise<SignInError | null> {
+  const secret = process.env.DEMO_ACCOUNT_SECRET;
+  if (!secret) return 'not_configured';
+  const user = fixtureUsers.find((u) => u.email === email);
+  const expected = Buffer.from(demoPassword(secret, email));
+  const given = Buffer.from(password);
+  if (!user || expected.length !== given.length || !timingSafeEqual(expected, given)) return 'invalid_credentials';
+  const token = randomBytes(32).toString('base64url');
+  mockSessions.set(token, user.id);
+  await setSessionCookie(token);
+  return null;
+}
+
+export async function signIn(email: string, password: string): Promise<{ ok: true } | { ok: false; error: SignInError }> {
+  const normalized = email.trim().toLowerCase();
+  if (useMock) {
+    const error = await mockSignIn(normalized, password);
+    return error ? { ok: false, error } : { ok: true };
+  }
+  const result = await piezas()
+    .users.signIn({ email: normalized, password })
+    .catch((error: unknown) => {
+      if (error instanceof PiezasError && ['invalid_credentials', 'account_pending', 'account_locked'].includes(error.code)) return null;
+      throw error;
+    });
+  // Demo accounts have no second factor; an MFA challenge is treated as a failed sign-in here.
+  if (!result?.session) return { ok: false, error: 'invalid_credentials' };
+  await setSessionCookie(result.session.token);
+  return { ok: true };
+}
+
+export async function signOut(): Promise<void> {
+  const jar = await cookies();
+  const token = jar.get(COOKIE)?.value;
+  jar.delete(COOKIE);
+  if (!token) return;
+  if (useMock) {
+    mockSessions.delete(token);
+    return;
+  }
+  await piezas().users.signOut(token);
+}
+
+export async function getCurrentUser(): Promise<VerifiedUser | null> {
+  const token = (await cookies()).get(COOKIE)?.value;
+  if (!token) return null;
+  if (useMock) {
+    const user = fixtureUsers.find((u) => u.id === mockSessions.get(token));
+    return user ? verify(user) : null;
+  }
+  const session = await piezas()
+    .users.getSession(token)
+    .catch((error: unknown) => {
+      if (error instanceof PiezasError && error.code === 'invalid_session') return null;
+      throw error;
+    });
+  if (!session?.valid || !session.user) return null;
+  const account = await findAccountByPiezasUser(session.user.id);
+  if (!account || !ROLES.includes(account.role as Role)) return null;
+  return verify({ id: account.id, role: account.role as Role, displayName: account.displayName, email: account.email });
+}
+
+/** Use at the top of every protected page and server action. */
+export async function requireUser(...roles: Role[]): Promise<VerifiedUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect('/login');
+  if (roles.length && !roles.includes(user.role)) redirect('/');
+  return user;
+}
+
+export const ROLE_HOME: Record<Role, string> = {
+  parent: '/parent',
+  instructor: '/instructor',
+  desk: '/desk',
+  patrol: '/patrol',
+  admin: '/admin',
+};
+````
+
+### changed: package.json
+
+````
+{
+  "name": "softmax-hackathon-team2",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "piezas": "^0.7.7",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@piezas/sdk": "^0.5.2",
+    "next": "^16.4.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test:frontend": "playwright test tests/frontend.spec.ts",
+    "seed": "tsx --env-file=.env scripts/seed.ts",
+    "seed:live": "SEED_TARGET=live tsx --env-file=.env scripts/seed.ts",
+    "demo:accounts": "tsx --env-file=.env scripts/demo-accounts.ts",
+    "test:unit": "playwright test tests/unit"
+  }
+}
+````
+
+### changed: scripts/seed.ts
+
+````
+// Loads the synthetic demo dataset (lib/fixtures.ts) into Piezas.
+//
+//   npx tsx scripts/seed.ts                 → TEST copy (PIEZAS_TEST_API_KEY).
+//       Resets every Kestrel record to the fixtures, so each check starts
+//       from the same state. `piezas test` runs this before every check.
+//   SEED_TARGET=live npx tsx scripts/seed.ts → LIVE app (PIEZAS_API_KEY).
+//       Only creates what is missing; never changes or deletes live records.
+//
+// Every name, phone, address and email is invented (.test addresses never
+// receive mail). Each account's password is derived from DEMO_ACCOUNT_SECRET;
+// print them with `npm run demo:accounts`.
+import { Piezas, PiezasError, type EntityClient, type EntityRecord } from '@piezas/sdk';
+import { createDemoState } from '../lib/fixtures';
+import { demoPassword, entityDefinitionsFor, keyOf, slugsFor, type AccountPayload, type Collection } from '../lib/piezas-schema';
+
+const live = process.env.SEED_TARGET === 'live';
+const apiKey = live ? process.env.PIEZAS_API_KEY : process.env.PIEZAS_TEST_API_KEY;
+const secret = process.env.DEMO_ACCOUNT_SECRET;
+if (!apiKey) {
+  console.error(live ? 'PIEZAS_API_KEY is missing.' : 'No test copy of the app yet (PIEZAS_TEST_API_KEY is missing). Run: piezas test --setup');
+  process.exit(1);
+}
+if (!secret) {
+  console.error('DEMO_ACCOUNT_SECRET is missing from .env.');
+  process.exit(1);
+}
+const piezas = new Piezas({ apiKey, apiBaseUrl: process.env.PIEZAS_API_URL });
+
+/** Creates the sign-in account if needed, switches it on, and returns its users-service id. */
+async function ensureUser(email: string, password: string): Promise<string> {
+  await piezas.users.signUp({ email, password }).catch((error: unknown) => {
+    if (error instanceof PiezasError && error.code === 'conflict') return;
+    throw error;
+  });
+  // Sign-up for an existing email can report success with a placeholder id
+  // (so it does not reveal which emails exist); the listing is authoritative.
+  const user = (await piezas.users.listUsers({ email })).users.find((u) => u.email === email);
+  if (!user) throw new Error(`Could not create or find ${email}`);
+  if (user.status !== 'active') await piezas.users.updateUser(user.id, { status: 'active' });
+  return user.id;
+}
+
+async function listAll(client: EntityClient): Promise<EntityRecord[]> {
+  const all: EntityRecord[] = [];
+  for (let offset = 0; ; offset += 100) {
+    const page = await client.list({ limit: 100, offset });
+    all.push(...page.data);
+    if (page.data.length < 100) return all;
+  }
+}
+
+async function syncCollection(name: Collection, client: EntityClient, desired: object[]) {
+  const existing = new Map((await listAll(client)).map((r) => [String(r.data.key ?? r.title), r]));
+  const wanted = new Set<string>();
+  for (const item of desired) {
+    const key = keyOf(name, item);
+    wanted.add(key);
+    const payload = JSON.stringify(item);
+    const record = existing.get(key);
+    if (!record) await client.create({ title: key, data: { key, payload } });
+    else if (!live && record.data.payload !== payload) await client.update(record.id, { data: { key, payload } });
+  }
+  if (live) return;
+  for (const [key, record] of existing) if (!wanted.has(key)) await client.delete(record.id);
+}
+
+export async function seed() {
+  await piezas.users.configurePolicy({ requireEmailVerification: false });
+  const state = createDemoState();
+
+  const accounts: AccountPayload[] = [];
+  for (const user of state.users)
+    accounts.push({ ...user, piezasUserId: await ensureUser(user.email, demoPassword(secret!, user.email)) });
+
+  // The `piezas test` harness's own sign-in person (no app role).
+  const testEmail = process.env.PIEZAS_TEST_USER_EMAIL;
+  const testPassword = process.env.PIEZAS_TEST_USER_PASSWORD;
+  if (!live && testEmail && testPassword) await ensureUser(testEmail, testPassword);
+
+  const clients = await piezas.defineEntities(entityDefinitionsFor(apiKey!));
+  for (const [name, slug] of Object.entries(slugsFor(apiKey!)) as [Collection, string][]) {
+    await syncCollection(name, clients[slug], name === 'users' ? accounts : (state[name] as object[]));
+  }
+}
+
+seed().then(
+  () => console.log(live ? 'live demo data ready (missing records created)' : 'test information ready'),
+  (error) => {
+    console.error(error?.message ?? error);
+    process.exit(1);
+  },
+);
+````
+
 ### changed: tests/frontend.spec.ts
 
 ````
 import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { demoPassword } from '../lib/piezas-schema';
 
-if (!process.env.DEMO_PASSWORD && existsSync('.env')) process.loadEnvFile('.env');
+if (!process.env.DEMO_ACCOUNT_SECRET && existsSync('.env')) process.loadEnvFile('.env');
 
 test('signed-out visitors land on sign-in, which fits a phone', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
@@ -1796,8 +2019,8 @@ test('signed-out visitors land on sign-in, which fits a phone', async ({ page })
 });
 
 test('each role signs in and sees only its own authorized summary', async ({ page }) => {
-  const password = process.env.DEMO_PASSWORD;
-  expect(password, 'DEMO_PASSWORD must be set (in .env) for the sign-in check').toBeTruthy();
+  const secret = process.env.DEMO_ACCOUNT_SECRET;
+  expect(secret, 'DEMO_ACCOUNT_SECRET must be set (in .env) for the sign-in check').toBeTruthy();
   const cases = [
     ['priya.shah@example.test', 'Priya Shah · Parent', '1 linked child(ren) · 1 need information'],
     ['jordan.lee@example.test', 'Jordan Lee · Instructor', 'Group 14 · 3 children · 1 with safety alerts'],
@@ -1808,7 +2031,7 @@ test('each role signs in and sees only its own authorized summary', async ({ pag
   for (const [email, who, summary] of cases) {
     await page.goto('/login');
     await page.getByTestId('login-email').fill(email);
-    await page.getByTestId('login-password').fill(password!);
+    await page.getByTestId('login-password').fill(demoPassword(secret!, email));
     await page.getByTestId('login-submit').click();
     await expect(page.getByTestId('current-user')).toHaveText(who);
     await expect(page.getByTestId('home-summary')).toHaveText(summary);
@@ -2184,5 +2407,19 @@ test.describe('regressions from quality scan', () => {
     data(await svc.recordPickup(CHILD_IDS.lily, ADULT_IDS.lilyFather, true, DAY, desk));
     expect(data(await svc.getDeskPickupView(CHILD_IDS.lily, DAY, desk)).entry.pickup).toMatchObject({ kind: 'Released', incidentToday: false });
   });
+
+  test('Hana assigns an instructor to a group, and the rosters follow', async () => {
+    const admin = as(USER_IDS.admin);
+    data(await svc.assignInstructorToGroup(GROUP_IDS.group14, USER_IDS.instructorGroup9, admin));
+    expect(data(await svc.getInstructorRoster(DAY, as(USER_IDS.instructorGroup14)))).toEqual([]);
+    expect(data(await svc.getInstructorRoster(DAY, as(USER_IDS.instructorGroup9))).map((g) => g.groupNumber).sort()).toEqual([14, 9].sort());
+    expect(errCode(await svc.assignInstructorToGroup(GROUP_IDS.group14, USER_IDS.desk, admin))).toBe('invalid');
+    expect(errCode(await svc.assignInstructorToGroup('grp_nope', USER_IDS.instructorGroup9, admin))).toBe('not_found');
+    expect(errCode(await svc.assignInstructorToGroup(GROUP_IDS.group9, USER_IDS.instructorGroup9, as(USER_IDS.instructorGroup9)))).toBe('forbidden');
+  });
 });
 ````
+
+## Also in the change, not shown above (open them yourself when they matter)
+
+- package-lock.json (changed)

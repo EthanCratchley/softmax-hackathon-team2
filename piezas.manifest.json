@@ -115,8 +115,14 @@
   },
   "publicRoutes": [],
   "deploy": {
-    "requiredEnv": ["PIEZAS_API_URL"],
-    "optionalEnv": []
+    "requiredEnv": [
+      "PIEZAS_API_URL"
+    ],
+    "optionalEnv": [],
+    "appId": "2d4989af-1829-4018-9abb-d5e4aafbf30b",
+    "mode": "mixed",
+    "slug": "kestrel-kids-safety",
+    "url": "https://kestrel-kids-safety.apps.piezas.ai"
   },
   "recipes": [],
   "notes": [

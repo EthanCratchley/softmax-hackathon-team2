@@ -69,5 +69,6 @@
     "fixed": 3,
     "of": 8
   },
-  "status": "open"
+  "status": "stopped",
+  "stoppedAfterRounds": 3
 }
