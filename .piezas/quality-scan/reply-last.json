@@ -1,8 +1,10 @@
 {
-  "event": "8d1a29876297b422b80de41f3c1dc1478b8afb1f",
-  "at": "2026-11-07T22:29:32.912Z",
+  "event": "a1fc652173b6ae4f7cc6dbe656f2fc355a73c8e7",
+  "at": "2026-11-07T23:25:07.829Z",
   "value": {
-    "notes": [],
+    "notes": [
+      "The customer approved the design (they typed \"approve\" themselves), and it is recorded. Move to the next step now and tell them in one sentence what happens next."
+    ],
     "quality": false
   }
 }
