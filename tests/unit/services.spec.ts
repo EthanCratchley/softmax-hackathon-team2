@@ -340,4 +340,15 @@ test.describe('regressions from quality scan', () => {
     ]);
     expect(errCode(await svc.updateChildProfile(CHILD_IDS.owen, { clothingToday: { lessonDate: '2027-01-02', description: 'x' } }, parent))).toBe('invalid');
   });
+
+  test('after a found child is released, the desk still sees that an incident happened today', async () => {
+    const desk = as(USER_IDS.desk);
+    data(await svc.checkInChild(CHILD_IDS.owen, DAY, '14', desk));
+    const { id } = data(await svc.reportMissingChild(CHILD_IDS.owen, DAY, { lastSeenAt: '2026-12-12T14:30:00-07:00', lastSeenLocation: 'Pigeon chair', clothingDescription: '', equipmentDescription: '', notes: '' }, desk));
+    data(await svc.updateIncident(id, { kind: 'status', status: 'Located' }, as(USER_IDS.patrol)));
+    data(await svc.recordPickup(CHILD_IDS.owen, ADULT_IDS.owenFather, true, DAY, desk));
+    expect(data(await svc.getDeskPickupView(CHILD_IDS.owen, DAY, desk)).entry.pickup).toMatchObject({ kind: 'Released', adultName: 'Daniel Parr', incidentToday: true });
+    data(await svc.recordPickup(CHILD_IDS.lily, ADULT_IDS.lilyFather, true, DAY, desk));
+    expect(data(await svc.getDeskPickupView(CHILD_IDS.lily, DAY, desk)).entry.pickup).toMatchObject({ kind: 'Released', incidentToday: false });
+  });
 });

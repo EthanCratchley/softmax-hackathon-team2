@@ -292,7 +292,8 @@ export interface InstructorRosterGroup {
 export type DeskPickupState =
   | { kind: 'Expected' }
   | { kind: 'CheckedIn' }
-  | { kind: 'Released'; adultName: string; releasedAt: Timestamp }
+  /** incidentToday: a resolved incident happened today — refer family questions to the admin. */
+  | { kind: 'Released'; adultName: string; releasedAt: Timestamp; incidentToday: boolean }
   | { kind: 'OpenIncident' }
   | { kind: 'IncidentToday' };
 

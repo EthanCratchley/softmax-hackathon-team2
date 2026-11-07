@@ -88,7 +88,7 @@ export function createMockServices(
     const state_: DeskPickupState = incidents.some((i) => i.status === 'Open')
       ? { kind: 'OpenIncident' }
       : pickup
-        ? { kind: 'Released', adultName: pickup.adultNameSnapshot, releasedAt: pickup.releasedAt }
+        ? { kind: 'Released', adultName: pickup.adultNameSnapshot, releasedAt: pickup.releasedAt, incidentToday: incidents.length > 0 }
         : incidents.length
           ? { kind: 'IncidentToday' }
           : { kind: att.status === 'CheckedIn' ? 'CheckedIn' : 'Expected' };
