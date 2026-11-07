@@ -1,39 +1,29 @@
 import 'server-only';
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { PiezasError } from '@piezas/sdk';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Role, User, VerifiedUser } from './domain/types';
-import { users } from './fixtures';
+import { users as fixtureUsers } from './fixtures';
+import { piezas } from './piezas';
+import { demoPassword } from './piezas-schema';
+import { findAccountByPiezasUser } from './services/piezas-store';
 
 // Session glue. The ONLY place a VerifiedUser is created. Pages and server
 // actions call requireUser(); they never accept a user, role or id from the
-// browser.
-//
-// Mock phase: synthetic accounts from lib/fixtures.ts with one shared demo
-// password from DEMO_PASSWORD (server env). After the preview is approved
-// this switches to Piezas users (signIn → session token in this same
-// httpOnly cookie, verified with users.getSession on every request).
+// browser. Identity comes from the Piezas users service; the role comes from
+// the app's account record, which only the server and seed script write.
 
 const COOKIE = 'kk_session';
 const MAX_AGE_SECONDS = 12 * 60 * 60;
-
-const store = globalThis as typeof globalThis & { __kestrelSessions?: Map<string, { userId: string; expiresAt: number }> };
-const sessions = (store.__kestrelSessions ??= new Map());
+const ROLES: readonly Role[] = ['parent', 'instructor', 'desk', 'patrol', 'admin'];
+const useMock = process.env.KESTREL_DATA === 'mock' && process.env.NODE_ENV !== 'production';
 
 const verify = (user: User): VerifiedUser => ({ ...user, __verified: true });
-const digest = (value: string) => createHash('sha256').update(value).digest();
 
 export type SignInError = 'invalid_credentials' | 'not_configured';
 
-export async function signIn(email: string, password: string): Promise<{ ok: true; user: VerifiedUser } | { ok: false; error: SignInError }> {
-  const expected = process.env.DEMO_PASSWORD;
-  if (!expected) return { ok: false, error: 'not_configured' };
-  const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-  const passwordOk = timingSafeEqual(digest(password), digest(expected));
-  if (!user || !passwordOk) return { ok: false, error: 'invalid_credentials' };
-
-  const token = randomBytes(32).toString('base64url');
-  sessions.set(token, { userId: user.id, expiresAt: Date.now() + MAX_AGE_SECONDS * 1000 });
+async function setSessionCookie(token: string) {
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
@@ -41,26 +31,72 @@ export async function signIn(email: string, password: string): Promise<{ ok: tru
     path: '/',
     maxAge: MAX_AGE_SECONDS,
   });
-  return { ok: true, user: verify(user) };
+}
+
+// Local mock mode only: in-memory tokens for fixture accounts.
+const mockStore = globalThis as typeof globalThis & { __kestrelSessions?: Map<string, string> };
+const mockSessions = (mockStore.__kestrelSessions ??= new Map());
+
+async function mockSignIn(email: string, password: string): Promise<SignInError | null> {
+  const secret = process.env.DEMO_ACCOUNT_SECRET;
+  if (!secret) return 'not_configured';
+  const user = fixtureUsers.find((u) => u.email === email);
+  const expected = Buffer.from(demoPassword(secret, email));
+  const given = Buffer.from(password);
+  if (!user || expected.length !== given.length || !timingSafeEqual(expected, given)) return 'invalid_credentials';
+  const token = randomBytes(32).toString('base64url');
+  mockSessions.set(token, user.id);
+  await setSessionCookie(token);
+  return null;
+}
+
+export async function signIn(email: string, password: string): Promise<{ ok: true } | { ok: false; error: SignInError }> {
+  const normalized = email.trim().toLowerCase();
+  if (useMock) {
+    const error = await mockSignIn(normalized, password);
+    return error ? { ok: false, error } : { ok: true };
+  }
+  const result = await piezas()
+    .users.signIn({ email: normalized, password })
+    .catch((error: unknown) => {
+      if (error instanceof PiezasError && ['invalid_credentials', 'account_pending', 'account_locked'].includes(error.code)) return null;
+      throw error;
+    });
+  // Demo accounts have no second factor; an MFA challenge is treated as a failed sign-in here.
+  if (!result?.session) return { ok: false, error: 'invalid_credentials' };
+  await setSessionCookie(result.session.token);
+  return { ok: true };
 }
 
 export async function signOut(): Promise<void> {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
-  if (token) sessions.delete(token);
   jar.delete(COOKIE);
+  if (!token) return;
+  if (useMock) {
+    mockSessions.delete(token);
+    return;
+  }
+  await piezas().users.signOut(token);
 }
 
 export async function getCurrentUser(): Promise<VerifiedUser | null> {
   const token = (await cookies()).get(COOKIE)?.value;
-  const session = token ? sessions.get(token) : undefined;
-  if (!token || !session) return null;
-  if (session.expiresAt < Date.now()) {
-    sessions.delete(token);
-    return null;
+  if (!token) return null;
+  if (useMock) {
+    const user = fixtureUsers.find((u) => u.id === mockSessions.get(token));
+    return user ? verify(user) : null;
   }
-  const user = users.find((u) => u.id === session.userId);
-  return user ? verify(user) : null;
+  const session = await piezas()
+    .users.getSession(token)
+    .catch((error: unknown) => {
+      if (error instanceof PiezasError && error.code === 'invalid_session') return null;
+      throw error;
+    });
+  if (!session?.valid || !session.user) return null;
+  const account = await findAccountByPiezasUser(session.user.id);
+  if (!account || !ROLES.includes(account.role as Role)) return null;
+  return verify({ id: account.id, role: account.role as Role, displayName: account.displayName, email: account.email });
 }
 
 /** Use at the top of every protected page and server action. */

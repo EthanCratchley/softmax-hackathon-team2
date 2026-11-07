@@ -1,5 +1,27 @@
 # Platform handoff (Dev 1 → Parent, Instructor/Patrol, Desk/Admin)
 
+## Getting started (10 minutes)
+
+1. `git fetch && git switch -c <your branch> origin/main`
+   (Anthony `feature/parent`, Raakin `feature/instructor-patrol`, Noah `feature/desk-admin`).
+2. `npm install`
+3. Create `.env` in the project root with the three values Ethan sends you privately:
+   ```
+   PIEZAS_API_URL=...
+   PIEZAS_TEST_API_KEY=...
+   DEMO_ACCOUNT_SECRET=...
+   ```
+   Never commit `.env` (it is gitignored). You do not need the live key.
+4. `npm run demo:accounts` prints every demo account's email and password.
+5. `npm run dev`, open http://localhost:3000 and sign in.
+6. Build your screens under your routes (see SPEC.md §Main Screens). Use `data-testid` on
+   everything a test needs, and write your scenario tests in `tests/scenarios/`.
+7. Before opening a PR: `npx tsc --noEmit` and `npx playwright test tests/unit tests/frontend.spec.ts tests/smoke.spec.ts`.
+
+Your local app uses the shared TEST copy of the data. `npm run seed` resets it to the
+demo fixtures if something gets into a weird state (it resets it for everyone).
+
+
 ## The rule
 
 Pages and server actions get the user from `requireUser()` and call `services.*`.
@@ -41,14 +63,15 @@ show `error.message`, e.g. "Release blocked: call patrol").
 | `lib/domain/types.ts` | Entities and role-specific view types. |
 | `lib/domain/rules.ts` | Phone validation, completeness, escalation time, safety alerts. Reuse in forms for instant feedback; the server re-checks. |
 | `lib/fixtures.ts` | Seed data and stable IDs (`CHILD_IDS.ava`, `USER_IDS.desk`, …). |
-| `lib/services/mock.ts` | In-memory implementation (today). Piezas implementation replaces it with no signature change. |
+| `lib/services/mock.ts` | The authorization and business logic. Runs over records loaded from Piezas (`lib/services/record-store.ts`); only changed records are written back. |
 | `app/globals.css` | Shared classes: `.page .card .field .button(.primary/.danger) .alert(.warn/.ok) .badge`. Tap targets are 48px. |
 
 Want a change to the contract? Ask Ethan first — don't edit `lib/` on your branch.
 
 ## Demo accounts (all fictional)
 
-Password: the `DEMO_PASSWORD` value — ask Ethan; put it in your own `.env`.
+Each account has its own password: run `npm run demo:accounts` (needs the `.env` from
+Getting started). Never paste these into GitHub or a public channel.
 
 | Email | Role | Notes |
 | --- | --- | --- |
@@ -65,9 +88,13 @@ Password: the `DEMO_PASSWORD` value — ask Ethan; put it in your own `.env`.
 Lesson day for every story: `DEMO_LESSON_DATE` = 2026-12-12. Lily is already checked in;
 her uncle Mark Whitfield (`ADULT_IDS.lilyUncle`) is on her list but inactive.
 
-Mock data lives in server memory: it resets when the dev server restarts.
+Data lives in Piezas. Local dev (`npm run dev`) uses the TEST copy (`PIEZAS_TEST_API_KEY`), never live data.
+`npm run seed` resets the TEST copy to these fixtures. No key yet? Put
+`KESTREL_DATA=mock` in `.env` to work on screens against in-memory data
+(resets on restart; never used in production).
 
 ## Tests
 
-`npx playwright test tests/unit` — service authorization and rules.
+`npm run test:unit` — service authorization and rules (no network).
+`npx playwright test tests/integration` — saves and reads through the Piezas test copy.
 Scenario tests go in `tests/scenarios/S-xxx-<name>.spec.ts`, selecting by `data-testid`.
