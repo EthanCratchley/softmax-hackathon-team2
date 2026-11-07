@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "pending": null,
+  "cycle": {
+    "id": "57e9b0f34d1b",
+    "startedAt": "2026-11-07T22:32:06.743Z",
+    "rounds": 1,
+    "ended": false,
+    "budgetReported": false
+  },
+  "consentAskedAt": null,
+  "hold": null,
+  "deployWanted": null,
+  "shownList": {
+    "scanId": "8ba123623e25",
+    "items": [
+      {
+        "n": 1,
+        "key": "7437eb9fb6c9497315781182",
+        "plain": "The app currently shows only starter cards, so parents and staff cannot perform any of the approved child safety journeys yet.",
+        "severity": "high"
+      },
+      {
+        "n": 2,
+        "key": "21d1a05ff4eb4a29c4d519c8",
+        "plain": "None of the 41 approved child safety checks are implemented, and no full app test run has been recorded.",
+        "severity": "medium"
+      },
+      {
+        "n": 3,
+        "key": "1a1eef46ea490b9c808206cf",
+        "plain": "People cannot report a problem from the first screen, so the existing check for that button will fail.",
+        "severity": "medium"
+      }
+    ]
+  },
+  "waits": null,
+  "deployScanTries": null
+}

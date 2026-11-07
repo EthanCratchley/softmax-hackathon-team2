@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "kind": "quality-scan",
+  "scanId": "8ba123623e25",
+  "cycle": "57e9b0f34d1b",
+  "round": 1,
+  "nonce": "qs-76346fe06145a91440",
+  "packetHash": "8d6a4f09ca22ed621f9301a3808f6b38e82eb4624f014dfb76127d8a6a6707d4",
+  "sourceFingerprint": "a18828284c58c9c8f68f92716e60607640e342e0e6c1e587c657d3a88ea643c4",
+  "specFingerprint": "3e9412ead13e2bd583c3d5100abe2d11b594d8dbfdf26821b98f174e9402f788",
+  "ranAt": "2026-11-07T22:33:04.659Z",
+  "validUntil": "2026-11-08T22:33:04.659Z",
+  "findings": [
+    {
+      "n": 1,
+      "severity": "high",
+      "plain": "The app currently shows only starter cards, so parents and staff cannot perform any of the approved child safety journeys yet.",
+      "file": "app/page.tsx",
+      "key": "7437eb9fb6c9497315781182",
+      "status": "open"
+    },
+    {
+      "n": 2,
+      "severity": "medium",
+      "plain": "None of the 41 approved child safety checks are implemented, and no full app test run has been recorded.",
+      "file": "tests/scenarios/README.md",
+      "key": "21d1a05ff4eb4a29c4d519c8",
+      "status": "open"
+    },
+    {
+      "n": 3,
+      "severity": "medium",
+      "plain": "People cannot report a problem from the first screen, so the existing check for that button will fail.",
+      "file": "app/page.tsx",
+      "key": "1a1eef46ea490b9c808206cf",
+      "status": "open"
+    }
+  ],
+  "fixedFromPrevious": {
+    "fixed": 0,
+    "of": 0
+  },
+  "status": "open"
+}

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "at": "2026-11-07T22:33:04.659Z",
+  "files": {
+    ".nvmrc": "68ca3fba3b7e864770cb61aeb306d4bd4354b68ab4dd38450860c5d823e42a53",
+    "app/globals.css": "f024000d94de7dbe20ded4191b565571c77275e22dac8093d29c6737d332e519",
+    "app/layout.tsx": "3fa914217e82ea49e444725ed8eadb9eac59425e4e6081fbce0e2f6362a2d341",
+    "app/page.tsx": "a931948a7859d5a6afbc12295f6efb4c03cc2245521c626674808c8b6f0159af",
+    "package-lock.json": "bfad8afe3b92d6900da371b034a7a08c6601b60d6324222333a29a2f9d866f48",
+    "package.json": "ba7f785c55b4d57bf71a5cfba5fc270600d26b298fe01cf1a666af054e8a6c2d",
+    "playwright.config.ts": "3592b4d1201e90b58d242cfba041c9672a39441eb7912dcb0109cab4ea1c8424",
+    "postcss.config.mjs": "f50058e0d309cdb3e7c25a1123337338641fb71e988572607d57f47209db1fd1",
+    "README.md": "24e2e117f17aea7ef478f51864302ef938c87e72c7fa42ff5550a09d1d540a9e",
+    "scripts/seed.ts": "6b43dd094a7946a7760aec93ffe7ab7cac221f413c71f027daa27ae49203b16d",
+    "tests/frontend.spec.ts": "8f7dfa4e2218e56bd7e99e22a6f5b897ab7a692739818830ff497617760f6838",
+    "tests/scenarios/README.md": "42a4d4f31d2daebec506c345a2f48fd029879ad5558c8ca5a13487027aef9863",
+    "tests/smoke.spec.ts": "6a16f15ab0680b1acaaf738d44981ed940e9fa66dfd2fc426bc2055381e817d0",
+    "tsconfig.json": "0e3d89e6f5bda2b6bc60e6e67174faba8336b087bae9cee271c57943547ea5d9"
+  }
+}

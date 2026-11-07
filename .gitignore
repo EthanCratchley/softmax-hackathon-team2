@@ -2,5 +2,12 @@
 .env.*
 !.env.example
 node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+playwright-report/
+test-results/
+*.log
 .piezas/guard.json
 .piezas/quality-scan/reply-last.json
