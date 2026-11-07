@@ -87,6 +87,8 @@ export interface KestrelServices {
   openChildDetailsWithReason(childId: Id, reason: string, user: VerifiedUser): Promise<Result<ChildProfile>>;
   /** Blocked if the group already has six children. */
   assignChildToGroup(childId: Id, groupId: Id, user: VerifiedUser): Promise<Result<{ childId: Id; groupId: Id }>>;
+  /** Target must be an instructor account. */
+  assignInstructorToGroup(groupId: Id, instructorUserId: Id, user: VerifiedUser): Promise<Result<{ groupId: Id; instructorUserId: Id }>>;
   /** Adds a correction beside the original; the original pickup log is never changed. */
   addPickupCorrection(pickupLogId: Id, reason: string, note: string, user: VerifiedUser): Promise<Result<PickupCorrection>>;
   /** Hana's open "mail the notice" tasks, created when patrol records sharing with police or rescuers. */

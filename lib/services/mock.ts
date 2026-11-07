@@ -488,6 +488,18 @@ export function createMockServices(
       return ok({ childId, groupId });
     },
 
+    async assignInstructorToGroup(groupId, instructorUserId, user) {
+      if (!is(user, 'admin')) return deny(user, 'LessonGroup', groupId, 'instructor assignment');
+      const group = state.groups.find((g) => g.id === groupId);
+      if (!group) return NOT_FOUND;
+      if (!state.users.some((u) => u.id === instructorUserId && u.role === 'instructor'))
+        return fail('invalid', 'Choose an instructor account.', { instructorUserId: 'Choose an instructor account.' });
+      const from = group.instructorUserId;
+      group.instructorUserId = instructorUserId;
+      audit(user, 'group_assignment_changed', 'LessonGroup', groupId, `Instructor changed from ${from} to ${instructorUserId}`);
+      return ok({ groupId, instructorUserId });
+    },
+
     async addPickupCorrection(pickupLogId, reason, note, user) {
       if (!is(user, 'admin')) return deny(user, 'PickupLog', pickupLogId, 'pickup correction');
       if (!state.pickups.some((p) => p.id === pickupLogId)) return NOT_FOUND;

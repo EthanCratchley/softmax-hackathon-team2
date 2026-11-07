@@ -351,4 +351,14 @@ test.describe('regressions from quality scan', () => {
     data(await svc.recordPickup(CHILD_IDS.lily, ADULT_IDS.lilyFather, true, DAY, desk));
     expect(data(await svc.getDeskPickupView(CHILD_IDS.lily, DAY, desk)).entry.pickup).toMatchObject({ kind: 'Released', incidentToday: false });
   });
+
+  test('Hana assigns an instructor to a group, and the rosters follow', async () => {
+    const admin = as(USER_IDS.admin);
+    data(await svc.assignInstructorToGroup(GROUP_IDS.group14, USER_IDS.instructorGroup9, admin));
+    expect(data(await svc.getInstructorRoster(DAY, as(USER_IDS.instructorGroup14)))).toEqual([]);
+    expect(data(await svc.getInstructorRoster(DAY, as(USER_IDS.instructorGroup9))).map((g) => g.groupNumber).sort()).toEqual([14, 9].sort());
+    expect(errCode(await svc.assignInstructorToGroup(GROUP_IDS.group14, USER_IDS.desk, admin))).toBe('invalid');
+    expect(errCode(await svc.assignInstructorToGroup('grp_nope', USER_IDS.instructorGroup9, admin))).toBe('not_found');
+    expect(errCode(await svc.assignInstructorToGroup(GROUP_IDS.group9, USER_IDS.instructorGroup9, as(USER_IDS.instructorGroup9)))).toBe('forbidden');
+  });
 });
