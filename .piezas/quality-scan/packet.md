@@ -1,7 +1,7 @@
 # Piezas quality scan packet
 
-Scan code: qs-76346fe06145a91440
-Round: 1 of 3
+Scan code: qs-5f6e94332fad387b7d
+Round: 2 of 3
 Project folder: C:\Users\raaki\OneDrive\Desktop\piezasathon\softmax-hackathon-team2
 
 ## The app description (what the owner approved)
@@ -552,17 +552,399 @@ says "deploy anyway".
 
 No test run is recorded yet (`piezas test` has not run).
 
+## Problems from the previous scan: check each one again
+
+1. [high] The app currently shows only starter cards, so parents and staff cannot perform any of the approved child safety journeys yet. (app/page.tsx)
+2. [medium] None of the 41 approved child safety checks are implemented, and no full app test run has been recorded. (tests/scenarios/README.md)
+3. [medium] People cannot report a problem from the first screen, so the existing check for that button will fail. (app/page.tsx)
+
 ## The change
 
-This is the first scan: the change is the whole app as it is now.
+Changed since the last scan (2026-11-07T22:33:04.659Z): 18 file(s) added or changed, 0 removed.
 
-### file: .nvmrc
+### added: app/instructor/page.tsx
+
+````
+'use client';
+import Link from 'next/link';
+import { useState } from 'react';
+import Shell from '@/components/instructor-patrol/shell';
+import s from '@/components/instructor-patrol/workspace.module.css';
+import { age, children, confirmHeadcount, groups, instructorId, lessonActive, lessonDay, nextHeadcount, usePreview } from '@/lib/instructor-patrol/preview';
+
+export default function Instructor() {
+  const [day, setDay] = useState(lessonDay);
+  const [time, setTime] = useState('10:00');
+  const data = usePreview();
+  const assigned = groups.filter(g => g.instructorId === instructorId && g.day === day);
+  return <Shell title="Your group. Every child.">
+    <p className={s.muted}>Alex Morgan · Instructor · Only your assigned groups and need-to-know safety information.</p>
+    <div className={s.grid}><label>Lesson day<input data-testid="lesson-day" type="date" value={day} onChange={e => setDay(e.target.value)} /></label><label>Preview lesson time<input data-testid="lesson-time" type="time" value={time} onChange={e => setTime(e.target.value)} /></label></div>
+    {!assigned.length && <p data-testid="empty-roster">No assigned groups for this lesson day.</p>}
+    {assigned.map(group => {
+      const roster = children.filter(c => c.groupId === group.id);
+      const confirmed = data.headcounts[group.id];
+      const due = confirmed ? nextHeadcount(confirmed) : '10:00';
+      return <section key={group.id} aria-label={`Group ${group.number}`}>
+        <h2>Group {group.number} · {group.level} · {roster.length} children</h2>
+        {lessonActive(time) ? <div className={s.banner} data-testid="headcount-panel"><strong>{time >= due ? 'Headcount due' : `Next headcount at ${due}`}</strong><p>Check every child is with the group.</p><div className={s.row}><button data-testid="all-here" disabled={time < due} onClick={() => confirmHeadcount(group.id, time)}>All {roster.length} here</button><a href="#roster" data-testid="someone-missing">Someone is missing</a></div>{confirmed && <p role="status" data-testid="headcount-confirmed">All {roster.length} accounted for at {confirmed}. Next prompt at {due}.</p>}</div> : <p data-testid="headcount-paused">Headcounts paused outside lesson time, including lunch from 11:45 to 12:45.</p>}
+        <div className={s.grid} id="roster">{roster.map(child => <article className={s.card} data-testid={`child-${child.id}`} key={child.id}><h3>{child.name}</h3><p>Age {age(child, day)} · {child.level} · Bib {child.bib}</p>{child.alert && <div className={s.alert} data-testid={`alert-${child.id}`}><strong>{child.alert}</strong><p>{child.medication}</p><p>{child.instructions}</p></div>}<Link data-testid={`report-${child.id}`} href={`/instructor/report-missing/${child.id}`}>Report missing</Link></article>)}</div>
+      </section>;
+    })}
+  </Shell>;
+}
+````
+
+### added: app/instructor/report-missing/[childId]/page.tsx
+
+````
+'use client';
+import { use } from 'react';
+import Shell from '@/components/instructor-patrol/shell';
+import ReportForm from '@/components/instructor-patrol/report-form';
+import { children, groups, instructorId } from '@/lib/instructor-patrol/preview';
+
+export default function MissingPage({ params }: { params: Promise<{ childId: string }> }) {
+  const { childId } = use(params);
+  const child = children.find(c => c.id === childId && groups.some(g => g.id === c.groupId && g.instructorId === instructorId));
+  return <Shell title={child ? `Report missing: ${child.name}` : 'Child not found'}>{child ? <ReportForm child={child} /> : <p data-testid="child-not-found">This child is not in your assigned preview group.</p>}</Shell>;
+}
+````
+
+### added: app/patrol/incidents/[id]/page.tsx
+
+````
+'use client';
+import { use, useState } from 'react';
+import Shell from '@/components/instructor-patrol/shell';
+import s from '@/components/instructor-patrol/workspace.module.css';
+import { addAction, age, children, escalation, groups, lessonDay, usePreview, type Incident } from '@/lib/instructor-patrol/preview';
+
+export default function IncidentPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const data = usePreview();
+  const incident = data.incidents.find(i => i.id === id);
+  const child = children.find(c => c.id === incident?.childId);
+  const [type, setType] = useState('Search update');
+  const [note, setNote] = useState('');
+  const [feedback, setFeedback] = useState('');
+  if (!incident || !child) return <Shell title="Incident not found"><p data-testid="incident-not-found">No emergency packet is available for this incident.</p></Shell>;
+  const group = groups.find(g => g.id === child.groupId)!;
+  function changeStatus(status: Incident['status']) { addAction(id, `Status changed to ${status}`, '', status); setFeedback(`Incident marked ${status}.`); }
+  return <Shell title={`${child.name} · Emergency packet`}>
+    <p className={s.muted}>Fictional patrol view. Packet access logging will be connected with secure sign-in.</p>
+    <div className={s.alert} data-testid="escalation"><span className={s.pill}>{incident.status}</span><h2>Escalate by {escalation(incident.lastSeenAt)} on {incident.lastSeenAt.slice(0, 10)}</h2><p>Earlier of 60 minutes after last seen or 16:00, resort local time. Follow patrol procedure; make calls yourself.</p></div>
+    <div className={s.grid}>
+      <section className={s.card}><h2>Child and group</h2><dl><dt>Name</dt><dd>{child.name}</dd><dt>Other names</dt><dd>{child.otherNames || 'None recorded'}</dd><dt>Age / level</dt><dd>{age(child, lessonDay)} · {child.level}</dd><dt>Group</dt><dd>Group {group.number}</dd><dt>Instructor</dt><dd>{group.instructor}</dd><dt>Lift pass</dt><dd>{child.pass || 'Not recorded'}</dd><dt>Bib</dt><dd>{child.bib || 'Not recorded'}</dd></dl></section>
+      <section className={s.card}><h2>Last seen</h2><dl><dt>Date and time</dt><dd>{incident.lastSeenAt.replace('T', ' ')}</dd><dt>Place</dt><dd>{incident.place}</dd><dt>Reported by</dt><dd>{incident.reportedBy}</dd><dt>Equipment</dt><dd>{incident.equipment}</dd><dt>Notes</dt><dd>{incident.notes || 'None recorded'}</dd></dl></section>
+      <section className={s.card} data-testid="clothing-comparison"><h2>Clothing descriptions</h2><h3>Reported by instructor / radio</h3><p>{incident.clothing} · {incident.helmet}</p><h3>Parent-given for today</h3><p>{child.jacket} · {child.helmet}</p><p className={s.muted}>Descriptions may differ. Confirm by radio; do not assume either is correct.</p></section>
+      <section className={s.card}><h2>Safety information</h2>{child.alert ? <div className={s.alert}><strong>{child.alert}</strong><p>{child.medication}</p><p>{child.instructions}</p></div> : <p>No safety alert recorded. This does not confirm there are no medical needs.</p>}<h3>Emergency contacts</h3>{child.contacts.map(contact => <div key={contact.phone}><p><strong>{contact.name}</strong> · {contact.relationship}</p><a data-testid={`contact-${contact.phone}`} href={`tel:${contact.phone}`}>{contact.phone}</a></div>)}</section>
+    </div>
+    <section className={s.card}><h2>Incident status</h2><div className={s.row}>{(['Open', 'Located', 'Closed'] as const).map(status => <button key={status} data-testid={`status-${status.toLowerCase()}`} disabled={incident.status === status} onClick={() => changeStatus(status)}>Mark {status}</button>)}</div>{incident.locatedAt && <p>Located at {incident.locatedAt}</p>}</section>
+    <div className={s.grid}><section className={s.card}><h2>Record an action</h2><form onSubmit={e => { e.preventDefault(); if (!note.trim()) return; addAction(id, type, note.trim()); setNote(''); setFeedback('Action added to the preview timeline.'); }}><label>Action<select data-testid="action-type" value={type} onChange={e => setType(e.target.value)}><option>Search update</option><option>Family contacted</option><option>Shared with police or rescuers</option></select></label><label>What happened<textarea data-testid="action-note" required maxLength={2000} value={note} onChange={e => setNote(e.target.value)} /></label><button data-testid="add-action">Add timed action</button></form>{feedback && <p role="status" data-testid="action-feedback">{feedback}</p>}{data.noticeTasks.includes(id) && <p className={s.banner} data-testid="notice-task">Preview follow-up: Hana must mail the family notice. The real task will be created when services are connected; the mailing address stays out of patrol views.</p>}</section>
+    <section className={s.card}><h2>Incident timeline</h2><ol data-testid="incident-timeline">{incident.actions.map((action, index) => <li key={index}><strong>{action.type}</strong><p>{action.note}</p><small>{action.staff} · {action.at}</small></li>)}</ol></section></div>
+  </Shell>;
+}
+````
+
+### added: app/patrol/page.tsx
+
+````
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
+import Shell from '@/components/instructor-patrol/shell';
+import ReportForm from '@/components/instructor-patrol/report-form';
+import s from '@/components/instructor-patrol/workspace.module.css';
+import { age, children, escalation, groups, lessonDay, usePreview } from '@/lib/instructor-patrol/preview';
+
+export default function Patrol() {
+  const data = usePreview();
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState('');
+  const active = data.incidents.filter(i => i.status === 'Open');
+  const child = children.find(c => c.id === selected);
+  return <Shell title="Patrol command">
+    <p className={s.muted}>Casey Brooks · Ski patrol · Work from the radio. Record each action.</p>
+    <h2>Open incidents · {active.length}</h2>
+    {!active.length && <p data-testid="no-open-incidents">No open incidents.</p>}
+    <div className={s.grid}>{active.map(incident => { const c = children.find(c => c.id === incident.childId)!; return <article className={s.card} data-testid={`incident-${incident.id}`} key={incident.id}><span className={s.pill}>{incident.status}</span><h2>{c.name}</h2><p>Last seen {incident.lastSeenAt.slice(11, 16)} · {incident.place}</p><p><strong>Escalate by {escalation(incident.lastSeenAt)}</strong></p><Link data-testid={`open-${incident.id}`} href={`/patrol/incidents/${incident.id}`}>Open emergency packet</Link></article>; })}</div>
+    <section className={s.card}><h2>Report received by radio?</h2><p>Find the child, then open an incident. Search results show only name, age and group.</p><label>Find a child by any name<input type="search" data-testid="child-search" value={search} onChange={e => { setSearch(e.target.value); setSelected(''); }} /></label>
+    {search.trim() && <div data-testid="search-results">{children.filter(c => `${c.name} ${c.otherNames}`.toLowerCase().includes(search.trim().toLowerCase())).map(c => <div className={s.row} key={c.id}><p>{c.name}{c.otherNames ? ` (also ${c.otherNames})` : ''} · Age {age(c, lessonDay)} · Group {groups.find(g => g.id === c.groupId)?.number}</p><button data-testid={`select-${c.id}`} onClick={() => setSelected(c.id)}>Select {c.name}</button></div>)}{!children.some(c => `${c.name} ${c.otherNames}`.toLowerCase().includes(search.trim().toLowerCase())) && <p>No matching children.</p>}</div>}
+    </section>
+    {child && <section className={s.card}><h2>Radio report: {child.name}</h2><ReportForm child={child} patrol /></section>}
+    {data.incidents.some(i => i.status !== 'Open') && <section className={s.card}><h2>Located and closed</h2>{data.incidents.filter(i => i.status !== 'Open').map(i => <p key={i.id}><Link data-testid={`history-${i.id}`} href={`/patrol/incidents/${i.id}`}>{children.find(c => c.id === i.childId)?.name} · {i.status}</Link></p>)}</section>}
+  </Shell>;
+}
+````
+
+### added: components/instructor-patrol/report-form.tsx
+
+````
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Child, createIncident, lessonDay, usePreview } from '@/lib/instructor-patrol/preview';
+import s from './workspace.module.css';
+
+export default function ReportForm({ child, patrol = false }: { child: Child; patrol?: boolean }) {
+  const router = useRouter();
+  const data = usePreview();
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const existing = data.incidents.find(i => i.childId === child.id && i.status !== 'Closed');
+  if (sent) return <div className={s.banner} role="status" data-testid="report-success"><h2>Missing report recorded in this preview</h2><p>Radio patrol and follow resort procedure. No family or responder has been contacted automatically.</p><Link href="/instructor" data-testid="back-roster">Return to roster</Link></div>;
+  if (existing) return <div className={s.banner} data-testid="existing-incident"><h2>An incident is already active for {child.name}</h2><p>Radio patrol with any new information. A second report will not be opened.</p>{patrol && <Link href={`/patrol/incidents/${existing.id}`}>Open incident</Link>}</div>;
+  return <form data-testid="missing-form" className={s.card} onSubmit={e => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const read = (key: string) => String(form.get(key) ?? '').trim();
+    if (!read('place') || !read('clothing') || !read('helmet') || !read('equipment')) { setError('Enter the last-seen place, clothing, helmet and equipment. Use “unknown” if needed.'); return; }
+    const id = createIncident({ childId: child.id, reportedBy: patrol ? 'Casey Brooks · Patrol' : 'Alex Morgan', lastSeenAt: read('lastSeenAt'), place: read('place'), clothing: read('clothing'), helmet: read('helmet'), equipment: read('equipment'), notes: read('notes') });
+    if (patrol) router.push(`/patrol/incidents/${id}`); else setSent(true);
+  }}>
+    <h2>Last seen details</h2><p>Report what was observed. Use “unknown” rather than guessing.</p>
+    <label>Last seen date and time<input data-testid="last-seen" required name="lastSeenAt" type="datetime-local" defaultValue={`${lessonDay}T10:00`} /></label>
+    <label>Last seen place<input data-testid="last-place" required name="place" maxLength={300} /></label>
+    <label>Reported clothing<input data-testid="reported-clothing" required name="clothing" maxLength={300} /></label>
+    <label>Reported helmet<input data-testid="reported-helmet" required name="helmet" maxLength={200} /></label>
+    <label>Equipment<input data-testid="equipment" required name="equipment" maxLength={300} /></label>
+    <label>Notes<textarea data-testid="report-notes" name="notes" maxLength={2000} /></label>
+    {error && <p role="alert">{error}</p>}<button data-testid="submit-report" type="submit">Open missing-child incident</button>
+  </form>;
+}
+````
+
+### added: components/instructor-patrol/shell.tsx
+
+````
+import Link from 'next/link';
+import styles from './workspace.module.css';
+
+export default function Shell({ title, children }: { title: string; children: React.ReactNode }) {
+  return <main className={styles.workspace} data-testid="safety-workspace">
+    <header><span className="brand">▲ KESTREL KIDS</span><span className={styles.pill}>Design preview</span></header>
+    <div className={styles.banner}>Fictional data only. Changes last while you browse here and reset on reload. Sign-in and secure saving are not connected.</div>
+    <nav aria-label="Design previews"><Link data-testid="instructor-nav" href="/instructor">Instructor preview</Link><Link data-testid="patrol-nav" href="/patrol">Patrol preview</Link></nav>
+    <h1>{title}</h1>{children}
+    <footer>Use radios and resort procedures if there is no signal. People contact families and responders; this preview sends no messages.</footer>
+  </main>;
+}
+````
+
+### added: components/instructor-patrol/workspace.module.css
+
+````
+.workspace { color: #173d35; font-size: 16px; }
+.workspace h1 { font-size: clamp(30px, 5vw, 48px); margin: 28px 0 12px; }
+.workspace h2 { font-size: 23px; margin: 0 0 16px; }
+.workspace h3 { font-size: 18px; margin: 0 0 8px; }
+.workspace p { line-height: 1.6; min-height: 0; margin: 8px 0; }
+.workspace nav { display: flex; flex-wrap: wrap; gap: 12px; }
+.workspace a, .workspace button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 18px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.workspace a { color: #173d35; background: #e6eee8; }
+.workspace button { background: #173d35; color: white; border: 1px solid #173d35; }
+.workspace button:disabled { opacity: .55; cursor: default; }
+.workspace :focus-visible { outline: 3px solid #b56c10; outline-offset: 4px; }
+.workspace label { display: grid; gap: 8px; font-weight: 700; margin: 16px 0; }
+.workspace input, .workspace select, .workspace textarea { width: 100%; min-width: 0; min-height: 48px; border: 1px solid #8b9f95; background: white; border-radius: 8px; padding: 12px; color: #173d35; font: inherit; }
+.workspace textarea { min-height: 100px; }
+.banner { padding: 14px 18px; background: #fff1cc; border: 1px solid #e8d396; border-radius: 10px; margin: 18px 0; }
+.muted { color: #53685f; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin: 24px 0; }
+.card { background: white; padding: 24px; border: 1px solid #d6dfd8; border-radius: 14px; min-width: 0; overflow-wrap: anywhere; }
+.alert { background: #fff0e9; border-left: 5px solid #ba3d23; border-radius: 8px; padding: 16px; margin: 16px 0; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
+.pill { display: inline-block; padding: 6px 12px; background: #fce1d8; color: #8b281b; border-radius: 30px; font-weight: 700; font-size: 14px; }
+.workspace dl { display: grid; grid-template-columns: minmax(100px, 1fr) 2fr; gap: 10px; margin: 0; }
+.workspace dt { color: #53685f; }
+.workspace dd { margin: 0; overflow-wrap: anywhere; }
+.workspace ol { padding-left: 22px; }
+.workspace li { padding: 8px 0; }
+@media (max-width: 650px) { .grid { grid-template-columns: 1fr; } .card { padding: 18px; } .workspace nav a { flex: 1; } .workspace dl { grid-template-columns: 1fr; gap: 6px; } .workspace dd { margin-bottom: 10px; } }
+````
+
+### added: lib/instructor-patrol/preview.ts
+
+````
+'use client';
+
+import { useSyncExternalStore } from 'react';
+
+// Fictional, temporary design data. Not an authorization or persistence layer.
+export const lessonDay = '2026-12-12';
+export const instructorId = 'staff-instructor-1';
+export const groups = [
+  { id: 'group-1', day: lessonDay, level: 'Level 2', instructorId, instructor: 'Alex Morgan', number: 3 },
+  { id: 'group-2', day: lessonDay, level: 'Level 1', instructorId: 'staff-instructor-2', instructor: 'Sam Lee', number: 5 },
+];
+export const children = [
+  { id: 'child-ava', name: 'Ava Chen', otherNames: '', birthDate: '2018-03-20', groupId: 'group-1', level: 'Level 2', pass: 'KK-1042', bib: '12', jacket: 'Yellow jacket', helmet: 'Black helmet', alert: 'Tree-nut allergy', medication: 'EpiPen at Kestrel Kids Ski School Desk', instructions: 'Follow the emergency plan and radio patrol immediately if symptoms appear.', contacts: [{ name: 'Jamie Chen', relationship: 'Parent', phone: '604-555-0101' }, { name: 'Robin Chen', relationship: 'Parent', phone: '604-555-0102' }] },
+  { id: 'child-owen', name: 'Owen Parr', otherNames: 'Owen Okafor-Parr', birthDate: '2017-07-14', groupId: 'group-1', level: 'Level 2', pass: 'KK-1088', bib: '14', jacket: 'Red jacket', helmet: 'Blue helmet', alert: '', medication: '', instructions: '', contacts: [{ name: 'Grace Okafor', relationship: 'Mother', phone: '604-555-0103' }, { name: 'Daniel Parr', relationship: 'Father', phone: '604-555-0104' }] },
+  { id: 'child-lily', name: 'Lily Whitfield', otherNames: '', birthDate: '2019-04-06', groupId: 'group-2', level: 'Level 1', pass: 'KK-1102', bib: '21', jacket: 'Purple jacket', helmet: 'White helmet', alert: '', medication: '', instructions: '', contacts: [{ name: 'Taylor Whitfield', relationship: 'Parent', phone: '604-555-0105' }, { name: 'Jordan Whitfield', relationship: 'Parent', phone: '604-555-0106' }] },
+];
+export type Child = typeof children[number];
+export type Incident = { id: string; childId: string; reportedBy: string; lastSeenAt: string; place: string; clothing: string; helmet: string; equipment: string; notes: string; status: 'Open' | 'Located' | 'Closed'; locatedAt?: string; actions: { type: string; note: string; staff: string; at: string }[] };
+const initial: { incidents: Incident[]; headcounts: Record<string, string>; noticeTasks: string[] } = {
+  incidents: [{ id: 'incident-owen', childId: 'child-owen', reportedBy: 'Alex Morgan', lastSeenAt: `${lessonDay}T14:30:00`, place: 'Top of the Pigeon chair', clothing: 'Blue jacket', helmet: 'White helmet', equipment: 'Skis and poles', notes: 'Separated while the group regrouped by the trail sign.', status: 'Open', actions: [{ type: 'Missing report opened', note: 'Radio patrol and follow resort procedure.', staff: 'Alex Morgan', at: '14:40' }] }], headcounts: {}, noticeTasks: [],
+};
+let state = initial;
+const listeners = new Set<() => void>();
+export function usePreview() { return useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn); }; }, () => state, () => initial); }
+function update(next: typeof state) { state = next; listeners.forEach(fn => fn()); }
+export function age(child: Child, day: string) { const birth = child.birthDate; return Number(day.slice(0, 4)) - Number(birth.slice(0, 4)) - (day.slice(5) < birth.slice(5) ? 1 : 0); }
+export function escalation(lastSeen: string) { const minutes = Number(lastSeen.slice(11, 13)) * 60 + Number(lastSeen.slice(14, 16)); const limit = Math.min(minutes + 60, 16 * 60); return `${String(Math.floor(limit / 60)).padStart(2, '0')}:${String(limit % 60).padStart(2, '0')}`; }
+export function lessonActive(time: string) { return (time >= '09:30' && time < '11:45') || (time >= '12:45' && time < '15:30'); }
+export function confirmHeadcount(groupId: string, time: string) { update({ ...state, headcounts: { ...state.headcounts, [groupId]: time } }); }
+export function nextHeadcount(time: string) { const total = Number(time.slice(0, 2)) * 60 + Number(time.slice(3)) + 30; const result = `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`; return result >= '11:45' && result < '12:45' ? '12:45' : result; }
+export function createIncident(input: Omit<Incident, 'id' | 'status' | 'actions'>) {
+  const existing = state.incidents.find(i => i.childId === input.childId && i.status !== 'Closed');
+  if (existing) return existing.id;
+  const id = `incident-${crypto.randomUUID()}`;
+  update({ ...state, incidents: [...state.incidents, { ...input, id, status: 'Open', actions: [{ type: 'Missing report opened', note: input.notes, staff: input.reportedBy, at: 'Preview time' }] }] });
+  return id;
+}
+export function addAction(id: string, type: string, note: string, status?: Incident['status']) {
+  const now = new Date();
+  update({ ...state, noticeTasks: type === 'Shared with police or rescuers' && !state.noticeTasks.includes(id) ? [...state.noticeTasks, id] : state.noticeTasks, incidents: state.incidents.map(i => i.id === id ? { ...i, status: status ?? i.status, locatedAt: status === 'Located' ? now.toISOString() : i.locatedAt, actions: [...i.actions, { type, note, staff: 'Casey Brooks · Patrol', at: now.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' }) }] } : i) });
+}
+````
+
+### added: playwright.preview.config.ts
+
+````
+import { defineConfig } from '@playwright/test';
+import base from './playwright.config';
+
+// Frontend-only checks; does not claim server authorization or Piezas coverage.
+// PW_BROWSER_CHANNEL=chrome can use an installed browser on constrained machines.
+export default defineConfig({
+  ...base,
+  testMatch: ['**/frontend.spec.ts', '**/instructor-patrol.preview.spec.ts'],
+  projects: [{ name: 'preview-chromium', use: { browserName: 'chromium', channel: process.env.PW_BROWSER_CHANNEL } }],
+});
+````
+
+### added: tests/instructor-patrol.preview.spec.ts
+
+````
+import { expect, test } from '@playwright/test';
+
+test('instructor preview limits the roster and fits a gloved phone', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/instructor');
+  await expect(page.getByTestId('child-child-ava')).toBeVisible();
+  await expect(page.getByTestId('alert-child-ava')).toContainText('Tree-nut allergy');
+  await expect(page.getByTestId('alert-child-ava')).toContainText('EpiPen at Kestrel Kids Ski School Desk');
+  await expect(page.getByTestId('child-child-lily')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  for (const control of await page.getByTestId('safety-workspace').locator('a, button, input').all()) {
+    const bounds = await control.boundingBox();
+    expect(bounds?.height).toBeGreaterThanOrEqual(48);
+  }
+  await page.getByTestId('report-child-ava').click();
+  await expect(page.getByTestId('missing-form')).toBeVisible();
+});
+
+test('unassigned and unknown children have no report form', async ({ page }) => {
+  for (const id of ['child-lily', 'unknown']) {
+    await page.goto(`/instructor/report-missing/${id}`);
+    await expect(page.getByTestId('child-not-found')).toBeVisible();
+    await expect(page.getByTestId('missing-form')).toHaveCount(0);
+  }
+});
+
+test('headcount confirmation schedules the next prompt and pauses at lunch', async ({ page }) => {
+  await page.goto('/instructor');
+  await page.getByTestId('all-here').click();
+  await expect(page.getByTestId('headcount-confirmed')).toContainText('Next prompt at 10:30');
+  await expect(page.getByTestId('all-here')).toBeDisabled();
+  await page.getByTestId('lesson-time').fill('11:45');
+  await expect(page.getByTestId('headcount-paused')).toBeVisible();
+  await expect(page.getByTestId('headcount-panel')).toHaveCount(0);
+  await page.getByTestId('lesson-time').fill('12:45');
+  await page.getByTestId('someone-missing').click();
+  await page.getByTestId('report-child-ava').click();
+  await expect(page.getByTestId('missing-form')).toBeVisible();
+});
+
+test('a missing report appears in patrol while browsing and duplicates are blocked', async ({ page }) => {
+  await page.goto('/instructor/report-missing/child-ava');
+  await page.getByTestId('last-seen').fill('2026-12-12T15:30');
+  await page.getByTestId('last-place').fill('Learning area');
+  await page.getByTestId('reported-clothing').fill('Yellow jacket');
+  await page.getByTestId('reported-helmet').fill('Black helmet');
+  await page.getByTestId('equipment').fill('Skis');
+  await page.getByTestId('report-notes').fill('Reported over the radio.');
+  await page.getByTestId('submit-report').click();
+  await expect(page.getByTestId('report-success')).toBeVisible();
+  await page.getByTestId('patrol-nav').click();
+  const incident = page.locator('article').filter({ hasText: 'Ava Chen' });
+  await expect(incident).toContainText('Escalate by 16:00');
+  await incident.getByRole('link').click();
+  await expect(page.getByTestId('escalation')).toContainText('16:00');
+  await page.getByTestId('instructor-nav').click();
+  await page.getByTestId('report-child-ava').click();
+  await expect(page.getByTestId('existing-incident')).toBeVisible();
+});
+
+test('patrol sees both clothing descriptions, contacts and a timed action history', async ({ page }) => {
+  await page.goto('/patrol/incidents/incident-owen');
+  await expect(page.getByTestId('clothing-comparison')).toContainText('Blue jacket · White helmet');
+  await expect(page.getByTestId('clothing-comparison')).toContainText('Red jacket · Blue helmet');
+  await expect(page.getByTestId('escalation')).toContainText('15:30');
+  await expect(page.getByTestId('contact-604-555-0103')).toHaveAttribute('href', 'tel:604-555-0103');
+  await page.getByTestId('action-type').selectOption('Family contacted');
+  await page.getByTestId('action-note').fill('Called both contacts by radio procedure.');
+  await page.getByTestId('add-action').click();
+  await expect(page.getByTestId('incident-timeline')).toContainText('Family contacted');
+  await page.getByTestId('action-type').selectOption('Shared with police or rescuers');
+  await page.getByTestId('action-note').fill('Information shared by the patroller.');
+  await page.getByTestId('add-action').click();
+  await expect(page.getByTestId('notice-task')).toBeVisible();
+  await page.getByTestId('status-located').click();
+  await expect(page.getByTestId('incident-timeline')).toContainText('Status changed to Located');
+  await page.getByTestId('status-closed').click();
+  await expect(page.getByTestId('incident-timeline')).toContainText('Status changed to Closed');
+  await page.getByTestId('patrol-nav').click();
+  await expect(page.getByTestId('no-open-incidents')).toBeVisible();
+  await expect(page.getByTestId('history-incident-owen')).toContainText('Closed');
+});
+
+test('radio search exposes minimal details and can open an incident', async ({ page }) => {
+  await page.goto('/patrol');
+  await page.getByTestId('child-search').fill('Lily');
+  const results = page.getByTestId('search-results');
+  await expect(results).toContainText('Lily Whitfield');
+  await expect(results).not.toContainText('604-');
+  await expect(results).not.toContainText('Purple jacket');
+  await page.getByTestId('select-child-lily').click();
+  await page.getByTestId('last-place').fill('Base lodge');
+  await page.getByTestId('reported-clothing').fill('Unknown');
+  await page.getByTestId('reported-helmet').fill('Unknown');
+  await page.getByTestId('equipment').fill('Unknown');
+  await page.getByTestId('submit-report').click();
+  await expect(page.getByTestId('incident-timeline')).toContainText('Missing report opened');
+  await expect(page.getByTestId('incident-timeline')).toContainText('Casey Brooks');
+});
+
+test('unknown incident and empty lesson day are clear', async ({ page }) => {
+  await page.goto('/patrol/incidents/not-a-real-incident');
+  await expect(page.getByTestId('incident-not-found')).toBeVisible();
+  await page.getByTestId('instructor-nav').click();
+  await page.getByTestId('lesson-day').fill('2026-12-13');
+  await expect(page.getByTestId('empty-roster')).toBeVisible();
+});
+````
+
+### changed: .nvmrc
 
 ````
 24
 ````
 
-### file: README.md
+### changed: README.md
 
 ````
 # Kestrel Kids Safety — Team 2
@@ -614,7 +996,7 @@ Use fictional data only. Do not add real child information, browser secrets, a l
 Pull your team's latest changes, run `npm ci` when the lockfile changes, then `npm run dev`. If port 3000 is busy, use `npm run dev -- --port 3001`.
 ````
 
-### file: app/globals.css
+### changed: app/globals.css
 
 ````
 @import "tailwindcss";
@@ -641,7 +1023,7 @@ footer { padding: 36px 0; font-size: 12px; color: #67796d; line-height: 1.7; }
 @media (max-width: 500px) { main { padding: 24px 18px; } .grid { grid-template-columns: 1fr; } .intro { padding-top: 56px; } .badge { font-size: 10px; } }
 ````
 
-### file: app/layout.tsx
+### changed: app/layout.tsx
 
 ````
 import type { Metadata } from 'next';
@@ -657,7 +1039,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 }
 ````
 
-### file: app/page.tsx
+### changed: app/page.tsx
 
 ````
 const workspaces = [
@@ -690,154 +1072,13 @@ export default function Home() {
 }
 ````
 
-### file: package.json
-
-````
-{
-  "name": "softmax-hackathon-team2",
-  "version": "0.1.0",
-  "private": true,
-  "engines": { "node": ">=22.0.0" },
-  "type": "module",
-  "devDependencies": {
-    "@playwright/test": "^1.47.0",
-    "@tailwindcss/postcss": "^4.3.5",
-    "@types/node": "^26.6.6",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "piezas": "^0.7.7",
-    "postcss": "^8.5.32",
-    "tailwindcss": "^4.3.5",
-    "typescript": "^7.0.2"
-  },
-  "dependencies": {
-    "@piezas/sdk": "^0.5.2",
-    "next": "^16.4.5",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
-  },
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "typecheck": "tsc --noEmit",
-    "test:frontend": "playwright test tests/frontend.spec.ts"
-  }
-}
-````
-
-### file: playwright.config.ts
-
-````
-import { defineConfig, devices } from '@playwright/test';
-
-// The Piezas scenario harness. `npx piezas test` runs this suite against a
-// SEPARATE test copy of the app (PIEZAS_TEST_API_KEY, from `piezas test --setup`),
-// never the live one, and writes .piezas/test-attestation.json — the record
-// `npx piezas deploy` requires. The app is started here on its own port with
-// the test copy's key. PW_BASE_URL points the suite at an app that is already
-// running (previews, clips); `piezas test` ignores it unless
-// PIEZAS_TEST_ALLOW_EXTERNAL_SERVER=1, since that app may use the live key.
-const port = Number(process.env.PIEZAS_TEST_PORT || 3100);
-
-export default defineConfig({
-  testDir: './tests',
-  outputDir: './.piezas/test-results/raw',
-  fullyParallel: true,
-  forbidOnly: true,
-  retries: 1,
-  reporter: 'list',
-  use: {
-    baseURL: process.env.PW_BASE_URL || `http://localhost:${port}`,
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-  },
-  webServer: process.env.PW_BASE_URL
-    ? undefined
-    : {
-        command: process.env.PIEZAS_TEST_SERVER_CMD || `npm run dev -- --port ${port}`,
-        port,
-        reuseExistingServer: false,
-        timeout: 120_000,
-        env: { PIEZAS_API_KEY: process.env.PIEZAS_TEST_API_KEY ?? '' },
-      },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-});
-````
-
-### file: postcss.config.mjs
+### changed: postcss.config.mjs
 
 ````
 export default { plugins: { '@tailwindcss/postcss': {} } };
 ````
 
-### file: scripts/seed.ts
-
-````
-// Made-up information for the app's checks. Piezas writes this file from the
-// data your description lists; edit it freely. Deterministic (fixed names,
-// dates and amounts) so a check gives the same result today and next year.
-//
-// It runs ONLY against the TEST copy of the app (PIEZAS_TEST_API_KEY, made by
-// `piezas test --setup`), never the live app, and it is safe to run again:
-// each record is created only if it is not there yet. Names and emails are
-// invented (example.test addresses never receive mail).
-//
-// `piezas test` runs it before every check:  npx tsx scripts/seed.ts
-import { Piezas } from '@piezas/sdk';
-
-const apiKey = process.env.PIEZAS_TEST_API_KEY;
-if (!apiKey) {
-  console.error('No test copy of the app yet (PIEZAS_TEST_API_KEY is missing). Run: piezas test --setup');
-  process.exit(1);
-}
-const piezas = new Piezas({ apiKey, apiBaseUrl: process.env.PIEZAS_API_URL });
-
-// upsert creates a record by title only when it does not exist yet. The record
-// kinds must be defined by the app (piezas.defineEntities) before this runs.
-async function upsert(accessor: string, title: string, data: Record<string, unknown>) {
-  const records = (piezas as unknown as Record<string, any>)[accessor];
-  if (!records?.list || !records?.create) {
-    console.warn(`${accessor}: not defined yet; run the app once (it defines its records), then seed again`);
-    return;
-  }
-  const found = await records.list({ search: title, limit: 10 });
-  const items: any[] = Array.isArray(found) ? found : found?.data ?? found?.items ?? found?.records ?? [];
-  if (items.some((r) => r?.title === title)) return;
-  await records.create({ title, data });
-}
-
-// The test sign-in person: created and switched on directly with the test
-// copy's key, so sign-up and sign-in checks never wait for an email.
-async function testSignInUser() {
-  const email = process.env.PIEZAS_TEST_USER_EMAIL;
-  const password = process.env.PIEZAS_TEST_USER_PASSWORD;
-  if (!email || !password) return;
-  let user: any;
-  try {
-    ({ user } = await piezas.users.signUp({ email, password }));
-  } catch {
-    const listed: any = await piezas.users.listUsers({ email });
-    user = (listed?.users ?? listed?.data ?? [])[0];
-  }
-  if (user?.id && user.status !== 'active') await piezas.users.updateUser(user.id, { status: 'active' });
-}
-
-export async function seed() {
-  await testSignInUser();
-
-}
-
-seed().then(
-  () => console.log('test information ready'),
-  (error) => {
-    console.error(error?.message ?? error);
-    process.exit(1);
-  },
-);
-````
-
-### file: tests/frontend.spec.ts
+### changed: tests/frontend.spec.ts
 
 ````
 import { expect, test } from '@playwright/test';
@@ -854,113 +1095,7 @@ test('the frontend starter renders each team workspace on a phone', async ({ pag
 });
 ````
 
-### file: tests/scenarios/README.md
-
-````
-# Acceptance scenarios
-
-One file per acceptance scenario in `SPEC.md`, named for the scenario it
-proves: `S-001-add-a-contact.spec.ts` (or `S-001.spec.ts`) tests `### S-001`,
-and nothing else. `npx piezas test` creates a failing placeholder for every
-scenario that has no file yet; replace its body, and keep its first line
-(`// piezas-scenario: S-001 v=...`): it records which wording of the scenario the
-test was written for, so a changed scenario reads as "out of date", not broken.
-
-Write each test from the scenario's own Given/When/Then: the Given is the data
-(`scripts/seed.ts` puts made-up records into the TEST copy of the app), the
-When is the interaction (`page.goto`, then click / fill / ...), the Then is a
-check on what is visible (`await expect(page.getByTestId('...')).toBeVisible()`).
-
-`npx piezas test` rejects a test that never opens the app, never does what the
-When line says, checks nothing visible, has a check that is always true, is
-skipped (`test.skip` / `.only` / `.fixme`), swallows failures, or fakes Piezas
-(intercepting its requests, mocking the SDK). Such a test counts as not written.
-
-Once a test passes, its checks are recorded. Removing or loosening one later
-needs the owner's OK (`npx piezas test` reports "changed checks").
-
-**Select by `data-testid`.** Text and CSS selectors break on the next redesign;
-a test id survives copy changes, restyling and layout moves. Add `data-testid`
-to the elements a scenario drives, name it for the thing
-(`data-testid="cancel-booking"`), and select it with
-`page.getByTestId('cancel-booking')`. `npx piezas doctor` counts the interactive
-elements that still have none (PZ026).
-````
-
-### file: tests/smoke.spec.ts
-
-````
-import { readFileSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
-
-// The one test every app has. A red smoke test means nothing below it is worth
-// reading: the page either renders or it does not.
-test('the home page renders with a clean console', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
-  });
-  page.on('pageerror', (error) => errors.push(error.message));
-
-  const response = await page.goto('/');
-
-  expect(response?.ok(), `GET / returned ${response?.status()}`).toBeTruthy();
-  await expect(page.locator('body')).not.toBeEmpty();
-  expect(errors, `console errors on /:\n${errors.join('\n')}`).toEqual([]);
-});
-
-// The Report a problem button is how the people trying the app tell the owner
-// what went wrong, so it has to be there on the very first screen, before
-// anyone signs in. Not checked when the owner turned it off or chose to go
-// live without it (their decision), or for a static site (no server to save
-// reports, so no button).
-function readText(file: string): string | null {
-  try {
-    return readFileSync(file, 'utf-8');
-  } catch {
-    return null;
-  }
-}
-
-function reportButtonSkip(): string | null {
-  const ownerChoice = 'The owner chose to go live without the Report a problem button, so it is not checked.';
-  if (process.env.PIEZAS_REPORT_BUTTON_CHECK === 'off') return ownerChoice;
-  if (process.env.PIEZAS_REPORT_BUTTON === 'off') return 'The Report a problem button is turned off for this app, so it is not checked.';
-  let manifest: { deploymentMode?: string; reportButton?: boolean } = {};
-  try {
-    manifest = JSON.parse(readText('piezas.manifest.json') ?? '{}');
-  } catch {
-    // no readable manifest: treat the app as a server app
-  }
-  if (manifest.reportButton === false) return ownerChoice;
-  // The local setting, in the order the dev server reads it.
-  for (const file of ['.env.development.local', '.env.local', '.env.development', '.env']) {
-    const m = /^\s*(?:export\s+)?PIEZAS_REPORT_BUTTON\s*=\s*["']?(\w+)/m.exec(readText(file) ?? '');
-    if (m) {
-      if (m[1].toLowerCase() === 'off') return 'The Report a problem button is turned off for this app, so it is not checked.';
-      break;
-    }
-  }
-  let mode = manifest.deploymentMode;
-  if (!mode) {
-    // A Next.js app exported as plain pages (output: 'export') is a static site.
-    const config = ['next.config.ts', 'next.config.mjs', 'next.config.js', 'next.config.cjs'].map(readText).find((t) => t !== null);
-    if (config && /\boutput\s*:\s*['"]export['"]/.test(config)) mode = 'static';
-  }
-  if (mode === 'static') return 'Static sites have no server to save reports, so there is no button to check.';
-  return null;
-}
-
-test('the Report a problem button is on the first screen, before sign-in', async ({ page }) => {
-  const skip = reportButtonSkip();
-  test.skip(skip !== null, skip ?? '');
-
-  await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Report a problem' })).toBeVisible();
-});
-````
-
-### file: tsconfig.json
+### changed: tsconfig.json
 
 ````
 {
@@ -985,7 +1120,3 @@ test('the Report a problem button is on the first screen, before sign-in', async
   "exclude": ["node_modules"]
 }
 ````
-
-## Also in the change, not shown above (open them yourself when they matter)
-
-- package-lock.json (file)

@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 const workspaces = [
   ['Parent', 'Child details, emergency contacts and authorized pickup adults.'],
   ['Instructor', 'Assigned groups, safety alerts and missing-child reporting.'],
@@ -9,16 +11,19 @@ const workspaces = [
 export default function Home() {
   return (
     <main data-testid="frontend-home">
-      <header><span className="brand">▲ KESTREL KIDS</span><span className="badge">Frontend starter</span></header>
+      <header><span className="brand">▲ KESTREL KIDS</span><span className="badge">Design preview</span></header>
       <section className="intro">
         <p className="eyebrow">SAFETY STARTS WITH SHARED INFORMATION</p>
         <h1>One team.<br />Every child accounted for.</h1>
-        <p className="description">Your hackathon workspace is ready. Build each role’s experience here, starting with fictional demo data.</p>
+        <p className="description">Explore the instructor roster, report a missing child, and follow an incident with patrol. These previews use fictional children and sample information.</p>
       </section>
       <section aria-label="Team workspaces" className="grid">
         {workspaces.map(([name, description], index) => (
           <article key={name} data-testid={`workspace-${name.toLowerCase()}`}>
-            <span className="number">0{index + 1}</span><h2>{name}</h2><p>{description}</p><span className="status">Ready to build</span>
+            <span className="number">0{index + 1}</span><h2>{name}</h2><p>{description}</p>
+            {name === 'Instructor' || name === 'Patrol' ? (
+              <Link className="status preview-link" data-testid={`open-${name.toLowerCase()}-preview`} href={`/${name.toLowerCase()}`}>Open {name.toLowerCase()} preview →</Link>
+            ) : <span className="status">Coming next</span>}
           </article>
         ))}
       </section>

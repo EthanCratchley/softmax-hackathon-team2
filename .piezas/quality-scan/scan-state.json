@@ -4,7 +4,7 @@
   "cycle": {
     "id": "57e9b0f34d1b",
     "startedAt": "2026-11-07T22:32:06.743Z",
-    "rounds": 1,
+    "rounds": 2,
     "ended": false,
     "budgetReported": false
   },
@@ -12,28 +12,47 @@
   "hold": null,
   "deployWanted": null,
   "shownList": {
-    "scanId": "8ba123623e25",
+    "scanId": "4d264e6e668a",
     "items": [
       {
         "n": 1,
-        "key": "7437eb9fb6c9497315781182",
-        "plain": "The app currently shows only starter cards, so parents and staff cannot perform any of the approved child safety journeys yet.",
+        "key": "3e4718a98ce2c12d550a6064",
+        "plain": "Parents cannot update child details, the desk cannot check children in or verify pickup, and Hana cannot see missing information or manage groups because those approved screens are still unfinished.",
         "severity": "high"
       },
       {
         "n": 2,
-        "key": "21d1a05ff4eb4a29c4d519c8",
-        "plain": "None of the 41 approved child safety checks are implemented, and no full app test run has been recorded.",
-        "severity": "medium"
+        "key": "3dd955b2b7bfe02b51e137b5",
+        "plain": "Anyone who opens the preview can read emergency contacts and safety information and act as patrol without signing in or having permission.",
+        "severity": "high"
       },
       {
         "n": 3,
-        "key": "1a1eef46ea490b9c808206cf",
-        "plain": "People cannot report a problem from the first screen, so the existing check for that button will fail.",
+        "key": "d957ccf473bafc66c9469bb1",
+        "plain": "Missing-child reports and patrol actions disappear on reload and never reach another staff member's device.",
+        "severity": "high"
+      },
+      {
+        "n": 4,
+        "key": "da49213654fab4333554f6f3",
+        "plain": "Opening an emergency packet leaves no record of who saw the child's private information or when.",
+        "severity": "high"
+      },
+      {
+        "n": 5,
+        "key": "1a3a0760860917446668837f",
+        "plain": "Recording that information was shared with rescuers does not create Hana's required follow-up task to mail the family a notice.",
+        "severity": "high"
+      },
+      {
+        "n": 6,
+        "key": "9ca0dc2529f11b0f8722e032",
+        "plain": "The approved child safety checks still have no recorded full-app test run, and the preview tests do not prove the required signed-in journeys and permission boundaries.",
         "severity": "medium"
       }
     ]
   },
   "waits": null,
-  "deployScanTries": null
+  "deployScanTries": null,
+  "resultShown": null
 }

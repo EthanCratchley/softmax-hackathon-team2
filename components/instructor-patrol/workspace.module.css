@@ -1,0 +1,27 @@
+.workspace { color: #173d35; font-size: 16px; }
+.workspace h1 { font-size: clamp(30px, 5vw, 48px); margin: 28px 0 12px; }
+.workspace h2 { font-size: 23px; margin: 0 0 16px; }
+.workspace h3 { font-size: 18px; margin: 0 0 8px; }
+.workspace p { line-height: 1.6; min-height: 0; margin: 8px 0; }
+.workspace nav { display: flex; flex-wrap: wrap; gap: 12px; }
+.workspace a, .workspace button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 18px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.workspace a { color: #173d35; background: #e6eee8; }
+.workspace button { background: #173d35; color: white; border: 1px solid #173d35; }
+.workspace button:disabled { opacity: .55; cursor: default; }
+.workspace :focus-visible { outline: 3px solid #b56c10; outline-offset: 4px; }
+.workspace label { display: grid; gap: 8px; font-weight: 700; margin: 16px 0; }
+.workspace input, .workspace select, .workspace textarea { width: 100%; min-width: 0; min-height: 48px; border: 1px solid #8b9f95; background: white; border-radius: 8px; padding: 12px; color: #173d35; font: inherit; }
+.workspace textarea { min-height: 100px; }
+.banner { padding: 14px 18px; background: #fff1cc; border: 1px solid #e8d396; border-radius: 10px; margin: 18px 0; }
+.muted { color: #53685f; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin: 24px 0; }
+.card { background: white; padding: 24px; border: 1px solid #d6dfd8; border-radius: 14px; min-width: 0; overflow-wrap: anywhere; }
+.alert { background: #fff0e9; border-left: 5px solid #ba3d23; border-radius: 8px; padding: 16px; margin: 16px 0; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
+.pill { display: inline-block; padding: 6px 12px; background: #fce1d8; color: #8b281b; border-radius: 30px; font-weight: 700; font-size: 14px; }
+.workspace dl { display: grid; grid-template-columns: minmax(100px, 1fr) 2fr; gap: 10px; margin: 0; }
+.workspace dt { color: #53685f; }
+.workspace dd { margin: 0; overflow-wrap: anywhere; }
+.workspace ol { padding-left: 22px; }
+.workspace li { padding: 8px 0; }
+@media (max-width: 650px) { .grid { grid-template-columns: 1fr; } .card { padding: 18px; } .workspace nav a { flex: 1; } .workspace dl { grid-template-columns: 1fr; gap: 6px; } .workspace dd { margin-bottom: 10px; } }
