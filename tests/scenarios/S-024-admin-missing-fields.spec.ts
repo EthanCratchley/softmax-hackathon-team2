@@ -1,16 +1,22 @@
+import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { demoPassword } from '../../lib/piezas-schema';
+import { CHILD_IDS } from '../../lib/fixtures';
 
-test('S-024: Hana sees incomplete children and exact missing fields in the synthetic checklist', async ({ page }) => {
+if (!process.env.DEMO_ACCOUNT_SECRET && existsSync('.env.local')) process.loadEnvFile('.env.local');
+
+test('S-024: Hana sees missing field names from the authorized admin service', async ({ page }) => {
+  const secret = process.env.DEMO_ACCOUNT_SECRET;
+  expect(secret, 'DEMO_ACCOUNT_SECRET must be configured for the test copy').toBeTruthy();
+  const email = 'hana.sato@example.test';
+  await page.goto('/login');
+  await page.getByTestId('login-email').fill(email);
+  await page.getByTestId('login-password').fill(demoPassword(secret!, email));
+  await page.getByTestId('login-submit').click();
+  await expect(page).toHaveURL('/');
   await page.goto('/admin');
-  await page.getByTestId('admin-lesson-day').selectOption('2026-12-13');
-  await expect(page.getByTestId('incomplete-profiles').locator(':scope > li')).toHaveCount(2);
-  await expect(page.getByTestId('missing-owen-contact2')).toHaveText('Second emergency contact with valid phone');
-  await expect(page.getByTestId('missing-owen-consent')).toHaveText('Signed consent');
-  await expect(page.getByTestId('incomplete-owen').locator('ul > li')).toHaveCount(2);
-  await expect(page.getByTestId('missing-maya-address')).toHaveText('Mailing address');
-  await expect(page.getByTestId('missing-maya-medications')).toHaveText('Medications answer or explicit none');
-  await expect(page.getByTestId('missing-maya-pickup')).toHaveText('Active authorized pickup adult');
-  await expect(page.getByTestId('incomplete-maya').locator('ul > li')).toHaveCount(3);
-  for (const id of ['ava', 'lily', 'leo', 'sam']) await expect(page.getByTestId(`incomplete-${id}`)).toHaveCount(0);
-  await expect(page.getByTestId('protected-child-details')).toHaveCount(0);
+  await expect(page.getByTestId(`incomplete-${CHILD_IDS.owen}`)).toContainText('Signed consent');
+  await expect(page.getByTestId(`incomplete-${CHILD_IDS.ella}`)).toContainText('Conditions answer or explicit none');
+  // Field labels are intentionally visible. Actual medical values must not be.
+  await expect(page.getByTestId('admin-dashboard')).not.toContainText(/Asthma|Type 1 diabetes|Glucose gel|Blue reliever inhaler|2 puffs/i);
 });

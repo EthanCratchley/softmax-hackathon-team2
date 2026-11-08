@@ -1,26 +1,19 @@
+import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { demoPassword } from '../../lib/piezas-schema';
 
-test('S-029: every protected mock opening needs a reason and logs child, staff and time', async ({ page }) => {
+if (!process.env.DEMO_ACCOUNT_SECRET && existsSync('.env.local')) process.loadEnvFile('.env.local');
+
+test('S-029: protected child detail access is not exposed before its service workflow is connected', async ({ page }) => {
+  const secret = process.env.DEMO_ACCOUNT_SECRET;
+  expect(secret, 'DEMO_ACCOUNT_SECRET must be configured for the test copy').toBeTruthy();
+  const email = 'hana.sato@example.test';
+  await page.goto('/login');
+  await page.getByTestId('login-email').fill(email);
+  await page.getByTestId('login-password').fill(demoPassword(secret!, email));
+  await page.getByTestId('login-submit').click();
+  await expect(page).toHaveURL('/');
   await page.goto('/admin');
-  await expect(page.getByTestId('protected-child-details')).toHaveCount(0);
-  await page.getByTestId('details-child').selectOption('ava');
-  await page.getByTestId('details-reason').fill('   ');
-  await expect(page.getByTestId('open-child-details')).toBeDisabled();
-  await expect(page.getByTestId('admin-access-entry')).toHaveCount(0);
-  await page.getByTestId('details-reason').fill('Follow up on a parent question.');
-  await page.getByTestId('open-child-details').click();
-  await expect(page.getByTestId('protected-child-details')).toContainText('Ava Chen');
-  await expect(page.getByTestId('protected-child-details')).toContainText('value not supplied');
-  await expect(page.getByTestId('admin-access-entry')).toContainText('Ava Chen (ava)');
-  await expect(page.getByTestId('admin-access-entry')).toContainText('Hana Sato (demo admin)');
-  await expect(page.getByTestId('admin-access-entry')).toContainText('Follow up on a parent question.');
-  await expect(page.getByTestId('admin-access-entry').locator('time')).toHaveAttribute('datetime', /.+/);
-  await page.getByTestId('close-child-details').click();
-  await expect(page.getByTestId('protected-child-details')).toHaveCount(0);
-  await expect(page.getByTestId('open-child-details')).toBeDisabled();
-  await page.getByTestId('details-reason').fill('A second documented opening.');
-  await page.getByTestId('open-child-details').click();
-  await expect(page.getByTestId('admin-access-entry')).toHaveCount(2);
-  await page.getByTestId('admin-lesson-day').selectOption('2026-12-13');
-  await expect(page.getByTestId('protected-child-details')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Open protected child details — unavailable' })).toBeDisabled();
+  await expect(page.getByTestId('incomplete-profiles')).not.toContainText(/allergy value|diagnosis|medication value/i);
 });

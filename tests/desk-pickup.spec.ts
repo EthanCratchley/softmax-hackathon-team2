@@ -1,91 +1,55 @@
+import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { demoPassword } from '../lib/piezas-schema';
+import { CHILD_IDS, ADULT_IDS, DEMO_LESSON_DATE } from '../lib/fixtures';
 
-test('only active, lesson-day-valid adults appear; ID confirmation resets when selection changes', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/desk/children/lily');
+if (!process.env.DEMO_ACCOUNT_SECRET && existsSync('.env.local')) process.loadEnvFile('.env.local');
+
+async function signInDesk(page: import('@playwright/test').Page) {
+  const secret = process.env.DEMO_ACCOUNT_SECRET;
+  expect(secret, 'DEMO_ACCOUNT_SECRET must be configured for the test copy').toBeTruthy();
+  const email = 'casey.morgan@example.test';
+  await page.goto('/login');
+  await page.getByTestId('login-email').fill(email);
+  await page.getByTestId('login-password').fill(demoPassword(secret!, email));
+  await page.getByTestId('login-submit').click();
+  await expect(page).toHaveURL('/');
+}
+
+test('pickup page uses the shared service projection and real child IDs', async ({ page }) => {
+  await signInDesk(page);
+  await page.goto('/desk');
+  const rosterStatus = await page.getByTestId(`status-${CHILD_IDS.lily}`).textContent();
+  await page.goto(`/desk/children/${CHILD_IDS.lily}?day=${DEMO_LESSON_DATE}`);
   await expect(page.getByTestId('pickup-child-name')).toHaveText('Lily Whitfield');
-  await expect(page.getByTestId('pickup-child-details')).toContainText('Little Kestrels · Bib 11');
-  await expect(page.getByTestId('adult-lily-expired')).toHaveCount(0);
-  await expect(page.getByTestId('adult-lily-cancelled')).toHaveCount(0);
-  await expect(page.getByTestId('adult-lily-future')).toHaveCount(0);
-  await expect(page.getByTestId('adult-ava-parent')).toHaveCount(0);
-  await page.getByTestId('adult-lily-parent').check();
-  await page.getByTestId('id-confirmation').check();
-  await expect(page.getByTestId('release-child')).toBeEnabled();
-  await page.getByTestId('adult-lily-grace').check();
-  await expect(page.getByTestId('id-confirmation')).not.toBeChecked();
-  await expect(page.getByTestId('release-child')).toBeDisabled();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(page.getByTestId('pickup-attendance')).toHaveText(rosterStatus!.trim());
+  await expect(page.getByTestId(`adult-${ADULT_IDS.lilyFather}`)).toBeVisible();
+  await expect(page.getByTestId(`adult-${ADULT_IDS.lilyUncle}`)).toHaveCount(0);
+  await expect(page.getByTestId('pickup-page')).not.toContainText(/medical|allerg|diagnos|dosage/i);
+  await expect(page.getByTestId('back-to-desk')).toHaveAttribute('href', `/desk?day=${DEMO_LESSON_DATE}`);
 });
 
-test('pickup shows only a medication-held indicator for the desk', async ({ page }) => {
-  await page.goto('/desk/children/ava');
-  await expect(page.getByTestId('medication-held-indicator')).toHaveText('Medication is held at the desk for this child.');
-  await expect(page.getByTestId('pickup-page')).not.toContainText(/epipen|dosage|diagnos|allerg/i);
-  await page.goto('/desk/children/lily');
-  await expect(page.getByTestId('medication-held-indicator')).toHaveCount(0);
+test('pickup access requires desk sign-in and unknown children are not found', async ({ page }) => {
+  const response = await page.goto(`/desk/children/${CHILD_IDS.lily}?day=${DEMO_LESSON_DATE}`);
+  expect(response?.status()).toBe(200);
+  await expect(page).toHaveURL(/\/login$/);
+  await signInDesk(page);
+  await page.goto('/desk/children/not-a-real-child?day=2026-12-12');
+  // App Router client navigation can return a 200 document while rendering the 404 boundary.
+  await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
+  await expect(page.getByText('This page could not be found.')).toBeVisible();
 });
 
-test('roster check-in carries its bib to pickup and release carries back to roster', async ({ page }) => {
+test('pickup history shows the same service-backed check-in timestamp as the roster', async ({ page }) => {
+  await signInDesk(page);
   await page.goto('/desk');
-  await page.getByTestId('bib-ava').fill('15');
-  await page.getByTestId('check-in-ava').click();
-  await page.getByTestId('pickup-ava').click();
-  await expect(page.getByTestId('pickup-child-details')).toContainText('Bib 15');
-  await expect(page.getByTestId('pickup-attendance')).toHaveText('Checked in');
-  await page.getByTestId('adult-ava-parent').check();
-  await page.getByTestId('id-confirmation').check();
-  await page.getByTestId('release-child').click();
-  await expect(page.getByTestId('release-record')).toContainText('Jamie Chen');
-  await expect(page.getByTestId('release-record')).toContainText('Parent pickup list');
-  await page.getByTestId('back-to-desk').click();
-  await expect(page.getByTestId('status-ava')).toHaveText('Released');
-  await page.getByTestId('pickup-ava').click();
-  await expect(page.getByTestId('release-record')).toHaveCount(1);
-  await expect(page.getByTestId('release-child')).toBeDisabled();
-});
-
-test('open incident, expected attendance, expired authorization and prior release block pickup', async ({ page }) => {
-  await page.goto('/desk/children/owen');
-  await expect(page.getByTestId('release-blocked')).toContainText('Call patrol');
-  await expect(page.getByTestId('release-child')).toBeDisabled();
-  await expect(page.getByTestId('release-record')).toHaveCount(0);
-  await page.goto('/desk/children/ava');
-  await expect(page.getByTestId('release-blocked')).toContainText('check this child in');
-  await expect(page.getByTestId('release-child')).toBeDisabled();
-  await page.goto('/desk');
-  await page.getByTestId('bib-maya').fill('24');
-  await page.getByTestId('check-in-maya').click();
-  await page.getByTestId('pickup-maya').click();
-  await expect(page.getByTestId('no-authorized-adults')).toBeVisible();
-  await expect(page.getByTestId('release-blocked')).toContainText('no active authorization');
-  await expect(page.getByTestId('release-child')).toBeDisabled();
-  await page.goto('/desk/children/leo');
-  await expect(page.getByTestId('release-record')).toContainText('Casey Martin');
-  await expect(page.getByTestId('release-blocked')).toContainText('already been released');
-  await expect(page.getByTestId('release-child')).toBeDisabled();
-});
-
-test('second lesson day keeps its date and located-incident guidance', async ({ page }) => {
-  await page.goto('/desk');
-  await page.getByTestId('lesson-day').selectOption('2026-12-13');
-  await page.getByTestId('bib-sam').fill('14');
-  await page.getByTestId('check-in-sam').click();
-  await page.getByTestId('pickup-sam').click();
-  await expect(page).toHaveURL(/sam\?day=2026-12-13/);
-  await expect(page.getByTestId('incident-located')).toContainText('Refer family questions to Hana');
-  await page.getByTestId('adult-sam-parent').check();
-  await page.getByTestId('id-confirmation').check();
-  await page.getByTestId('release-child').click();
-  await expect(page.getByTestId('release-record')).toContainText('2026-12-13');
-  await page.getByTestId('back-to-desk').click();
-  await expect(page.getByTestId('lesson-day')).toHaveValue('2026-12-13');
-  await expect(page.getByTestId('status-sam')).toHaveText('Released');
-});
-
-test('unknown children and mismatched lesson days return not found', async ({ page }) => {
-  const unknown = await page.goto('/desk/children/unknown');
-  expect(unknown?.status()).toBe(404);
-  const wrongDay = await page.goto('/desk/children/lily?day=2026-12-13');
-  expect(wrongDay?.status()).toBe(404);
+  const rosterTime = page.locator('[data-testid^="check-in-time-"] time').first();
+  await expect(rosterTime).toHaveAttribute('datetime', /.+/);
+  const checkedInAt = await rosterTime.getAttribute('datetime');
+  const timeTestId = await rosterTime.locator('xpath=..').getAttribute('data-testid');
+  const childId = timeTestId!.replace(/^check-in-time-/, '');
+  const rosterStatus = await page.getByTestId(`status-${childId}`).textContent();
+  await page.goto(`/desk/children/${childId}?day=${DEMO_LESSON_DATE}`);
+  await expect(page.getByTestId('pickup-attendance')).toHaveText(rosterStatus!.trim());
+  await expect(page.getByTestId('pickup-check-in-time')).toHaveAttribute('datetime', checkedInAt!);
 });

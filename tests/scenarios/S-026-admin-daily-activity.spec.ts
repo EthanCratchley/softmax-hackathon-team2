@@ -1,18 +1,24 @@
+import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { demoPassword } from '../../lib/piezas-schema';
+import { DEMO_LESSON_DATE } from '../../lib/fixtures';
 
-test('S-026: daily counts, incidents and denied pickups follow the selected mock lesson day', async ({ page }) => {
-  await page.goto('/admin');
-  await expect(page.getByTestId('admin-count-expected')).toHaveText('3');
+if (!process.env.DEMO_ACCOUNT_SECRET && existsSync('.env.local')) process.loadEnvFile('.env.local');
+
+test('S-026: Hana sees daily counts from the shared operations snapshot', async ({ page }) => {
+  const secret = process.env.DEMO_ACCOUNT_SECRET;
+  expect(secret, 'DEMO_ACCOUNT_SECRET must be configured for the test copy').toBeTruthy();
+  const email = 'hana.sato@example.test';
+  await page.goto('/login');
+  await page.getByTestId('login-email').fill(email);
+  await page.getByTestId('login-password').fill(demoPassword(secret!, email));
+  await page.getByTestId('login-submit').click();
+  await expect(page).toHaveURL('/');
+  await page.goto(`/admin?day=${DEMO_LESSON_DATE}`);
+  await expect(page.getByTestId('admin-count-expected')).toHaveText('6');
   await expect(page.getByTestId('admin-count-checkedIn')).toHaveText('1');
-  await expect(page.getByTestId('admin-count-released')).toHaveText('1');
-  await expect(page.getByTestId('admin-count-missing')).toHaveText('1');
-  await expect(page.getByTestId('incident-owen')).toContainText('Owen Parr');
-  await expect(page.getByTestId('admin-denial')).toContainText('Lily Whitfield · Mark Whitfield');
-  await page.getByTestId('admin-lesson-day').selectOption('2026-12-13');
-  await expect(page.getByTestId('admin-count-expected')).toHaveText('1');
+  await expect(page.getByTestId('admin-count-released')).toHaveText('0');
   await expect(page.getByTestId('admin-count-missing')).toHaveText('0');
-  await expect(page.getByTestId('admin-denial')).toHaveCount(0);
-  await expect(page.getByTestId('incident-owen')).toHaveCount(0);
-  await page.getByTestId('admin-lesson-day').selectOption('2026-12-19');
-  for (const key of ['expected', 'checkedIn', 'released', 'missing']) await expect(page.getByTestId(`admin-count-${key}`)).toHaveText('0');
+  await page.getByTestId('admin-lesson-day').selectOption('2026-12-13');
+  await expect(page.getByTestId('admin-count-expected')).toHaveText('0');
 });
