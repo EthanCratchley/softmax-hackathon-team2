@@ -1,12 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-test('released roster cards show recorded history and explicitly flag missing check-in details', async ({ page }) => {
+test('released roster cards show coherent synthetic attendance history', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/desk');
-  await expect(page.getByTestId('check-in-time-leo')).toHaveText('Not recorded');
-  await expect(page.getByTestId('check-in-staff-leo')).toHaveText('Not recorded');
-  await expect(page.getByTestId('attendance-incomplete-leo')).toContainText('Incomplete attendance history');
-  await expect(page.getByTestId('attendance-incomplete-leo')).toContainText('check-in time, check-in staff');
+  await expect(page.getByTestId('check-in-time-leo').locator('time')).toHaveAttribute('datetime', '2026-12-12T09:12:00-08:00');
+  await expect(page.getByTestId('check-in-staff-leo')).toHaveText('Jordan Ellis (demo desk staff)');
+  await expect(page.getByTestId('attendance-incomplete-leo')).toHaveCount(0);
   await expect(page.getByTestId('check-in-details-leo')).toContainText('Bib 23');
   await expect(page.getByTestId('release-time-leo').locator('time')).toHaveAttribute('datetime', '2026-12-12T14:55:00-08:00');
   await expect(page.getByTestId('release-staff-leo')).toHaveText('Jordan Ellis (demo desk staff)');
@@ -28,6 +27,6 @@ test('released roster cards show recorded history and explicitly flag missing ch
   await expect(page.getByTestId('release-adult-lily')).toHaveText('Grace Okafor');
   await expect(page.getByTestId('release-source-lily')).toHaveText('Parent pickup link');
   await expect(page.getByTestId('attendance-incomplete-lily')).toHaveCount(0);
-  await expect(page.getByTestId('attendance-incomplete-leo')).toBeVisible();
+  await expect(page.getByTestId('attendance-incomplete-leo')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

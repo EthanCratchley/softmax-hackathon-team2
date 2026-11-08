@@ -38,6 +38,7 @@ export default function PickupPanel({ childId, day }: { childId: string; day: st
     <div className={styles.title}><p className={styles.eyebrow}>AUTHORIZED PICKUP · {day}</p><h1 data-testid="pickup-child-name">{child.name}</h1><p data-testid="pickup-child-details">{child.group} · Bib {child.bib ?? 'not assigned'} · <span data-testid="pickup-attendance">{statusLabels[child.status]}</span></p></div>
     <p className={styles.notice}>Synthetic demo · Check-ins, releases and denial logs stay in this page session only and reset on refresh. No notifications are sent.</p>
     {!child.profileComplete && <p className={styles.warning}>Needs information · Ask parent to update profile.</p>}
+    {child.medicationHeldAtDesk && <p className={styles.notice} data-testid="medication-held-indicator">Medication is held at the desk for this child.</p>}
     {block && <p className={styles.blocked} role="status" data-testid="release-blocked">{block}</p>}
     {incident === 'located' && <p className={styles.notice} data-testid="incident-located">An incident happened today. Refer family questions to Hana.</p>}
     {state.error && <p className={styles.blocked} role="alert" data-testid="pickup-error">{state.error}</p>}

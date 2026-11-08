@@ -18,6 +18,14 @@ test('only active, lesson-day-valid adults appear; ID confirmation resets when s
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test('pickup shows only a medication-held indicator for the desk', async ({ page }) => {
+  await page.goto('/desk/children/ava');
+  await expect(page.getByTestId('medication-held-indicator')).toHaveText('Medication is held at the desk for this child.');
+  await expect(page.getByTestId('pickup-page')).not.toContainText(/epipen|dosage|diagnos|allerg/i);
+  await page.goto('/desk/children/lily');
+  await expect(page.getByTestId('medication-held-indicator')).toHaveCount(0);
+});
+
 test('roster check-in carries its bib to pickup and release carries back to roster', async ({ page }) => {
   await page.goto('/desk');
   await page.getByTestId('bib-ava').fill('15');
