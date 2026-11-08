@@ -1,0 +1,17 @@
+{
+  "nonce": "qs-4df4b69c50a32c912c",
+  "findings": [
+    {
+      "severity": "high",
+      "plain": "After signing in, every parent, instructor, desk worker, patroller and Hana still lands on a summary card whose \"Open my workspace\" button leads to a page that does not exist, so none of the four approved safety journeys (allergy, pickup, missing child, missing details) can be done on screen yet, including Hana assigning instructors to groups.",
+      "file": "app/page.tsx",
+      "previous": 1
+    },
+    {
+      "severity": "medium",
+      "plain": "All 41 approved safety checks are still empty placeholders that fail on purpose, so nothing the owner approved has yet been shown to work on the screens people will actually use.",
+      "file": "tests/scenarios/README.md",
+      "previous": 3
+    }
+  ]
+}

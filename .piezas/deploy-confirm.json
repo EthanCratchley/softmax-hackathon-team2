@@ -1,0 +1,266 @@
+{
+  "kind": "test-gate",
+  "silent": true,
+  "pause": "tests-not-passing",
+  "fingerprint": "d13ac694ebd434782c84688b",
+  "verdict": "changed",
+  "items": [
+    {
+      "n": 1,
+      "id": "S-001",
+      "title": "A parent cannot open another family's child",
+      "status": "not-written"
+    },
+    {
+      "n": 2,
+      "id": "S-002",
+      "title": "A parent completes a profile from a phone",
+      "status": "not-written"
+    },
+    {
+      "n": 3,
+      "id": "S-003",
+      "title": "Blank medical answers stay incomplete",
+      "status": "not-written"
+    },
+    {
+      "n": 4,
+      "id": "S-004",
+      "title": "A bad phone number is rejected",
+      "status": "not-written"
+    },
+    {
+      "n": 5,
+      "id": "S-005",
+      "title": "A new allergy reaches the assigned instructor",
+      "status": "not-written"
+    },
+    {
+      "n": 6,
+      "id": "S-006",
+      "title": "An unrelated instructor is denied",
+      "status": "not-written"
+    },
+    {
+      "n": 7,
+      "id": "S-007",
+      "title": "The instructor screens work in gloves",
+      "status": "not-written"
+    },
+    {
+      "n": 8,
+      "id": "S-008",
+      "title": "Parent-given clothing reaches patrol",
+      "status": "not-written"
+    },
+    {
+      "n": 9,
+      "id": "S-009",
+      "title": "Desk finds a child by any name and checks them in",
+      "status": "not-written"
+    },
+    {
+      "n": 10,
+      "id": "S-010",
+      "title": "Desk sees the pickup list and no medical details",
+      "status": "not-written"
+    },
+    {
+      "n": 11,
+      "id": "S-011",
+      "title": "Desk cannot change the pickup list",
+      "status": "not-written"
+    },
+    {
+      "n": 12,
+      "id": "S-012",
+      "title": "An unlisted adult is blocked",
+      "status": "not-written"
+    },
+    {
+      "n": 13,
+      "id": "S-013",
+      "title": "A parent authorizes an adult and the release is recorded once",
+      "status": "not-written"
+    },
+    {
+      "n": 14,
+      "id": "S-014",
+      "title": "Medication held at the desk shows without the rest",
+      "status": "not-written"
+    },
+    {
+      "n": 15,
+      "id": "S-015",
+      "title": "An instructor reports a child missing",
+      "status": "not-written"
+    },
+    {
+      "n": 16,
+      "id": "S-016",
+      "title": "Desk reports for an instructor with a dead phone",
+      "status": "not-written"
+    },
+    {
+      "n": 17,
+      "id": "S-017",
+      "title": "After a child is found the desk knows what to say",
+      "status": "not-written"
+    },
+    {
+      "n": 18,
+      "id": "S-018",
+      "title": "Patrol opens an incident from a radio call",
+      "status": "not-written"
+    },
+    {
+      "n": 19,
+      "id": "S-019",
+      "title": "Patrol gets everything on one screen",
+      "status": "not-written"
+    },
+    {
+      "n": 20,
+      "id": "S-020",
+      "title": "Others cannot open the packet",
+      "status": "not-written"
+    },
+    {
+      "n": 21,
+      "id": "S-021",
+      "title": "Patrol logs actions and closes an incident",
+      "status": "not-written"
+    },
+    {
+      "n": 22,
+      "id": "S-022",
+      "title": "The escalation time uses the earlier limit",
+      "status": "not-written"
+    },
+    {
+      "n": 23,
+      "id": "S-023",
+      "title": "Sharing with police creates Hana's notice task",
+      "status": "not-written"
+    },
+    {
+      "n": 24,
+      "id": "S-024",
+      "title": "Hana sees what is missing",
+      "status": "not-written"
+    },
+    {
+      "n": 25,
+      "id": "S-025",
+      "title": "Group limits hold",
+      "status": "not-written"
+    },
+    {
+      "n": 26,
+      "id": "S-026",
+      "title": "Hana sees today's activity",
+      "status": "not-written"
+    },
+    {
+      "n": 27,
+      "id": "S-027",
+      "title": "Corrections add instead of overwrite",
+      "status": "not-written"
+    },
+    {
+      "n": 28,
+      "id": "S-028",
+      "title": "The demo uses only fictional data",
+      "status": "not-written"
+    },
+    {
+      "n": 29,
+      "id": "S-029",
+      "title": "Hana opens medical details only with a logged reason",
+      "status": "not-written"
+    },
+    {
+      "n": 30,
+      "id": "S-030",
+      "title": "A parent creates a private pickup link",
+      "status": "not-written"
+    },
+    {
+      "n": 31,
+      "id": "S-031",
+      "title": "The link page shows the minimum",
+      "status": "not-written"
+    },
+    {
+      "n": 32,
+      "id": "S-032",
+      "title": "A link alone does not release a child",
+      "status": "not-written"
+    },
+    {
+      "n": 33,
+      "id": "S-033",
+      "title": "Cancelled and expired links stop working",
+      "status": "not-written"
+    },
+    {
+      "n": 34,
+      "id": "S-035",
+      "title": "A failed email does not stop the desk",
+      "status": "not-written"
+    },
+    {
+      "n": 35,
+      "id": "S-036",
+      "title": "Missing reports do not email parents",
+      "status": "not-written"
+    },
+    {
+      "n": 36,
+      "id": "S-037",
+      "title": "An instructor confirms a headcount",
+      "status": "not-written"
+    },
+    {
+      "n": 37,
+      "id": "S-038",
+      "title": "A short headcount leads to a report",
+      "status": "not-written"
+    },
+    {
+      "n": 38,
+      "id": "S-039",
+      "title": "No headcount prompts during lunch",
+      "status": "not-written"
+    },
+    {
+      "n": 39,
+      "id": "S-040",
+      "title": "An overdue headcount is flagged",
+      "status": "not-written"
+    },
+    {
+      "n": 40,
+      "id": "S-041",
+      "title": "Lost contact prompts a radio call",
+      "status": "not-written"
+    }
+  ],
+  "legacy": [
+    {
+      "fingerprint": "d13ac694ebd434782c84688b",
+      "pause": "test-gate"
+    }
+  ],
+  "decide": [
+    {
+      "kind": "version",
+      "key": "unchecked",
+      "fp": "d13ac694ebd434782c84688b",
+      "title": "this version",
+      "code": "7fc4f6d20b4a3deb937ce769d177b7728e46d09bbceaf551c522f93262491285"
+    }
+  ],
+  "sourceFingerprint": "7fc4f6d20b4a3deb937ce769d177b7728e46d09bbceaf551c522f93262491285",
+  "at": "2026-11-07T23:53:38.939Z"
+}

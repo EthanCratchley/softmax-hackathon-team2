@@ -115,13 +115,23 @@
   },
   "publicRoutes": [],
   "deploy": {
-    "requiredEnv": [],
-    "optionalEnv": []
+    "requiredEnv": [
+      "PIEZAS_API_URL"
+    ],
+    "optionalEnv": [],
+    "appId": "2d4989af-1829-4018-9abb-d5e4aafbf30b",
+    "mode": "mixed",
+    "slug": "kestrel-kids-safety",
+    "url": "https://kestrel-kids-safety.apps.piezas.ai"
   },
   "recipes": [],
   "notes": [
     "Future recipes should extend this manifest instead of replacing it.",
     "Run `npx piezas doctor` after AI-generated changes."
   ],
-  "rules": "short"
+  "rules": "short",
+  "testApp": {
+    "appId": "1c881c69-ae2c-4dac-bca3-ceeb9fd9b967",
+    "appName": "kestrel-kids-safety (test)"
+  }
 }
