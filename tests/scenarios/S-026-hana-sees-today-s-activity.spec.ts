@@ -10,8 +10,35 @@
 // (await expect(page.getByTestId(...)).toBeVisible() / toHaveText(...)).
 // Keep the first line: it tells Piezas which scenario (and which wording of
 // it) this test checks. Never skip the test or fake Piezas.
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
+import { signIn } from '../sign-in';
 
-test("S-026: Hana sees today's activity", async () => {
-  throw new Error("PIEZAS_NOT_WRITTEN: S-026 has no test yet");
+const count = async (page: import('@playwright/test').Page, key: string) => Number(await page.getByTestId(`admin-count-${key}`).textContent());
+
+test("S-026: Hana's overview counts match the day's check-ins, releases and denials", async ({ page }) => {
+  await signIn(page, 'hana.sato@example.test');
+  await page.goto(`/admin?day=${DEMO_LESSON_DATE}`);
+  const before = { expected: await count(page, 'expected'), checkedIn: await count(page, 'checkedIn'), released: await count(page, 'released') };
+
+  await signIn(page, 'casey.morgan@example.test');
+  await page.goto(`/desk/children/${CHILD_IDS.noor}?day=${DEMO_LESSON_DATE}`);
+  await page.getByTestId('bib-number').fill('31');
+  await page.getByTestId('check-in-child').click();
+  await expect(page.getByTestId('pickup-attendance')).toHaveText('Checked in');
+  await page.getByTestId('denial-name').fill('Unlisted Visitor');
+  await page.getByTestId('denial-reason').fill('Not on the list');
+  await page.getByTestId('record-denial').click();
+  await expect(page.getByTestId('pickup-action-message')).toHaveText('Denied pickup attempt recorded.');
+  await page.getByTestId(`adult-${ADULT_IDS.noorMother}`).check();
+  await page.getByTestId('id-confirmation').check();
+  await page.getByTestId('release-child').click();
+  await expect(page.getByTestId('release-record')).toContainText('Leila Haddad');
+
+  await signIn(page, 'hana.sato@example.test');
+  await page.goto(`/admin?day=${DEMO_LESSON_DATE}`);
+  expect(await count(page, 'expected')).toBe(before.expected);
+  expect(await count(page, 'checkedIn')).toBe(before.checkedIn + 1);
+  expect(await count(page, 'released')).toBe(before.released + 1);
+  await expect(page.getByTestId('admin-denials')).toContainText('Attempted pickup: Unlisted Visitor');
 });
