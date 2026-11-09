@@ -127,7 +127,7 @@ export default async function IncidentPacketPage({ params, searchParams }: { par
           </li>
           {i.actions.map((a) => (
             <li key={a.id} data-testid="timeline-entry" data-type={a.type}>
-              {resortTime(a.occurredAt)} · {ACTION_LABEL[a.type]} · {a.note}
+              {resortTime(a.occurredAt)} · {ACTION_LABEL[a.type]} · {a.staffUserId === user.id ? user.displayName : 'Other staff'} · {a.note}
             </li>
           ))}
         </ol>

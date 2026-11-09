@@ -3,15 +3,26 @@
 //   Given Owen has an open incident
 //   When an instructor, desk staff or a parent requests the packet, or patrol requests one for a child with no incident
 //   Then the request is refused and no details are returned
-//
-// NOT WRITTEN YET. Replace the test body with the real steps, driven against
-// the running app: open the page (page.goto), do what the When line says
-// (click, fill, ...), and check what the Then line says is visible
-// (await expect(page.getByTestId(...)).toBeVisible() / toHaveText(...)).
-// Keep the first line: it tells Piezas which scenario (and which wording of
-// it) this test checks. Never skip the test or fake Piezas.
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { CASEY, closeIncidentsFor, DAY, HANA, JORDAN, PRIYA, ROB, signInAs } from '../safety-helpers';
 
-test("S-020: Others cannot open the packet", async () => {
-  throw new Error("PIEZAS_NOT_WRITTEN: S-020 has no test yet");
+test('S-020: Others cannot open the packet', async ({ page }) => {
+  await closeIncidentsFor(page, 'chd_owen');
+  await page.goto(`/patrol?day=${DAY}&q=Owen`);
+  await page.getByTestId('open-incident-chd_owen').click();
+  await expect(page.getByTestId('emergency-packet')).toBeVisible();
+  const packetUrl = new URL(page.url()).pathname;
+
+  for (const email of [JORDAN, CASEY, PRIYA, HANA]) {
+    await signInAs(page, email);
+    await page.goto(packetUrl);
+    await expect(page, email).toHaveURL(/\/$/);
+    await expect(page.getByTestId('emergency-packet')).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText('604-555-0121');
+  }
+
+  await signInAs(page, ROB);
+  await page.goto('/patrol/incidents/inc_does_not_exist');
+  await expect(page.getByTestId('packet-error')).toHaveText('Not found');
+  await expect(page.getByTestId('emergency-packet')).toHaveCount(0);
 });

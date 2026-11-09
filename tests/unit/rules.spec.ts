@@ -103,13 +103,13 @@ test('name search matches any name, case-insensitive (R-014)', () => {
 });
 
 test.describe('resort UTC offset (instructor last-seen time)', () => {
-  test('standard time in winter, daylight time in summer', () => {
-    expect(resortOffset('2026-12-12')).toBe('-08:00');
-    expect(resortOffset('2027-07-01')).toBe('-07:00');
+  test('winter standard time before BC moved to permanent UTC-7', () => {
+    expect(resortOffset('2025-12-12')).toBe('-08:00');
+    expect(resortOffset('2025-07-01')).toBe('-07:00');
   });
 
-  test('follows the March change', () => {
-    expect(resortOffset('2027-03-13')).toBe('-08:00');
-    expect(resortOffset('2027-03-15')).toBe('-07:00');
+  test('the demo lesson day uses the permanent offset', () => {
+    expect(resortOffset('2026-12-12')).toBe('-07:00');
+    expect(resortOffset('2027-01-15')).toBe('-07:00');
   });
 });
