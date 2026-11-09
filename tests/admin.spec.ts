@@ -31,9 +31,10 @@ test('admin dashboard reads missing-field and daily operations data from shared 
   await expect(page.getByTestId('admin-count-expected')).toHaveText('0');
   // Profile completion is not lesson-day scoped; only operational counts change.
   await expect(page.getByTestId(`incomplete-${CHILD_IDS.owen}`)).toBeVisible();
-  for (const id of ['Group assignments — unavailable', 'Open protected child details — unavailable', 'Add pickup correction — unavailable']) {
-    await expect(page.getByRole('button', { name: id })).toBeDisabled();
+  for (const id of ['assign-child-form', 'assign-instructor-form', 'details-child-select', 'admin-audit-link']) {
+    await expect(page.getByTestId(id)).toBeVisible();
   }
+  await expect(page.getByRole('button', { name: /unavailable/ })).toHaveCount(0);
 });
 
 test('admin access redirects users without the admin role', async ({ page }) => {

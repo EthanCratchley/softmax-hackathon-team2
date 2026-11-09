@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import type { CompletionSummaryRow, NoticeTask, OperationsSnapshot, PickupRecordView } from '@/lib/domain/types';
 import { CorrectionForm, GroupForms } from './admin-forms';
 import { lessonDays } from '@/lib/desk/fixtures';
@@ -39,7 +38,6 @@ export default function AdminDashboard({ lessonDate, completion, operations, pic
   staffNames: Record<string, string>;
 }) {
   const router = useRouter();
-  const [detailsChild, setDetailsChild] = useState(childOptions[0]?.id ?? '');
   return <main className={`${desk.desk} ${styles.admin}`} data-testid="admin-dashboard">
     <header className={desk.header}><span className={desk.brand}>▲ KESTREL KIDS</span><span className={desk.tag}>ADMIN</span></header>
     <div className={desk.title}><p className={desk.eyebrow}>HANA’S OPERATIONS DESK</p><h1>Every detail accounted for.</h1><p>Follow up on missing information, coordinate groups, and see what needs attention.</p></div>
@@ -88,7 +86,7 @@ export default function AdminDashboard({ lessonDate, completion, operations, pic
     </section>
 
     <section className={desk.panel} aria-label="Protected child details"><h2>Protected child details</h2><p>Opening a full profile needs a reason, and every opening is logged.</p>
-      <div className={styles.form}><label>Child<select data-testid="details-child-select" value={detailsChild} onChange={event => setDetailsChild(event.target.value)}>{childOptions.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label><button type="button" data-testid="details-child-open" onClick={() => router.push(`/admin/children/${encodeURIComponent(detailsChild)}`)}>Continue</button></div>
+      <form method="get" action="/admin/children" className={styles.form}><label>Child<select name="child" data-testid="details-child-select">{childOptions.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label><button type="submit" data-testid="details-child-open">Continue</button></form>
     </section>
     <footer className={desk.footer}>Admin dashboard · Displayed information is returned by the authorized admin service.</footer>
   </main>;
