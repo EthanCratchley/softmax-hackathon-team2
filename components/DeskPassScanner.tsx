@@ -66,6 +66,7 @@ export function DeskPassScanner() {
       {error && <p role="alert" className="alert danger">{error}</p>}{notice && <p data-testid="desk-notice" role="status" className="alert ok">{notice}</p>}
       {pass && <div className="scan-result" data-testid="scan-result"><p className="eyebrow">Pass found</p><h2>{matchingLabel}</h2><p>Lesson date: {pass.lessonDate}</p><p>Expires: {new Date(pass.expiresAt).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Vancouver' })}</p>
         {pass.blockedReason && <p className="alert warn" role="status">{pass.blockedReason}</p>}
+        {pass.needsInformation && <p className="alert warn" role="status" data-testid="pass-needs-information">Needs information · Ask the parent to update the profile.</p>}
         {pass.purpose === 'pickup' && <>
           <p className="small" data-testid="pass-authorized-adult"><strong>Authorized adult on active list:</strong> {pass.adultName ?? 'No active adult found'}</p>
           <label className="check-field id-check"><input data-testid="pass-id-check" type="checkbox" checked={idChecked} disabled={!pass.adultOnList} onChange={(event) => setIdChecked(event.target.checked)} /> I verified the adult present matches this authorized adult and checked their photo ID.</label>

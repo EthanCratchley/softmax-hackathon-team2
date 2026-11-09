@@ -208,35 +208,45 @@ export function createMockServices(
       if (Object.keys(errors).length) return fail('invalid', 'Please fix the highlighted fields.', errors);
 
       const at = stamp();
+      const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
       const med = medicalFor(childId);
-      const medicalChanged = (['allergies', 'conditions', 'medications', 'safetyInstructions'] as const).filter((k) => changes[k] !== undefined);
-      if (changes.allergies !== undefined) med.allergies = trimList(changes.allergies, (v) => v.trim());
-      if (changes.conditions !== undefined) med.conditions = trimList(changes.conditions, (v) => v.trim());
-      if (changes.medications !== undefined)
-        med.medications = trimList(changes.medications, (m) => ({ name: m.name.trim(), location: m.location.trim(), heldAtDesk: Boolean(m.heldAtDesk) }));
-      if (changes.safetyInstructions !== undefined) med.safetyInstructions = changes.safetyInstructions.trim();
+      const next = {
+        allergies: changes.allergies === undefined ? med.allergies : trimList(changes.allergies, (v) => v.trim()),
+        conditions: changes.conditions === undefined ? med.conditions : trimList(changes.conditions, (v) => v.trim()),
+        medications: changes.medications === undefined ? med.medications : trimList(changes.medications, (m) => ({ name: m.name.trim(), location: m.location.trim(), heldAtDesk: Boolean(m.heldAtDesk) })),
+        safetyInstructions: changes.safetyInstructions === undefined ? med.safetyInstructions : changes.safetyInstructions.trim(),
+      };
+      // Only fields whose value actually changes count as a change (and are audited).
+      const medicalChanged = (Object.keys(next) as (keyof typeof next)[]).filter((k) => !same(next[k], med[k]));
       if (medicalChanged.length) {
-        med.updatedBy = user.id;
-        med.updatedAt = at;
+        Object.assign(med, next, { updatedBy: user.id, updatedAt: at });
         audit(user, 'medical_updated', 'MedicalProfile', childId, `Updated ${medicalChanged.join(', ')}`);
       }
 
       if (changes.emergencyContacts) {
-        state.contacts = state.contacts.filter((c) => c.childId !== childId);
-        changes.emergencyContacts.forEach((c, i) =>
-          state.contacts.push({ id: newId('ec'), childId, name: c.name.trim(), relationship: c.relationship.trim(), phone: c.phone.trim(), priority: (i + 1) as 1 | 2 }),
-        );
-        audit(user, 'contacts_updated', 'EmergencyContact', childId, `Set ${changes.emergencyContacts.length} emergency contact(s)`);
+        const wanted = changes.emergencyContacts.map((c, i) => ({ name: c.name.trim(), relationship: c.relationship.trim(), phone: c.phone.trim(), priority: (i + 1) as 1 | 2 }));
+        const current = state.contacts.filter((c) => c.childId === childId).sort((a, b) => a.priority - b.priority).map(({ name, relationship, phone, priority }) => ({ name, relationship, phone, priority }));
+        if (!same(wanted, current)) {
+          state.contacts = state.contacts.filter((c) => c.childId !== childId);
+          wanted.forEach((c) => state.contacts.push({ id: newId('ec'), childId, ...c }));
+          audit(user, 'contacts_updated', 'EmergencyContact', childId, `Set ${wanted.length} emergency contact(s)`);
+        }
       }
 
       if (changes.authorizedAdults) {
+        let updated = 0;
         for (const a of changes.authorizedAdults) {
-          const existing = a.id ? state.adults.find((x) => x.id === a.id) : undefined;
-          const fields = { name: a.name.trim(), relationship: a.relationship.trim(), phone: a.phone?.trim() || null, isActive: a.isActive, updatedBy: user.id, updatedAt: at };
-          if (existing) Object.assign(existing, fields);
-          else state.adults.push({ id: newId('adl'), childId, ...fields });
+          const fields = { name: a.name.trim(), relationship: a.relationship.trim(), phone: a.phone?.trim() || null, isActive: a.isActive };
+          // A "new" adult matching one already on this child's list updates that adult instead of duplicating them.
+          const existing = a.id
+            ? state.adults.find((x) => x.id === a.id)
+            : state.adults.find((x) => x.childId === childId && x.name.toLowerCase() === fields.name.toLowerCase() && x.relationship.toLowerCase() === fields.relationship.toLowerCase());
+          if (existing && same({ name: existing.name, relationship: existing.relationship, phone: existing.phone, isActive: existing.isActive }, fields)) continue;
+          if (existing) Object.assign(existing, fields, { updatedBy: user.id, updatedAt: at });
+          else state.adults.push({ id: newId('adl'), childId, ...fields, updatedBy: user.id, updatedAt: at });
+          updated += 1;
         }
-        audit(user, 'pickup_adults_updated', 'AuthorizedAdult', childId, `Updated ${changes.authorizedAdults.length} pickup adult(s)`);
+        if (updated) audit(user, 'pickup_adults_updated', 'AuthorizedAdult', childId, `Updated ${updated} pickup adult(s)`);
       }
 
       if (changes.consent) {
@@ -308,7 +318,7 @@ export function createMockServices(
       const expired = Date.parse(pass.expiresAt) <= now().getTime();
       const openIncident = pass.purpose === 'pickup' && incidentsFor(child.id, lessonDate).some((incident) => incident.status === 'Open');
       const blockedReason = expired ? 'This pass has expired.' : pass.redeemedAt ? 'This pass has already been used once.' : pass.purpose === 'pickup' && !adult ? 'That adult is no longer on the active pickup list.' : openIncident ? 'Release blocked: call patrol.' : null;
-      return ok({ passId: pass.id, childId: child.id, childFirstName: child.firstName, childLastName: child.lastName, groupNumber: groupOf(child)?.groupNumber ?? null, lessonDate, purpose: pass.purpose, adultName: adult?.name ?? pass.adultName, adultOnList: pass.purpose !== 'pickup' || Boolean(adult), expiresAt: pass.expiresAt, redeemedAt: pass.redeemedAt, canRedeem: !blockedReason, blockedReason });
+      return ok({ passId: pass.id, childId: child.id, childFirstName: child.firstName, childLastName: child.lastName, groupNumber: groupOf(child)?.groupNumber ?? null, lessonDate, purpose: pass.purpose, adultName: adult?.name ?? pass.adultName, adultOnList: pass.purpose !== 'pickup' || Boolean(adult), expiresAt: pass.expiresAt, redeemedAt: pass.redeemedAt, canRedeem: !blockedReason, blockedReason, needsInformation: profileOf(child).completion.status === 'NeedsInformation' });
     },
 
     async redeemLessonPass(passId, input, user) {
@@ -618,6 +628,25 @@ export function createMockServices(
       group.instructorUserId = instructorUserId;
       audit(user, 'group_assignment_changed', 'LessonGroup', groupId, `Instructor changed from ${from} to ${instructorUserId}`);
       return ok({ groupId, instructorUserId });
+    },
+
+    async listGroups(user) {
+      if (!is(user, 'admin')) return FORBIDDEN;
+      return ok(
+        state.groups
+          .slice()
+          .sort((a, b) => a.groupNumber - b.groupNumber)
+          .map((g) => ({
+            groupId: g.id,
+            groupNumber: g.groupNumber,
+            day: g.day,
+            skiLevel: g.skiLevel,
+            instructorUserId: g.instructorUserId,
+            instructorName: staffName(g.instructorUserId),
+            children: state.children.filter((c) => c.groupId === g.id).map((c) => ({ childId: c.id, firstName: c.firstName, lastName: c.lastName })),
+            capacity: MAX_GROUP_SIZE,
+          })),
+      );
     },
 
     async listPickups(lessonDate, user) {

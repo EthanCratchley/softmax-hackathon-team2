@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { signIn } from './sign-in';
 import { demoPassword } from '../lib/piezas-schema';
 import { CHILD_IDS, DEMO_LESSON_DATE } from '../lib/fixtures';
 
@@ -35,6 +36,14 @@ test('admin dashboard reads missing-field and daily operations data from shared 
     await expect(page.getByTestId(id)).toBeVisible();
   }
   await expect(page.getByRole('button', { name: /unavailable/ })).toHaveCount(0);
+});
+
+test('Hana sees who is in each group and how full it is', async ({ page }) => {
+  await signIn(page, 'hana.sato@example.test');
+  await page.goto('/admin');
+  await expect(page.getByTestId('group-instructor-grp_14')).toHaveText(/^Instructor: /);
+  await expect(page.getByTestId('group-count-grp_09')).toHaveText(/^\d of 6 places$/);
+  await expect(page.getByTestId('group-overview')).not.toContainText(/Asthma|diabetes|Tree nuts/i);
 });
 
 test('admin access redirects users without the admin role', async ({ page }) => {
