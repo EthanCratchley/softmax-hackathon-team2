@@ -31,11 +31,12 @@ export default async function ParentChildPage({ params }: { params: Promise<{ id
       <header className="profile-heading"><div className="profile-title-row"><h1>{result.data.child.firstName} {result.data.child.lastName}</h1>
         <span className={`badge ${result.data.completion.status === 'Complete' ? 'ok' : 'warn'}`} data-testid="profile-status">{result.data.completion.status === 'Complete' ? 'Complete' : 'Needs information'}</span></div>
         <p className="small muted updated-line">Updated {new Date(result.data.child.updatedAt).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Vancouver' })}</p>
+        {result.data.medicalUpdatedByName && result.data.medical.updatedAt && <p className="small muted" data-testid="medical-changed-by">Medical details last changed by {result.data.medicalUpdatedByName} on <time dateTime={result.data.medical.updatedAt}>{new Date(result.data.medical.updatedAt).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Vancouver' })}</time></p>}
       </header>
       <ProfileChecklist missing={result.data.completion.missing} />
       <ParentJourneyPanel childId={result.data.child.id} childName={result.data.child.firstName} lessonDate={DEMO_LESSON_DATE} adults={result.data.authorizedAdults}
         dropoffPass={dropoffPass} pickupPasses={pickupPasses} dropoffQr={dropoffQr} pickupQrByAdultId={pickupQrByAdultId}
-        activity={activityResult?.ok ? activityResult.data : []} />
+        activity={activityResult?.ok ? activityResult.data : []} activityError={activityResult && !activityResult.ok ? activityResult.error.message : null} />
       <ParentProfileForm profile={result.data} lessonDate={DEMO_LESSON_DATE} />
     </>}
   </main>;

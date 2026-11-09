@@ -104,6 +104,8 @@ export interface KestrelServices {
   addPickupCorrection(pickupLogId: Id, reason: string, note: string, user: VerifiedUser): Promise<Result<PickupCorrection>>;
   /** Hana's open "mail the notice" tasks, created when patrol records sharing with police or rescuers. */
   getNoticeTasks(user: VerifiedUser): Promise<Result<NoticeTask[]>>;
+  /** Admin marks the notice as mailed; done tasks drop off the open list. */
+  completeNoticeTask(taskId: Id, user: VerifiedUser): Promise<Result<NoticeTask>>;
   /** Newest first. Entries never contain medical values. */
   getAuditLog(user: VerifiedUser): Promise<Result<AuditEvent[]>>;
 }

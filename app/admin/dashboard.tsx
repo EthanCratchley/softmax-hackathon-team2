@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { CompletionSummaryRow, NoticeTask, OperationsSnapshot, PickupRecordView } from '@/lib/domain/types';
-import { CorrectionForm, GroupForms } from './admin-forms';
+import { CorrectionForm, GroupForms, NoticeDoneForm } from './admin-forms';
 import { lessonDays } from '@/lib/desk/fixtures';
 import desk from '../desk/roster.module.css';
 import styles from './dashboard.module.css';
@@ -68,7 +68,7 @@ export default function AdminDashboard({ lessonDate, completion, operations, pic
     <section className={desk.panel} aria-label="Notice tasks"><h2>Notice tasks</h2><p>Created when patrol records sharing with police or rescuers. Mail the required notice to the family.</p>
       {tasksError && <p role="alert" className={desk.blocked} data-testid="tasks-error">Could not load notice tasks: {tasksError}</p>}
       {!tasksError && tasks.length === 0 && <p data-testid="no-notice-tasks">No open notice tasks.</p>}
-      {tasks.length > 0 && <ul className={styles.list} data-testid="notice-tasks">{tasks.map(task => <li key={task.id} data-testid={`notice-task-${task.id}`}><strong>Mail the notice: {task.childName}</strong><p>Incident {task.incidentId}</p><p data-testid={`notice-task-address-${task.id}`}>{task.mailingAddress ?? 'No mailing address on file'}</p><time dateTime={task.createdAt}>Created {timeLabel(task.createdAt)}</time></li>)}</ul>}
+      {tasks.length > 0 && <ul className={styles.list} data-testid="notice-tasks">{tasks.map(task => <li key={task.id} data-testid={`notice-task-${task.id}`}><strong>Mail the notice: {task.childName}</strong><p>Incident {task.incidentId}</p><p data-testid={`notice-task-address-${task.id}`}>{task.mailingAddress ?? 'No mailing address on file'}</p><time dateTime={task.createdAt}>Created {timeLabel(task.createdAt)}</time><NoticeDoneForm taskId={task.id} /></li>)}</ul>}
     </section>
 
     <section className={desk.panel} aria-label="Pickup records"><h2>Pickup records for {lessonDate}</h2><p>Original release records never change. Corrections are added beside them.</p>

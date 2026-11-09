@@ -503,11 +503,12 @@ export function createMockServices(
       if (!is(user, 'patrol')) return deny(user, 'Incident', incidentId, 'emergency packet');
       const incident = state.incidents.find((i) => i.id === incidentId);
       if (!incident) return NOT_FOUND;
-      if (incident.status === 'Closed') return fail('blocked', 'This incident is closed.');
+      // A closed incident keeps its timeline but no longer exposes medical details or contacts.
+      const closed = incident.status === 'Closed';
       const child = findChild(incident.childId)!;
       const group = groupOf(child);
       const att = attendanceFor(child.id, incident.lessonDate);
-      audit(user, 'incident_packet_viewed', 'Incident', incident.id, `Emergency packet opened for incident ${incident.id}`);
+      audit(user, 'incident_packet_viewed', 'Incident', incident.id, `${closed ? 'Closed incident timeline' : 'Emergency packet'} opened for incident ${incident.id}`);
       return ok({
         incident: structuredClone(incident),
         child: {
@@ -521,9 +522,9 @@ export function createMockServices(
           bibNumber: att?.bibNumber ?? null,
         },
         group: group ? { groupNumber: group.groupNumber, instructorName: state.users.find((u) => u.id === group.instructorUserId)?.displayName ?? 'Unknown' } : null,
-        parentClothingToday: att?.clothingToday ?? null,
-        alerts: safetyAlerts(medicalFor(child.id)),
-        emergencyContacts: state.contacts
+        parentClothingToday: closed ? null : (att?.clothingToday ?? null),
+        alerts: closed ? [] : safetyAlerts(medicalFor(child.id)),
+        emergencyContacts: closed ? [] : state.contacts
           .filter((c) => c.childId === child.id)
           .sort((a, b) => a.priority - b.priority)
           .map(({ name, relationship, phone, priority }) => ({ name, relationship, phone, priority })),
@@ -542,7 +543,7 @@ export function createMockServices(
         if (!update.note?.trim()) return fail('invalid', 'Add a note for this action.', { note: 'Add a note for this action.' });
         incident.actions.push({ id: newId('act'), type: update.type, note: update.note.trim(), staffUserId: user.id, occurredAt: at });
         audit(user, 'incident_updated', 'Incident', incident.id, `Action: ${update.type}`);
-        if (update.type === 'shared_with_police_or_rescuers') {
+        if (update.type === 'shared_with_police_or_rescuers' && !state.noticeTasks.some((t) => t.incidentId === incident.id && t.status === 'Open')) {
           const child = findChild(incident.childId)!;
           const task = { id: newId('tsk'), childId: child.id, childName: `${child.firstName} ${child.lastName}`, incidentId: incident.id, mailingAddress: child.mailingAddress, createdBy: user.id, createdAt: at, status: 'Open' as const };
           state.noticeTasks.push(task);
@@ -639,6 +640,16 @@ export function createMockServices(
       state.corrections.push(correction);
       audit(user, 'pickup_corrected', 'PickupLog', pickupLogId, `Correction added: ${correction.reason}`);
       return ok({ ...correction });
+    },
+
+    async completeNoticeTask(taskId, user) {
+      if (!is(user, 'admin')) return deny(user, 'NoticeTask', taskId, 'complete notice task');
+      const task = state.noticeTasks.find((t) => t.id === taskId);
+      if (!task) return NOT_FOUND;
+      if (task.status === 'Done') return fail('blocked', 'This notice task is already done.');
+      task.status = 'Done';
+      audit(user, 'notice_task_completed', 'NoticeTask', task.id, `Notice mailed for incident ${task.incidentId}`);
+      return ok(structuredClone(task));
     },
 
     async getNoticeTasks(user) {

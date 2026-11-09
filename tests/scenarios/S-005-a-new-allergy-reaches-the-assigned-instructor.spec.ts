@@ -22,6 +22,9 @@ test('S-005: A new allergy reaches the assigned instructor', async ({ page }) =>
   // Saving without consent is allowed; the profile just stays "Needs information".
   await expect(page.getByTestId('parent-profile-form').getByRole('status').filter({ hasText: /^Saved / })).toBeVisible();
   await expect(page.getByTestId('save-error')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByTestId('medical-changed-by')).toContainText('Medical details last changed by Priya Shah on');
+  await expect(page.getByTestId('medical-changed-by').locator('time')).toHaveAttribute('datetime', /T/);
 
   await signInAs(page, JORDAN);
   await page.goto(`/instructor?day=${DAY}`);

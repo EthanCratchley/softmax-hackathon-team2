@@ -4,7 +4,7 @@
 //   When a patroller searches the child's name and opens an incident
 //   Then the search showed only name, age and group, the incident now exists, and the action is logged
 import { expect, test } from '@playwright/test';
-import { closeIncidentsFor, DAY } from '../safety-helpers';
+import { closeIncidentsFor, DAY, auditActionsFor } from '../safety-helpers';
 
 test('S-018: Patrol opens an incident from a radio call', async ({ page }) => {
   await closeIncidentsFor(page, 'chd_owen');
@@ -48,6 +48,11 @@ test('S-018: Patrol opens an incident from a radio call', async ({ page }) => {
   await expect(page).toHaveURL(packetUrl);
   await page.goto('/patrol');
   await expect(page.locator('[data-child="chd_owen"]')).toHaveCount(1);
+
+  // Opening the incident from the radio call is in the audit trail, by Rob.
+  const incidentId = packetUrl.split('/patrol/incidents/')[1].split('?')[0];
+  expect(await auditActionsFor(page, incidentId)).toContain('incident_reported');
+  await expect(page.getByTestId('audit-log').locator('li[data-action="incident_reported"]', { hasText: incidentId })).toContainText('Rob Fournier');
 });
 
 test('S-018: the radio-call form needs a place and refuses a child patrol did not search for', async ({ page }) => {

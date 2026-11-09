@@ -46,6 +46,14 @@ export async function addCorrectionAction(pickupLogId: string, _: AdminFormState
   return { ok: true, message: 'Correction added beside the original record.' };
 }
 
+export async function completeNoticeAction(taskId: string, _: AdminFormState): Promise<AdminFormState> {
+  const user = await requireUser('admin');
+  const result = await services.completeNoticeTask(taskId, user);
+  if (!result.ok) return failed(result.error);
+  revalidatePath('/admin');
+  return { ok: true, message: 'Marked as mailed.' };
+}
+
 /** The profile travels only in this action's response, never in a URL. */
 export async function openDetailsAction(childId: string, _: DetailsState, form: FormData): Promise<DetailsState> {
   const user = await requireUser('admin');

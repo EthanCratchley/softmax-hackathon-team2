@@ -4,7 +4,7 @@
 //   When a patroller opens the packet on a tablet
 //   Then the required details all appear on one screen and the audit trail shows who opened it, when and for which incident
 import { expect, test } from '@playwright/test';
-import { closeIncidentsFor, instructorReports, patrolOpensPacket } from '../safety-helpers';
+import { closeIncidentsFor, instructorReports, patrolOpensPacket, auditActionsFor } from '../safety-helpers';
 
 test('S-019: Patrol gets everything on one screen', async ({ page }) => {
   await closeIncidentsFor(page, 'chd_owen');
@@ -34,4 +34,10 @@ test('S-019: Patrol gets everything on one screen', async ({ page }) => {
     /^Follow resort procedure: escalate to police if not located by Dec 12, 3:30\sp\.m\.\. This app does not contact police or family\.$/,
   );
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  // Opening the packet is recorded: who, when, which incident.
+  const incidentId = page.url().split('/patrol/incidents/')[1].split('?')[0];
+  const actions = await auditActionsFor(page, incidentId);
+  expect(actions[0]).toBe('incident_packet_viewed');
+  await expect(page.getByTestId('audit-log').locator('li', { hasText: incidentId }).first()).toContainText('Rob Fournier');
 });

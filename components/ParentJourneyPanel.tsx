@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { AuthorizedAdult, LessonDate, LessonPass, ParentActivityEvent } from '@/lib/domain/types';
 import { PassQRCode } from './PassQRCode';
 
-export function ParentJourneyPanel({ childId, childName, lessonDate, adults, dropoffPass, pickupPasses, dropoffQr, pickupQrByAdultId, activity }: {
+export function ParentJourneyPanel({ childId, childName, lessonDate, adults, dropoffPass, pickupPasses, dropoffQr, pickupQrByAdultId, activity, activityError = null }: {
   childId: string;
   childName: string;
   lessonDate: LessonDate;
@@ -15,6 +15,7 @@ export function ParentJourneyPanel({ childId, childName, lessonDate, adults, dro
   dropoffQr: string | null;
   pickupQrByAdultId: Record<string, string | null>;
   activity: ParentActivityEvent[];
+  activityError?: string | null;
 }) {
   const [purpose, setPurpose] = useState<'dropoff' | 'pickup'>('dropoff');
   const activeAdults = adults.filter((adult) => adult.isActive);
@@ -61,7 +62,7 @@ export function ParentJourneyPanel({ childId, childName, lessonDate, adults, dro
         <p className="small muted pass-footnote">Staff match the adult against your authorized list and check photo ID. A code alone never releases {childName}.</p>
       </div>
       <div className="activity-card"><div className="activity-heading"><h3>Recent Activity</h3></div>
-        {activity.length ? <ol className="activity-list" data-testid="activity-list">{activity.map((event) => <li key={event.id}><span className={`activity-dot ${event.kind}`} aria-hidden="true" /><div><strong>{event.kind === 'checked_in' ? 'Dropped off' : 'Picked up'}</strong>{event.adultName && <span> by {event.adultName}</span>}<time dateTime={event.at}>{new Date(event.at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Vancouver' })}</time></div></li>)}</ol> : <p className="empty-activity">No drop-off or pick-up activity yet.</p>}
+        {activityError ? <p className="alert danger" role="alert" data-testid="activity-error">Drop-off and pick-up history could not be loaded: {activityError}</p> : activity.length ? <ol className="activity-list" data-testid="activity-list">{activity.map((event) => <li key={event.id}><span className={`activity-dot ${event.kind}`} aria-hidden="true" /><div><strong>{event.kind === 'checked_in' ? 'Dropped off' : 'Picked up'}</strong>{event.adultName && <span> by {event.adultName}</span>}<time dateTime={event.at}>{new Date(event.at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Vancouver' })}</time></div></li>)}</ol> : <p className="empty-activity">No drop-off or pick-up activity yet.</p>}
         <p className="small muted">History is from the desk’s saved attendance and pickup records.</p>
       </div>
     </div>
