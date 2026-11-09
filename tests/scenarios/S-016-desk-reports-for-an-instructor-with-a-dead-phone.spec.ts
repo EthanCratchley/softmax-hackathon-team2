@@ -3,7 +3,7 @@
 //   Given an instructor radios the desk that Owen is missing
 //   When desk staff file the report and then open Owen's pickup screen
 //   Then an open incident exists, the screen says "Call patrol" with no details, and release is blocked
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 import { CASEY, closeIncidentsFor, ROB, signInAs } from '../safety-helpers';
 import { signIn } from '../sign-in';

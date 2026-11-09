@@ -3,7 +3,7 @@
 //   Given a parent editing an emergency contact
 //   When they enter the 9-digit number 604555-187 and save
 //   Then the app refuses it with a clear message and the old value stays
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { CHILD_IDS } from '../../lib/fixtures';
 import { DANA, openSection } from '../parent-helpers';
 import { signIn } from '../sign-in';

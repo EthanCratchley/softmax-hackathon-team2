@@ -3,7 +3,7 @@
 //   Given Owen has an open incident
 //   When a patroller opens the packet on a tablet
 //   Then the required details all appear on one screen and the audit trail shows who opened it, when and for which incident
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { closeIncidentsFor, instructorReports, patrolOpensPacket, auditActionsFor } from '../safety-helpers';
 
 test('S-019: Patrol gets everything on one screen', async ({ page }) => {

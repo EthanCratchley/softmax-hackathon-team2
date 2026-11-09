@@ -3,7 +3,7 @@
 //   Given Owen is in the signed-in instructor's group
 //   When the instructor reports him missing at 2:40 p.m., last seen at 2:30 p.m. at the top of the Pigeon chair, with clothing and notes
 //   Then an open incident appears on the patrol list with those details
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { closeIncidentsFor, instructorReports, ROB, signInAs } from '../safety-helpers';
 
 test('S-015: An instructor reports a child missing', async ({ page }) => {

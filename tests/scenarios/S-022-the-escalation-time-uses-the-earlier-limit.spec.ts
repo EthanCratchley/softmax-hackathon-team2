@@ -3,7 +3,7 @@
 //   Given one child last seen at 2:30 p.m. and another last seen at 3:30 p.m.
 //   When patrol opens each packet
 //   Then the first shows 3:30 p.m., the second shows 4:00 p.m., and no message is sent to police or family
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { escalationTime } from '../../lib/domain/rules';
 import { closeIncidentsFor, instructorReports, patrolOpensPacket } from '../safety-helpers';
 

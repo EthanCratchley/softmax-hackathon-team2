@@ -3,7 +3,7 @@
 //   Given a child with every detail filled in except conditions, which is blank
 //   When the parent saves the profile
 //   Then the status reads "Needs information" and names conditions as missing
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { CHILD_IDS } from '../../lib/fixtures';
 import { fillAvaProfile, PRIYA, saveProfile } from '../parent-helpers';
 import { signIn } from '../sign-in';

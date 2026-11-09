@@ -3,7 +3,7 @@
 //   Given Owen's incident has been marked Located
 //   When desk staff open Owen's screen
 //   Then release is available and a note says an incident happened today and to refer family questions to Hana
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 import { CASEY, closeIncidentsFor, instructorReports, patrolOpensPacket } from '../safety-helpers';
 import { signIn } from '../sign-in';

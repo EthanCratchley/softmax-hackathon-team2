@@ -3,7 +3,7 @@
 //   Given Lily's parent adds Mark Whitfield from their phone after the denial
 //   When desk staff refresh, choose him, confirm the ID check and release her, then try to release her again
 //   Then exactly one pickup record exists with the required details, the second attempt is blocked and shows who took her, and the record offers no edit or delete
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 import { CASEY, DANA, openSection, saveProfile } from '../parent-helpers';
 import { signIn } from '../sign-in';

@@ -3,7 +3,7 @@
 //   Given desk staff are signed in
 //   When they try to add an authorized adult to Lily's list by a direct server call
 //   Then the request is refused and the list stays the same
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../scenario-test';
 import { CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 import { CASEY, DANA, openSection } from '../parent-helpers';
 import { signIn } from '../sign-in';

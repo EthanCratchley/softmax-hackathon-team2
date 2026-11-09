@@ -3,7 +3,7 @@
 //   Given Ava is checked in and has a recorded allergy
 //   When desk staff open her pickup screen and also request her medical record directly from the server
 //   Then they see only her active adults and state, and the medical request is refused
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 import { CASEY, openSection, PRIYA, saveProfile } from '../parent-helpers';
 import { signIn } from '../sign-in';

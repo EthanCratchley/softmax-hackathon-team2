@@ -3,7 +3,7 @@
 //   Given an instructor on a 375-pixel-wide phone screen
 //   When they open their roster
 //   Then nothing scrolls sideways, tap targets are at least 48 pixels, and each child's missing-report button is one tap away
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../scenario-test';
 import { DAY, JORDAN, signInAs } from '../safety-helpers';
 
 const noSideScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);

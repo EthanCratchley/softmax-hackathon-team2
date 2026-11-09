@@ -3,7 +3,7 @@
 //   Given an instructor who is not assigned Ava's group
 //   When they request Ava's alerts or try to change her medical details by address or direct server call
 //   Then they are refused and no details are returned
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { DAY, JORDAN, SAM, signInAs } from '../safety-helpers';
 import { signIn } from '../sign-in';
 

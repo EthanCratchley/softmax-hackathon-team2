@@ -5,7 +5,7 @@
 //   Then they see "holds [medication] for this child" and not the condition
 //
 import { existsSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { demoPassword } from '../../lib/piezas-schema';
 import { CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 
