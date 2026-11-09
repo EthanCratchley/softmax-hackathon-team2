@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ageOn, computeCompletion, escalationTime, isValidPhone, matchesName, normalizePhone, resortOffset, safetyAlerts } from '../../lib/domain/rules';
+import { ageOn, computeCompletion, endOfLessonDay, escalationTime, isValidPhone, matchesName, normalizePhone, resortOffset, safetyAlerts } from '../../lib/domain/rules';
 import { CHILD_IDS, createDemoState } from '../../lib/fixtures';
 
 test.describe('phone validation (R-003)', () => {
@@ -112,4 +112,8 @@ test.describe('resort UTC offset (instructor last-seen time)', () => {
     expect(resortOffset('2026-12-12')).toBe('-07:00');
     expect(resortOffset('2027-01-15')).toBe('-07:00');
   });
+});
+
+test('a lesson day ends at 11:59:59 p.m. resort time', () => {
+  expect(endOfLessonDay('2026-12-12')).toBe(new Date('2026-12-12T23:59:59-07:00').toISOString());
 });

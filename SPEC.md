@@ -111,11 +111,15 @@ Every role check happens on the server against the signed-in person. There is no
 - R-046: [Stated] During lesson time, an instructor's roster prompts for a headcount every 30 minutes, skipping lunch. They can confirm "all here" with one tap or report who is missing. (Team feature list; Case Exhibit 2 for lesson times; the interval is assumed)
 - R-047: [Assumed] Desk staff and Hana see a group flagged when its headcount is more than 10 minutes overdue. The flag shows no details about any child. (Team feature list)
 - R-048: [Stated] Desk staff and Hana see "Instructor not responding: try the radio" when an instructor's roster has had no contact for 20 minutes during lesson time. The wording does not claim the battery is dead, because the app cannot tell a dead phone from a locked one or no signal. (Team feature list: dead battery alert; Case section 2; the 20 minutes is assumed)
+- R-049: [Assumed] A parent sees check-in and release alerts and a newest-first activity history for each linked child, derived from that child's attendance and pickup records. The view includes event time and the pickup adult's name, never another child's events or medical details.
+- R-050: [Assumed] For each lesson day, a parent can show a drop-off QR or enter its short numeric alternative. For pickup, the parent selects an active authorized adult and shows that adult's QR or the same numeric alternative. A code is scoped to one child, adult (for pickup), purpose and lesson day; it cannot release a child by itself. Desk staff still check photo ID and record release once.
 
 ## Data
 
 - Pickup link: child, parent, authorized adult, lesson date, hidden link code, cancelled at, last opened at
 - Alert message: child, parent, type (check-in, release), sent or failed, time
+- Parent activity view: child, event type (check-in, release, denied pickup), event time, adult name where applicable; derived from existing records and filtered by the signed-in parent's child links
+- Lesson pass: child, lesson date, purpose (drop-off, pickup), authorized adult for pickup, opaque pass value, numeric alternative, expiry, redeemed time
 - Headcount: group, lesson date, instructor, due at, confirmed at, count
 - Instructor contact: instructor, lesson date, last contact at
 - Staff profile: sign-in user ID, role (instructor, desk, patrol, admin), display name
@@ -475,6 +479,27 @@ covers: R-048
 Given an instructor's roster last made contact 21 minutes ago in lesson time
 When desk staff or Hana view today's list
 Then they see "Instructor not responding: try the radio", with no claim about the battery, and it clears when the roster makes contact again
+
+### S-042: A parent sees their child's drop-off and pickup history
+
+covers: R-049
+Given a parent with one linked child who has a check-in and release record
+When the parent opens that child's lesson activity
+Then they see the check-in time, release time and authorized pickup adult, with the latest event first and no unrelated child's activity
+
+### S-043: A parent can show scannable drop-off and pickup passes
+
+covers: R-050
+Given a parent with a linked child and one active pickup adult
+When they open the lesson passes and select that adult
+Then they see a drop-off QR with a numeric alternative and a pickup QR plus the same numeric alternative for that named adult; the pass expires after the lesson and staff must still check photo ID
+
+### S-044: Desk verifies a lesson pass with a safe fallback
+
+covers: R-050
+Given desk staff scan a drop-off or pickup QR, or enter its numeric alternative
+When the pass matches the child, lesson day and purpose
+Then the desk sees only the child and required pass details; pickup remains blocked until staff match the active authorized adult and confirm photo ID
 
 ## Open Conflicts
 

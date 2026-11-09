@@ -4,14 +4,23 @@
 //   When desk staff open that child
 //   Then they see "holds [medication] for this child" and not the condition
 //
-// NOT WRITTEN YET. Replace the test body with the real steps, driven against
-// the running app: open the page (page.goto), do what the When line says
-// (click, fill, ...), and check what the Then line says is visible
-// (await expect(page.getByTestId(...)).toBeVisible() / toHaveText(...)).
-// Keep the first line: it tells Piezas which scenario (and which wording of
-// it) this test checks. Never skip the test or fake Piezas.
-import { test } from '@playwright/test';
+import { existsSync } from 'node:fs';
+import { expect, test } from '@playwright/test';
+import { demoPassword } from '../../lib/piezas-schema';
+import { CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 
-test("S-014: Medication held at the desk shows without the rest", async () => {
-  throw new Error("PIEZAS_NOT_WRITTEN: S-014 has no test yet");
+for (const file of ['.env.local', '.env']) if (!process.env.DEMO_ACCOUNT_SECRET && existsSync(file)) process.loadEnvFile(file);
+
+test('S-014: the desk sees which medication it holds, but not the condition', async ({ page }) => {
+  const secret = process.env.DEMO_ACCOUNT_SECRET;
+  expect(secret, 'DEMO_ACCOUNT_SECRET must be configured for the test copy').toBeTruthy();
+  const email = 'casey.morgan@example.test';
+  await page.goto('/login');
+  await page.getByTestId('login-email').fill(email);
+  await page.getByTestId('login-password').fill(demoPassword(secret!, email));
+  await page.getByTestId('login-submit').click();
+  await expect(page).toHaveURL('/');
+  await page.goto(`/desk/children/${CHILD_IDS.noor}?day=${DEMO_LESSON_DATE}`);
+  await expect(page.getByTestId('medication-held-indicator')).toHaveText('Holds Glucose gel for this child');
+  await expect(page.getByTestId('pickup-page')).not.toContainText(/diabetes|shaky or pale/i);
 });

@@ -1,0 +1,2323 @@
+/**
+ * Kestrel UI — the design layer.
+ *
+ * Loaded after `globals.css`, which stays the team's file and is not edited.
+ * Deleting the import in `app/layout.tsx` reverts everything here.
+ *
+ * The rules in this file are documented in `docs/DESIGN_SYSTEM.md`. Three of
+ * them are load-bearing and easy to undo by accident:
+ *
+ *  1. NO UPPERCASE TEXT. There is not one `text-transform` in this file. Casing
+ *     is decided in the copy, not by CSS, so what a screen reader hears and what
+ *     a person sees cannot drift apart.
+ *  2. SEVEN TYPE ROLES, no more: display, title, card-title, body, ui, meta,
+ *     numeric. A new size is a design decision, not a fix for one screen.
+ *  3. ONE CARD IDIOM. White surface, hairline border, no shadow. Shadow is for
+ *     things that float above the page (the save dock) and nothing else.
+ */
+
+/* ------------------------------------------------------------------ tokens */
+:root {
+  color-scheme: light;
+
+  /* Neutrals: one family, warm-green. Everything else is derived. */
+  --bg: #f2f5f1;
+  --surface: #ffffff;
+  --surface-2: #f7faf6;
+  --surface-3: #eef3ec;
+  --ink: #102a22;
+  --ink-2: #33544a;
+  --muted: #5d7269;
+  --line: #e0e7df;
+  --line-2: #cbd6cc;
+
+  /* Brand: one green, three weights. */
+  --brand: #1c5a48;
+  --brand-hover: #154638;
+  --brand-soft: #e9f1ec;
+
+  /* Status. Amber means "something is needed", nothing else. */
+  --needs: #7a5310;
+  --needs-bg: #fdf6e6;
+  --needs-line: #ecd9a8;
+  --ok: #07603c;
+  --ok-bg: #eaf6ef;
+  --ok-line: #c0e3cc;
+  --bad: #9f2a1f;
+  --bad-bg: #fdf1ef;
+  --bad-line: #f2cdc7;
+
+  /* Type scale — see DESIGN_SYSTEM.md §3. */
+  --text-display: clamp(26px, 3.6vw, 34px);
+  --text-title: 19px;
+  --text-card: 16px;
+  --text-body: 16px;
+  --text-ui: 14px;
+  --text-meta: 12.5px;
+
+  /* Space scale — 4px base, only these steps. */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* Two radii and one pill. */
+  --r-control: 10px;
+  --r-card: 14px;
+  --r-pill: 999px;
+
+  /* Two control heights only. */
+  --h-lg: 48px;
+  --h-sm: 40px;
+
+  --shadow-float: 0 2px 6px rgb(16 42 34 / 7%), 0 18px 32px -20px rgb(16 42 34 / 55%);
+  --ring: 0 0 0 2px var(--bg), 0 0 0 5px #7fb6a1;
+  --ease: 120ms cubic-bezier(0.2, 0, 0.2, 1);
+
+  --gutter: clamp(16px, 4vw, 32px);
+}
+
+/* ------------------------------------------------------- casing (rule 1) */
+/* `globals.css` sets `text-transform: uppercase` on `.brand` and `.eyebrow`.
+   A later rule does not cancel it, so say so explicitly — this is the only
+   place in the app where casing is overridden rather than decided in copy. */
+.brand,
+.eyebrow {
+  text-transform: none;
+}
+
+/* -------------------------------------------------------------------- base */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: var(--text-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* -------------------------------------------------------------- type roles */
+h1,
+h2,
+h3 {
+  margin: 0;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+/* display — one per page.
+   `.parent-page h1` in globals.css is more specific than a bare `h1`, so the
+   role is set on the same selectors rather than fighting them. */
+h1,
+.parent-page h1,
+.profile-title-row h1,
+.desk-scan-card h1 {
+  font-size: var(--text-display);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+/* title — a section or a card heading. */
+h2 {
+  font-size: var(--text-title);
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+/* card title — the smallest heading that is still a heading. */
+h3 {
+  font-size: var(--text-card);
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* meta — context, never a label pretending to be a title. Sentence case,
+   no letter-spacing, no transform. */
+.eyebrow {
+  margin: 0 0 var(--s2);
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: var(--text-meta);
+  line-height: 1.5;
+}
+
+.page-intro {
+  max-width: 58ch;
+  margin: var(--s2) 0 0;
+  color: var(--ink-2);
+  font-size: var(--text-body);
+  line-height: 1.55;
+}
+
+code {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 0.9em;
+}
+
+/* ------------------------------------------------------------------- shell */
+.page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: clamp(24px, 3.4vw, 40px) var(--gutter) 80px;
+}
+
+.page.narrow {
+  max-width: 440px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-height: 58px;
+  padding: var(--s2) var(--gutter);
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 255 255 / 92%);
+  backdrop-filter: saturate(150%) blur(8px);
+}
+
+/* The wordmark is a name, so it is set like a name: sentence case, tight. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--ink);
+  font-size: var(--text-ui);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: linear-gradient(150deg, #2f7d63, var(--brand) 60%, #123c30);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 16%);
+}
+
+.brand:hover {
+  color: var(--brand);
+}
+
+.brand-suffix {
+  color: var(--muted);
+  font-weight: 550;
+}
+
+.brand-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.who {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s2);
+  min-width: 0;
+  color: var(--ink-2);
+  font-size: var(--text-ui);
+  font-weight: 550;
+}
+
+.who-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: var(--text-meta);
+  font-weight: 700;
+}
+
+.who [data-testid='signed-in-as'] {
+  overflow: hidden;
+  max-width: 40vw;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.who-person {
+  font-weight: 650;
+}
+
+.who .button.ghost {
+  flex: 0 0 auto;
+  min-height: var(--h-sm);
+  padding: 0 var(--s3);
+  border-color: var(--line-2);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: var(--text-ui);
+  white-space: nowrap;
+}
+
+.who .button.ghost:hover {
+  border-color: #a9bbaf;
+  background: var(--surface-2);
+}
+
+/* ----------------------------------------------------------------- buttons */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--h-sm);
+  min-height: var(--h-lg);
+  padding: 0 18px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-ui);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--ease),
+    border-color var(--ease),
+    color var(--ease);
+}
+
+.button:hover {
+  border-color: #b3c3b8;
+  background: var(--surface-2);
+}
+
+.button.primary {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+  font-weight: 650;
+}
+
+.button.primary:hover {
+  border-color: var(--brand-hover);
+  background: var(--brand-hover);
+}
+
+.button.danger {
+  border-color: var(--bad);
+  background: var(--bad);
+  color: #fff;
+}
+
+.button.ghost {
+  min-height: var(--h-sm);
+  border-color: transparent;
+  background: transparent;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button:focus-visible,
+.back-link:focus-visible,
+summary:focus-visible,
+.answer-option:has(input:focus-visible) {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--h-sm);
+  margin: 0 0 var(--s3);
+  color: var(--brand);
+  font-size: var(--text-ui);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ------------------------------------------------------------------- cards */
+/* One idiom. A card is a white surface with a hairline border — nothing else. */
+.card {
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.card > h2:first-child {
+  margin-bottom: var(--s3);
+}
+
+/* --------------------------------------------------------------- page head */
+.parent-page {
+  max-width: 880px;
+}
+
+.parent-page-heading,
+.profile-heading {
+  margin: 0 0 var(--s5);
+}
+
+.parent-page-heading h1 {
+  margin: 0;
+}
+
+.first-lesson {
+  margin-top: var(--s3);
+}
+
+.parent-privacy-note {
+  margin-top: var(--s4);
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+
+.profile-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+}
+
+/* Everything under a page title that is context rather than content. */
+.page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s2);
+  margin: var(--s2) 0 0;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.5;
+}
+
+.page-meta > span + span::before {
+  content: '·';
+  margin-right: var(--s2);
+  color: var(--line-2);
+}
+
+/* On a narrow screen the separator ends up stranded at the start of a wrapped
+   line ("· Last updated…"), which reads like a typo. Stack the facts instead. */
+@media (max-width: 700px) {
+  .page-meta {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .page-meta > span + span::before {
+    content: none;
+  }
+}
+
+.updated-line {
+  margin: var(--s2) 0 0;
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+
+/* ---------------------------------------------------------------- children */
+.children-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.child-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--s5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  transition: border-color var(--ease);
+}
+
+.child-card:hover {
+  border-color: var(--line-2);
+}
+
+/* Kicker, then name with the status badge level with it. The kicker gets the
+   full card width so "Group 3 · Level 1 · Saturday" never strands a "·" or
+   slides under the badge. `display: contents` drops the wrapper div so the
+   three items can sit on the grid directly. */
+.child-card-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--s3);
+  row-gap: var(--s1);
+}
+
+.child-card-heading > div {
+  display: contents;
+}
+
+.child-card-heading .child-card-kicker {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.child-card-heading h2 {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.child-card-heading .badge {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.child-card-kicker {
+  margin: 0 0 var(--s1);
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 550;
+  line-height: 1.45;
+}
+
+.child-card-heading h2 {
+  font-size: var(--text-title);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.child-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-top: var(--s3);
+}
+
+.child-progress-track {
+  position: relative;
+  flex: 1 1 auto;
+  max-width: 220px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+}
+
+.child-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--brand);
+  transition: width 240ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.child-progress-label {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.link-quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--h-sm);
+  color: var(--brand);
+  font-size: var(--text-ui);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-quiet:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-quiet:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--r-control);
+}
+
+/* Needs-attention is the only thing on this page that may use amber. */
+.child-card-note,
+.child-card-done {
+  margin: var(--s3) 0 0;
+  padding: var(--s3);
+  border-radius: var(--r-control);
+  font-size: var(--text-ui);
+  line-height: 1.5;
+}
+
+.child-card-note {
+  border: 1px solid var(--needs-line);
+  background: var(--needs-bg);
+  color: #63481a;
+}
+
+.child-card-done {
+  border: 1px solid var(--ok-line);
+  background: var(--ok-bg);
+  color: #1d4f3b;
+}
+
+.child-card-footer {
+  display: grid;
+  gap: var(--s2);
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+}
+
+.child-card-footer p {
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+
+.child-card-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+
+.child-card-actions .button {
+  min-height: var(--h-sm);
+  padding: 0 var(--s4);
+}
+
+.empty-state {
+  padding: var(--s6) var(--s5);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  text-align: center;
+}
+
+.empty-state h2 {
+  margin-bottom: var(--s2);
+}
+
+.empty-state p {
+  max-width: 46ch;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: var(--text-ui);
+}
+
+.privacy-note {
+  max-width: 60ch;
+  margin: var(--s5) 0 0;
+  padding-left: var(--s3);
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.55;
+}
+
+/* ------------------------------------------------------------------ badges */
+/* A badge is a word with a dot. Never a colour on its own. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge.ok {
+  border-color: var(--ok-line);
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.badge.warn {
+  border-color: var(--needs-line);
+  background: var(--needs-bg);
+  color: var(--needs);
+}
+
+.badge.danger {
+  border-color: var(--bad-line);
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+
+/* ------------------------------------------------------------------ alerts */
+.alert {
+  position: relative;
+  margin: 0;
+  padding: 11px var(--s4) 11px 34px;
+  border: 1px solid var(--bad-line);
+  border-radius: var(--r-control);
+  background: var(--bad-bg);
+  color: var(--bad);
+  font-size: var(--text-ui);
+  line-height: 1.5;
+}
+
+.alert::before {
+  content: '';
+  position: absolute;
+  top: 17px;
+  left: 15px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.alert.warn {
+  border-color: var(--needs-line);
+  background: var(--needs-bg);
+  color: var(--needs);
+}
+
+.alert.ok {
+  border-color: var(--ok-line);
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.alert h1 {
+  font-size: var(--text-title);
+}
+
+/* ------------------------------------------------------------------ fields */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: var(--text-ui);
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: var(--h-lg);
+  padding: 11px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: 400;
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #94a59c;
+}
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: #b6c6ba;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgb(127 182 161 / 40%);
+}
+
+.field textarea {
+  min-height: 84px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--bad);
+  font-size: var(--text-meta);
+  font-weight: 550;
+  line-height: 1.45;
+}
+
+.field-error::before {
+  content: '!';
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: var(--bad);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.parent-form input[aria-invalid='true'],
+.parent-form textarea[aria-invalid='true'] {
+  border-color: var(--bad);
+  background: #fffbfa;
+}
+
+/* ------------------------------------------------------- form and sections */
+.parent-form {
+  /* Makes this the sticky dock's scroll container, so the dock sits at the
+     bottom of the form rather than following the page into the footer. */
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding-bottom: var(--s1);
+}
+
+.parent-section {
+  overflow: clip;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.parent-section[open] {
+  border-color: var(--line-2);
+}
+
+.parent-section > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 72px;
+  padding: var(--s4) var(--s4);
+  cursor: pointer;
+  list-style: none;
+  transition: background var(--ease);
+}
+
+.parent-section > summary:hover {
+  background: var(--surface-2);
+}
+
+.parent-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A chevron, drawn as one SVG rather than two rotated borders.
+   Two borders meet at a corner, so rotating that corner gives a V with a notch
+   — and `rotate` plus a `translate` in the same transform moved it out of the
+   row it was meant to sit in. One path, one transform, nothing to misalign. */
+.parent-section > summary::after {
+  content: '';
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  width: 12px;
+  height: 12px;
+  background-color: var(--muted);
+  -webkit-mask: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.5 6 8.5 10 4.5' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  mask: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.5 6 8.5 10 4.5' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  transform: rotate(0deg);
+  transition: transform var(--ease);
+}
+
+.parent-section[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.section-heading {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.section-heading strong {
+  color: var(--ink);
+  font-size: var(--text-card);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.section-heading > span {
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.45;
+}
+
+/* New information only: the server rejected something in this section. */
+.section-trouble {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.section-trouble::before {
+  content: ' · ';
+  color: var(--line-2);
+}
+
+.parent-section-body {
+  padding: var(--s1) var(--s4) var(--s5);
+  border-top: 1px solid var(--line);
+}
+
+.section-hint {
+  max-width: 66ch;
+  margin: var(--s3) 0 var(--s4);
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.6;
+}
+
+/* A repeated block of fields: contact 1, adult 2. An inset, not a card. */
+.subcard {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: var(--s3) 0;
+  padding: var(--s3) var(--s4) var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+}
+
+.subcard > h3 {
+  margin-bottom: var(--s1);
+}
+
+.subcard > .field:first-child {
+  margin-top: 0;
+}
+
+.form-section {
+  min-width: 0;
+  margin: var(--s5) 0;
+  padding: 0;
+  border: 0;
+}
+
+.form-section legend {
+  margin-bottom: var(--s1);
+  color: var(--ink);
+  font-size: var(--text-ui);
+  font-weight: 650;
+}
+
+.subsection-title {
+  margin: var(--s5) 0 var(--s1);
+  color: var(--ink);
+  font-size: var(--text-ui);
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.subsection-title:first-child {
+  margin-top: 0;
+}
+
+.parent-form .field {
+  margin: var(--s3) 0;
+}
+
+.parent-form h3 {
+  margin: 0 0 var(--s1);
+}
+
+.add-adult {
+  margin-top: var(--s4);
+  padding: var(--s4);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+}
+
+/* Answer pills: a radio a parent can hit with a glove on. */
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: var(--s3) 0;
+}
+
+.answer-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: var(--text-ui);
+  font-weight: 550;
+  cursor: pointer;
+  transition: background var(--ease), border-color var(--ease);
+}
+
+.answer-option:hover {
+  border-color: #b6c6ba;
+  background: var(--surface-2);
+}
+
+.answer-option:has(input:checked) {
+  border-color: #6f9f8b;
+  background: var(--brand-soft);
+  color: var(--brand);
+  box-shadow: inset 0 0 0 1px #6f9f8b;
+}
+
+.answer-option input,
+.check-field input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+}
+
+.check-field {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-height: 44px;
+  color: var(--ink-2);
+  font-size: var(--text-ui);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.check-field input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+}
+
+/* Consent already on file: a record to read, not a form to fill. */
+.consent-record {
+  margin: var(--s3) 0;
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--ok-line);
+  border-radius: var(--r-control);
+  background: var(--ok-bg);
+}
+
+.consent-record p {
+  margin: 0;
+  color: #1d4f3b;
+  font-size: var(--text-ui);
+}
+
+.consent-record p + p {
+  margin-top: var(--s1);
+}
+
+/* --------------------------------------------------------- the save dock */
+/* The one thing on the page that floats, and the only element with a shadow. */
+.form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  margin: var(--s3) -4px 0;
+  padding: var(--s3) 4px;
+  background: linear-gradient(to top, var(--bg) 58%, rgb(242 245 241 / 0%));
+}
+
+.form-actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s3) var(--s3) var(--s4);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+}
+
+/* The status is a sentence next to the button, not a third alert box. */
+.form-actions-bar [data-testid='form-status'] {
+  display: flex;
+  /* `1 1 240px` was written for a row, where the basis is a *width*. On a phone
+     the bar becomes a column, so the same basis became 240 pixels of empty
+     height — a blank white panel over the form whenever there was nothing to
+     report. The basis is auto and the width is capped instead. */
+  flex: 1 1 auto;
+  max-width: 46ch;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ink-2);
+  font-size: var(--text-ui);
+  line-height: 1.45;
+}
+
+/* An empty status line must not reserve a row of its own. */
+.form-actions-bar [data-testid='form-status']:empty {
+  display: none;
+}
+
+.form-actions-bar [data-testid='form-status'] strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.form-actions-bar [data-testid='form-status'].ok {
+  color: var(--ok);
+}
+
+.form-actions-bar [data-testid='form-status'].danger {
+  color: var(--bad);
+}
+
+.form-actions-bar [data-testid='form-status'].danger strong {
+  color: var(--bad);
+}
+
+.form-actions-bar [data-testid='form-status']:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--r-control);
+}
+
+.save-cluster [data-testid='save-state']:empty {
+  display: none;
+}
+
+.save-cluster {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--s3);
+  margin-left: auto;
+}
+
+.save-cluster p {
+  max-width: 16ch;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.35;
+  text-align: right;
+}
+
+.save-button {
+  min-width: 200px;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------- checklist */
+/* One amber surface per screen: this one. It replaces the second banner that
+   used to sit above the form saying the same thing. */
+.checklist {
+  display: grid;
+  gap: var(--s3);
+  margin: 0 0 var(--s5);
+  padding: var(--s4);
+  border: 1px solid var(--needs-line);
+  border-radius: var(--r-card);
+  background: var(--needs-bg);
+}
+
+.checklist-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s1) var(--s4);
+}
+
+.checklist-head h2 {
+  color: #4a370f;
+  font-size: var(--text-card);
+  font-weight: 650;
+}
+
+.checklist-count {
+  margin-top: 2px;
+  color: #7a5a17;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A plain progress element: it says the same thing as the count above, in a
+   shape the eye can measure without reading. */
+.checklist-bar {
+  width: 100%;
+  height: 6px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: #f0e2c2;
+  appearance: none;
+}
+
+.checklist-bar::-webkit-progress-bar {
+  border-radius: var(--r-pill);
+  background: #f0e2c2;
+}
+
+.checklist-bar::-webkit-progress-value {
+  border-radius: var(--r-pill);
+  background: #9a7320;
+}
+
+.checklist-bar::-moz-progress-bar {
+  border-radius: var(--r-pill);
+  background: #9a7320;
+}
+
+.checklist-items {
+  display: grid;
+  gap: 2px var(--s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 720px) {
+  .checklist-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Each line is the way to fix it: a row you can press that opens the section. */
+.checklist-item {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 40px;
+  padding: 4px var(--s2);
+  border: none;
+  border-radius: var(--r-control);
+  background: transparent;
+  color: #4a370f;
+  font: inherit;
+  font-size: var(--text-ui);
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--ease);
+}
+
+.checklist-item:hover {
+  background: #fdf4e2;
+}
+
+.checklist-item:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.checklist-number {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e7d5ab;
+  border-radius: 50%;
+  background: #fffdf7;
+  color: #7a5a17;
+  font-size: var(--text-meta);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.checklist-label {
+  min-width: 0;
+}
+
+/* A chevron, always on. A row that only says it is a control when hovered is
+   a row that half the users never learn is a control. */
+.checklist-go {
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-top: 1.5px solid #a9822a;
+  border-right: 1.5px solid #a9822a;
+  border-radius: 1px;
+  transform: rotate(45deg);
+  transition: transform var(--ease);
+}
+
+.checklist-item:hover .checklist-go {
+  transform: rotate(45deg) translate(2px, -2px);
+}
+
+.checklist-foot {
+  color: #6b5322;
+  font-size: var(--text-meta);
+}
+
+.profile-complete {
+  margin: 0 0 var(--s5);
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--ok-line);
+  border-radius: var(--r-card);
+  background: var(--ok-bg);
+  color: #1d4f3b;
+  font-size: var(--text-ui);
+  font-weight: 550;
+}
+
+/* ------------------------------------------------------ lesson-day panel */
+.journey {
+  margin: 0 0 var(--s5);
+  padding: var(--s5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.journey-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s2) var(--s3);
+  margin-bottom: var(--s4);
+}
+
+.journey-head-main {
+  min-width: 0;
+}
+
+.journey-grid {
+  display: grid;
+  gap: var(--s3);
+}
+
+@media (min-width: 760px) {
+  .journey-grid {
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.85fr);
+    align-items: start;
+  }
+}
+
+/* ---- the day's two stops -------------------------------------------------
+   A rail with a dot per stop and a line between them. The point is that a
+   parent can see "morning, then afternoon" without reading a word, and can
+   see which half is already done. */
+
+.journey-stages {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: var(--s4) var(--s4) var(--s4) var(--s3);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+  list-style: none;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  column-gap: var(--s3);
+}
+
+.stage + .stage {
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+}
+
+.stage-rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 5px;
+}
+
+/* The dot carries the state: filled when the pass is live, a ring when not,
+   and the team colour once that half of the day has happened. */
+.stage-dot {
+  position: relative;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--line-2);
+  border-radius: 50%;
+  background: var(--surface-2);
+}
+
+.stage-ready .stage-dot {
+  border-color: var(--brand);
+  background: var(--brand);
+}
+
+.stage-done .stage-dot {
+  border-color: var(--ok-line);
+  background: var(--ok-line);
+}
+
+.stage-main {
+  min-width: 0;
+}
+
+.stage-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s1) var(--s3);
+  margin-bottom: var(--s3);
+}
+
+.stage-label {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-ui);
+  font-weight: 650;
+}
+
+.stage-state {
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 600;
+}
+
+.stage-state.ready {
+  color: #1d4f3b;
+}
+
+.stage-state.done {
+  color: var(--brand);
+}
+
+.stage-pass {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s4);
+}
+
+.stage-qr {
+  width: 132px;
+  height: 132px;
+}
+
+.stage-details {
+  display: grid;
+  justify-items: start;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.stage-details .pass-code {
+  margin: 0;
+}
+
+.stage-details .button {
+  margin-top: var(--s1);
+}
+
+.stage-foot {
+  max-width: 52ch;
+  margin: var(--s3) 0 0;
+}
+
+/* On a phone the QR and the digits do not fit side by side without the eight
+   digits breaking across two lines — which is the one thing a code being read
+   out loud must never do. Stack them and give the number the full width. */
+@media (max-width: 560px) {
+  .stage-pass {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s3);
+  }
+
+  .stage-qr {
+    width: 148px;
+    height: 148px;
+  }
+}
+
+/* ---- activity ------------------------------------------------------------ */
+
+.journey-activity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--s4);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+}
+
+.journey-activity-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+
+.journey-count {
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.journey-note {
+  max-width: 46ch;
+  margin: var(--s4) 0 0;
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+}
+
+
+/* ------------------------------------------------------------- history */
+/* Same closed-row shape as a form section: a heading, a one-line reason, and
+   a chevron. The audit trail is worth keeping, not worth reading every visit. */
+.history {
+  overflow: clip;
+  margin: 0 0 var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.history > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 64px;
+  padding: var(--s3) var(--s4);
+  cursor: pointer;
+  list-style: none;
+}
+
+.history > summary::-webkit-details-marker {
+  display: none;
+}
+
+.history > summary:hover {
+  background: var(--surface-2);
+}
+
+.history > summary::after {
+  content: '';
+  grid-column: 2;
+  justify-self: center;
+  width: 12px;
+  height: 12px;
+  background-color: var(--muted);
+  -webkit-mask: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.5 6 8.5 10 4.5' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  mask: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.5 6 8.5 10 4.5' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  transition: transform var(--ease);
+}
+
+.history[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.history-list {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0 var(--s4) var(--s4);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s3);
+  list-style: none;
+}
+
+.history-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s2);
+}
+
+.history-action {
+  color: var(--ink-2);
+  font-size: var(--text-ui);
+}
+
+.history-actor {
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+
+.history-list time {
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+
+.history-list time::before {
+  content: '·';
+  margin-right: 6px;
+  color: var(--line-2);
+}
+
+/* A sentence under a list, not a state the page is stuck in. */
+.pass-hint {
+  max-width: 62ch;
+  margin: var(--s3) 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.pass-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(14px, 3vw, 24px);
+}
+
+.pass-qr {
+  flex: 0 0 auto;
+  width: 172px;
+  height: 172px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: #fff;
+}
+
+.pass-qr.small-qr {
+  width: 132px;
+  height: 132px;
+  padding: 6px;
+}
+
+.pass-qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pass-details {
+  display: grid;
+  justify-items: start;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.pass-details p {
+  margin: 0;
+}
+
+.pass-details .button {
+  min-height: var(--h-sm);
+  margin-top: var(--s2);
+  padding: 0 var(--s4);
+}
+
+/* The one place a monospace face earns its keep: a number read aloud. */
+.pass-code {
+  margin: var(--s1) 0;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(24px, 4.4vw, 30px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+}
+
+.pass-note {
+  max-width: 62ch;
+  margin: var(--s4) 0 0;
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* Parent pass panel: one calm card with a low-noise stop switch. */
+.journey-panel {
+  margin: 0 0 var(--s5);
+  padding: var(--s5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.journey-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s2) var(--s3);
+  margin-bottom: var(--s4);
+}
+
+.pass-card {
+  min-width: 0;
+  padding: var(--s4);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+}
+
+.pass-tabs {
+  display: inline-flex;
+  gap: 3px;
+  margin-bottom: var(--s4);
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface);
+}
+
+.pass-tabs button {
+  min-height: var(--h-sm);
+  padding: 0 var(--s4);
+  border: 0;
+  border-radius: calc(var(--r-control) - 3px);
+  color: var(--ink-2);
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pass-tabs button.selected {
+  color: var(--brand);
+  background: var(--surface-3);
+}
+
+.pass-tabs button:focus-visible {
+  outline: 3px solid #7fb6a1;
+  outline-offset: 2px;
+}
+
+.pass-content {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s4);
+}
+
+.pass-code-wrap {
+  display: grid;
+  justify-items: start;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.pass-code-wrap .pass-code {
+  margin: 0;
+}
+
+.pass-footnote {
+  max-width: 62ch;
+  margin: var(--s4) 0 0;
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+}
+
+.activity-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--s4);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+}
+
+.activity-heading {
+  margin-bottom: var(--s3);
+}
+
+.activity-heading h3 {
+  margin: 0;
+}
+
+.pass-adult {
+  margin: 0 0 var(--s4);
+}
+
+.pass-adult select {
+  min-height: var(--h-lg);
+  padding: 0 var(--s3);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-control);
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+}
+
+.empty-activity {
+  color: var(--muted);
+  font-size: var(--text-ui);
+}
+
+.pass-fullscreen-page {
+  max-width: 680px;
+}
+
+.pass-fullscreen-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--s3);
+  padding: clamp(20px, 5vw, 40px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  text-align: center;
+}
+
+.pass-fullscreen-card h1 {
+  margin: 0;
+}
+
+.pass-fullscreen-card > p {
+  max-width: 50ch;
+}
+
+.pass-fullscreen-name {
+  color: var(--ink-2);
+  font-size: var(--text-title);
+  font-weight: 600;
+}
+
+.pass-fullscreen-card .pass-qr {
+  width: min(72vw, 320px);
+  height: auto;
+  padding: 12px;
+}
+
+.pass-fullscreen-code {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+  width: 100%;
+  padding: var(--s4);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+}
+
+.pass-fullscreen-code .pass-code {
+  font-size: clamp(32px, 9vw, 44px);
+}
+
+.pass-switch {
+  margin-top: var(--s2);
+}
+
+.qr-error {
+  max-width: 26ch;
+  padding: var(--s4);
+  border: 1px solid var(--needs-line);
+  border-radius: var(--r-control);
+  background: var(--needs-bg);
+  color: var(--needs);
+}
+
+@media (max-width: 560px) {
+  .journey-panel { padding: var(--s4); }
+  .pass-content { grid-template-columns: minmax(0, 1fr); justify-items: start; }
+  .pass-qr { width: 148px; height: 148px; }
+}
+
+.copy-code {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s1);
+}
+
+.copy-code .button {
+  min-height: var(--h-sm);
+  padding: 0 var(--s3);
+}
+
+.pass-section-head .button {
+  min-height: var(--h-sm);
+  padding: 0 var(--s4);
+}
+
+.pass-list {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pickup-pass {
+  overflow: clip;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+}
+
+.pickup-pass > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 60px;
+  padding: var(--s3) var(--s4);
+  cursor: pointer;
+  list-style: none;
+}
+
+.pickup-pass > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pickup-pass-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s4);
+  padding: 0 var(--s4) var(--s4);
+  border-top: 1px solid var(--line);
+}
+
+.pickup-pass .pass-note {
+  margin: 0;
+  padding: 0 var(--s4) var(--s4);
+  border-top: 0;
+}
+
+/* ------------------------------------------------------------ activity */
+.activity-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-list li {
+  position: relative;
+  display: flex;
+  gap: var(--s3);
+  padding: 2px 0 var(--s4);
+}
+
+.activity-list li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 0;
+  left: 5px;
+  width: 1px;
+  background: var(--line);
+}
+
+.activity-dot {
+  z-index: 1;
+  flex: 0 0 11px;
+  width: 11px;
+  height: 11px;
+  margin-top: 5px;
+  border: 2px solid var(--surface-2);
+  border-radius: 50%;
+  background: #2f7d63;
+}
+
+.activity-dot.released {
+  background: #4d7590;
+}
+
+.activity-list li > div {
+  display: grid;
+  align-content: start;
+  color: var(--ink-2);
+  font-size: var(--text-ui);
+}
+
+.activity-list li > div strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.activity-list time {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+
+/* ------------------------------------------------------------------ desk */
+.desk-page {
+  max-width: 820px;
+}
+
+.desk-scan {
+  display: grid;
+  gap: var(--s3);
+  margin: 0 0 var(--s4);
+  padding: var(--s5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.scan-input {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s3);
+}
+
+.scan-input .field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.scan-input .field input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+}
+
+.scan-input .button {
+  flex: 0 0 auto;
+}
+
+.scan-result {
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+}
+
+.scan-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s2);
+  margin: 0;
+}
+
+.scan-facts > div {
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface);
+}
+
+/* Label then value — the label is a label, not a category banner. */
+.scan-facts dt {
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 550;
+}
+
+.scan-facts dd {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: var(--text-ui);
+  font-weight: 600;
+}
+
+.desk-safety-note {
+  display: flex;
+  gap: var(--s3);
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--brand-soft);
+  color: var(--ink-2);
+}
+
+.desk-safety-note > span {
+  display: grid;
+  flex: 0 0 24px;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #d6e9de;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.desk-safety-note strong {
+  display: block;
+  color: var(--ink);
+  font-size: var(--text-ui);
+  font-weight: 650;
+}
+
+.desk-safety-note p {
+  max-width: 68ch;
+  margin: var(--s1) 0 0;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.55;
+}
+
+/* ----------------------------------------------------------------- login */
+.page.narrow {
+  padding-top: clamp(32px, 6vw, 56px);
+}
+
+.page.narrow form {
+  margin: var(--s5) 0;
+}
+
+.demo-list {
+  display: grid;
+  gap: var(--s2);
+  margin: var(--s3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 760px) {
+  .demo-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.demo-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.demo-account {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  justify-items: start;
+  gap: 1px;
+  width: 100%;
+  min-height: 0;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-control);
+  text-align: left;
+}
+
+.demo-account:hover {
+  border-color: #9fbfae;
+  background: var(--brand-soft);
+}
+
+.demo-role {
+  color: var(--brand);
+  font-size: var(--text-meta);
+  font-weight: 600;
+}
+
+.demo-name {
+  color: var(--ink);
+  font-size: var(--text-ui);
+  font-weight: 650;
+}
+
+.demo-email {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 400;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------- utilities */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* ------------------------------------------------------------ responsive */
+@media (max-width: 560px) {
+  .brand-suffix,
+  .who-avatar {
+    display: none;
+  }
+
+
+
+  .who [data-testid='signed-in-as'] {
+    max-width: 38vw;
+  }
+
+  .who-role {
+    display: none;
+  }
+
+  .child-card {
+    padding: var(--s4);
+  }
+
+  .child-card-heading {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--s2);
+  }
+
+  .child-card-heading .badge {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: start;
+  }
+
+  .child-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .child-card-actions {
+    flex-direction: column;
+  }
+
+  .child-card-actions .button,
+  .child-card-footer .button {
+    width: 100%;
+  }
+
+  .parent-section > summary {
+    padding: var(--s3) var(--s3);
+    gap: var(--s2) var(--s3);
+    align-items: start;
+  }
+
+  .parent-section > summary::after {
+    grid-row: 1;
+    margin-top: 6px;
+  }
+
+  .parent-section-body {
+    padding: 0 var(--s3) var(--s4);
+  }
+
+  .subcard {
+    padding: var(--s3);
+  }
+
+  .form-actions {
+    padding: var(--s3) 0 var(--s2);
+  }
+
+  .form-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s2);
+    padding: var(--s3);
+  }
+
+  .form-actions-bar [data-testid='form-status'] {
+    max-width: none;
+  }
+
+  .save-cluster {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 6px;
+    margin-left: 0;
+  }
+
+  /* The timestamp under the button is noise on a phone; "Saved." already says
+     what happened, and the meta line at the top carries the last update. */
+  .save-cluster p {
+    display: none;
+  }
+
+  .save-button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .journey,
+  .pass-panel,
+  .pass-section,
+  .desk-scan {
+    padding: var(--s4);
+  }
+
+  .pass-qr {
+    width: 148px;
+    height: 148px;
+  }
+
+  .scan-input {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scan-input .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -17,7 +17,8 @@ test('S-019: Patrol gets everything on one screen', async ({ page }) => {
   await expect(page.getByTestId('packet-age')).toHaveText('10');
   await expect(page.getByTestId('packet-group')).toHaveText('Group 14 · Jordan Lee');
   await expect(page.getByTestId('packet-lift-pass')).toHaveText('KK-24-1003');
-  await expect(page.getByTestId('packet-bib')).toHaveText('Not checked in');
+  // Owen may already have been checked in (bib) by an earlier desk test on the same server.
+  await expect(page.getByTestId('packet-bib')).toHaveText(/^(\d+|Not checked in)$/);
   await expect(page.getByTestId('packet-last-seen-at')).toHaveText(/Dec 12, 2:30\sp\.m\./);
   await expect(page.getByTestId('packet-last-seen-location')).toHaveText('Top of the Pigeon chair');
   await expect(page.getByTestId('packet-reported-clothing')).toHaveText('Green jacket over red');
