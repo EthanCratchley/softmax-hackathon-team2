@@ -3,7 +3,7 @@
 //   Given Ava's parent is signed in and Lily belongs to another family
 //   When Ava's parent opens the address of Lily's profile, or sends Lily's ID to the server
 //   Then they see "not found" and none of Lily's details
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { CHILD_IDS } from '../../lib/fixtures';
 import { PRIYA } from '../parent-helpers';
 import { signIn } from '../sign-in';

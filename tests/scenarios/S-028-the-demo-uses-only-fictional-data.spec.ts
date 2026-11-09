@@ -10,7 +10,7 @@
 // (await expect(page.getByTestId(...)).toBeVisible() / toHaveText(...)).
 // Keep the first line: it tells Piezas which scenario (and which wording of
 // it) this test checks. Never skip the test or fake Piezas.
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 import { signIn } from '../sign-in';
 

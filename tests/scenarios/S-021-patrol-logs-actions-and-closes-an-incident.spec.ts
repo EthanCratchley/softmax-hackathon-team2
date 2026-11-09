@@ -3,7 +3,7 @@
 //   Given Owen has an open incident
 //   When a patroller adds "family contacted", marks him Located and later Closed
 //   Then the timeline shows each step with the patroller and time, and each is in the audit trail
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { closeIncidentsFor, patrolReports, auditActionsFor } from '../safety-helpers';
 
 test('S-021: Patrol logs actions and closes an incident', async ({ page }) => {

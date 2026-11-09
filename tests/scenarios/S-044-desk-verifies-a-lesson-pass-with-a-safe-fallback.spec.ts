@@ -1,6 +1,6 @@
 // piezas-scenario: S-044 v=3138313a5741
 import { existsSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../scenario-test';
 import { demoPassword } from '../../lib/piezas-schema';
 
 if (!process.env.DEMO_ACCOUNT_SECRET && existsSync('.env')) process.loadEnvFile('.env');

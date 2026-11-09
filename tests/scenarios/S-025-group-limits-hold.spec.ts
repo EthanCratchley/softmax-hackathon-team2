@@ -10,7 +10,7 @@
 // (await expect(page.getByTestId(...)).toBeVisible() / toHaveText(...)).
 // Keep the first line: it tells Piezas which scenario (and which wording of
 // it) this test checks. Never skip the test or fake Piezas.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../scenario-test';
 import type { VerifiedUser } from '../../lib/domain/types';
 import { CHILD_IDS, createDemoState, GROUP_IDS, USER_IDS } from '../../lib/fixtures';
 import { createMockServices } from '../../lib/services/mock';

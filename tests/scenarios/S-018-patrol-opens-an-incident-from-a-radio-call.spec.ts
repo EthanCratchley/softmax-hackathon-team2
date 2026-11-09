@@ -3,7 +3,7 @@
 //   Given patrol hears by radio that a child is missing and no incident exists
 //   When a patroller searches the child's name and opens an incident
 //   Then the search showed only name, age and group, the incident now exists, and the action is logged
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { closeIncidentsFor, DAY, auditActionsFor } from '../safety-helpers';
 
 test('S-018: Patrol opens an incident from a radio call', async ({ page }) => {

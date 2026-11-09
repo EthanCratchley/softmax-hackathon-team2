@@ -3,7 +3,7 @@
 //   Given Ava's profile shows "Needs information" on a phone-sized screen
 //   When her parent enters two contacts, the tree-nut allergy, "none" for conditions, the EpiPen and its location, one pickup adult, an address and their consent, then reloads
 //   Then the saved values remain and the status reads "Complete"
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { CHILD_IDS } from '../../lib/fixtures';
 import { fillAvaProfile, openSection, PRIYA, saveProfile } from '../parent-helpers';
 import { signIn } from '../sign-in';

@@ -4,7 +4,7 @@
 //   When the parent opens that child's lesson activity
 //   Then they see the check-in time, release time and authorized pickup adult, with the latest event first and no unrelated child's activity
 //
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 import { signIn } from '../sign-in';
 

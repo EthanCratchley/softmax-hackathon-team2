@@ -3,7 +3,7 @@
 //   Given Ava is in a group assigned to an instructor
 //   When her parent saves the tree-nut allergy and EpiPen location and the instructor refreshes the roster
 //   Then Ava has a prominent alert with the allergy, EpiPen location and what to do, and the profile shows who changed it and when
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { DAY, JORDAN, PRIYA, SAM, signInAs } from '../safety-helpers';
 
 test('S-005: A new allergy reaches the assigned instructor', async ({ page }) => {

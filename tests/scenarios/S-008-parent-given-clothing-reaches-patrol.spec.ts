@@ -3,7 +3,7 @@
 //   Given Owen's parent added "red jacket, blue helmet" for today and his instructor reported "blue jacket, white helmet"
 //   When patrol opens Owen's packet
 //   Then both descriptions appear, each labelled with who gave it
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { CHILD_IDS } from '../../lib/fixtures';
 import { NGOZI, openSection, saveProfile } from '../parent-helpers';
 import { closeIncidentsFor, instructorReports, patrolOpensPacket } from '../safety-helpers';

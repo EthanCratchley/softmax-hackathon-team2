@@ -3,7 +3,7 @@
 //   Given Owen has an open incident
 //   When an instructor, desk staff or a parent requests the packet, or patrol requests one for a child with no incident
 //   Then the request is refused and no details are returned
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { CASEY, closeIncidentsFor, HANA, JORDAN, patrolReports, PRIYA, ROB, signInAs } from '../safety-helpers';
 
 test('S-020: Others cannot open the packet', async ({ page }) => {
