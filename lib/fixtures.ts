@@ -94,7 +94,7 @@ export interface DemoState {
   audit: AuditEvent[];
   noticeTasks: NoticeTask[];
   passes: LessonPass[];
-  passAttempts: { id: string; lessonDate: LessonDate; count: number; lockedUntil: string | null }[];
+  passAttempts: { id: string; lessonDate: LessonDate; staffUserId: string; count: number; lockedUntil: string | null }[];
 }
 
 /** A fresh deep copy of the seed, so mocks and tests never share mutations. */

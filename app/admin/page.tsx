@@ -1,7 +1,15 @@
-import { DEMO_LESSON_DATE } from '@/lib/fixtures';
+import { createDemoState, DEMO_LESSON_DATE } from '@/lib/fixtures';
 import { services } from '@/lib/services';
 import { requireUser } from '@/lib/session';
 import AdminDashboard from './dashboard';
+
+// There is no group-listing service, so the seeded groups and accounts supply
+// only ids and display names for the pickers; the services enforce every change.
+const demo = createDemoState();
+const childOptions = demo.children.map((c) => ({ id: c.id, label: `${c.firstName} ${c.lastName}` }));
+const groupOptions = demo.groups.map((g) => ({ id: g.id, label: `Group ${g.groupNumber} · ${g.skiLevel}` }));
+const instructorOptions = demo.users.filter((u) => u.role === 'instructor').map((u) => ({ id: u.id, label: u.displayName }));
+const staffNames = Object.fromEntries(demo.users.map((u) => [u.id, u.displayName]));
 
 export default async function AdminPage({ searchParams }: {
   searchParams: Promise<{ day?: string | string[] }>;
@@ -10,15 +18,25 @@ export default async function AdminPage({ searchParams }: {
   const params = await searchParams;
   const requestedDay = Array.isArray(params.day) ? params.day[0] : params.day;
   const lessonDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDay ?? '') ? requestedDay! : DEMO_LESSON_DATE;
-  const [completion, operations] = await Promise.all([
+  const [completion, operations, pickups, tasks] = await Promise.all([
     services.getProfileCompletionSummary(user),
     services.getOperationsSnapshot(lessonDate, user),
+    services.listPickups(lessonDate, user),
+    services.getNoticeTasks(user),
   ]);
   return <AdminDashboard
     lessonDate={lessonDate}
     completion={completion.ok ? completion.data : []}
     operations={operations.ok ? operations.data : null}
+    pickups={pickups.ok ? pickups.data : []}
+    tasks={tasks.ok ? tasks.data : []}
     completionError={completion.ok ? undefined : completion.error.message}
     operationsError={operations.ok ? undefined : operations.error.message}
+    pickupsError={pickups.ok ? undefined : pickups.error.message}
+    tasksError={tasks.ok ? undefined : tasks.error.message}
+    childOptions={childOptions}
+    groupOptions={groupOptions}
+    instructorOptions={instructorOptions}
+    staffNames={staffNames}
   />;
 }

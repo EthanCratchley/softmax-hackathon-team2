@@ -29,7 +29,7 @@ export default async function ParentChildPage({ params }: { params: Promise<{ id
     <Link href="/parent" className="back-link">← My Children</Link>
     {!result.ok ? <div className="alert danger" role="alert">{result.error.message}</div> : <>
       <header className="profile-heading"><div className="profile-title-row"><h1>{result.data.child.firstName} {result.data.child.lastName}</h1>
-        <span className={`badge ${result.data.completion.status === 'Complete' ? 'ok' : 'warn'}`}>{result.data.completion.status === 'Complete' ? 'Complete' : 'Needs attention'}</span></div>
+        <span className={`badge ${result.data.completion.status === 'Complete' ? 'ok' : 'warn'}`} data-testid="profile-status">{result.data.completion.status === 'Complete' ? 'Complete' : 'Needs information'}</span></div>
         <p className="small muted updated-line">Updated {new Date(result.data.child.updatedAt).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Vancouver' })}</p>
       </header>
       <ProfileChecklist missing={result.data.completion.missing} />

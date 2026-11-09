@@ -414,4 +414,42 @@ test.describe('regressions from quality scan', () => {
     expect(errCode(await svc.assignInstructorToGroup('grp_nope', USER_IDS.instructorGroup9, admin))).toBe('not_found');
     expect(errCode(await svc.assignInstructorToGroup(GROUP_IDS.group9, USER_IDS.instructorGroup9, as(USER_IDS.instructorGroup9)))).toBe('forbidden');
   });
+
+  test('profile names who last changed the medical details (R-008)', async () => {
+    const parent = as(USER_IDS.parentAva);
+    expect(data(await svc.getChildProfile(CHILD_IDS.ava, parent)).medicalUpdatedByName).toBeNull();
+    data(await svc.updateChildProfile(CHILD_IDS.ava, { allergies: ['Tree nuts'] }, parent));
+    expect(data(await svc.getChildProfile(CHILD_IDS.ava, parent)).medicalUpdatedByName).toBe('Priya Shah');
+  });
+
+  test('packet names the reporter and every patroller on the timeline', async () => {
+    const { id } = data(await svc.reportMissingChild(CHILD_IDS.owen, DAY, { lastSeenAt: '2026-12-12T14:30:00-07:00', lastSeenLocation: 'Pigeon chair', clothingDescription: '', equipmentDescription: '', notes: '' }, as(USER_IDS.instructorGroup14)));
+    data(await svc.updateIncident(id, { kind: 'action', type: 'search', note: 'Checked lift line' }, as(USER_IDS.patrol)));
+    expect(data(await svc.getIncidentPacket(id, as(USER_IDS.patrol))).staffNames).toEqual({ [USER_IDS.instructorGroup14]: 'Jordan Lee', [USER_IDS.patrol]: 'Rob Fournier' });
+  });
+
+  test("Hana lists the day's releases with names and corrections; others cannot", async () => {
+    const log = data(await svc.recordPickup(CHILD_IDS.lily, ADULT_IDS.lilyFather, true, DAY, as(USER_IDS.desk)));
+    data(await svc.addPickupCorrection(log.id, 'Wrong adult tapped', 'Released to Dana Whitfield', as(USER_IDS.admin)));
+    const rows = data(await svc.listPickups(DAY, as(USER_IDS.admin)));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ id: log.id, childName: 'Lily Whitfield', adultNameSnapshot: 'Tom Whitfield', verifiedByName: 'Casey Morgan' });
+    expect(rows[0].corrections.map((c) => c.note)).toEqual(['Released to Dana Whitfield']);
+    expect(data(await svc.listPickups('2026-12-13', as(USER_IDS.admin)))).toEqual([]);
+    for (const id of [USER_IDS.desk, USER_IDS.parentLily, USER_IDS.patrol]) expect(errCode(await svc.listPickups(DAY, as(id))), id).toBe('forbidden');
+  });
+
+  test("denied pickups in the snapshot carry the child's name", async () => {
+    data(await svc.recordDeniedPickup(CHILD_IDS.lily, 'Mark Whitfield', 'Not listed', DAY, as(USER_IDS.desk)));
+    expect(data(await svc.getOperationsSnapshot(DAY, as(USER_IDS.admin))).deniedPickups[0]).toMatchObject({ childName: 'Lily Whitfield', statedAdultName: 'Mark Whitfield' });
+  });
+
+  test('wrong pass codes lock only the desk person who typed them', async () => {
+    const desk = as(USER_IDS.desk);
+    const otherDesk = { ...desk, id: 'usr_desk_second', displayName: 'Second Desk' } as VerifiedUser;
+    state.users.push({ id: otherDesk.id, role: 'desk', displayName: 'Second Desk', email: 'second.desk@example.test' });
+    for (let i = 0; i < 5; i++) await svc.resolveLessonPass('00000000', DAY, desk);
+    expect(errCode(await svc.resolveLessonPass('00000000', DAY, desk))).toBe('blocked');
+    expect(errCode(await svc.resolveLessonPass('00000000', DAY, otherDesk))).toBe('not_found');
+  });
 });

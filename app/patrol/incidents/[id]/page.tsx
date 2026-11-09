@@ -43,7 +43,8 @@ export default async function IncidentPacketPage({ params, searchParams }: { par
       </Shell>
     );
 
-  const { incident: i, child: c, group, alerts, emergencyContacts, parentClothingToday, escalateAt } = packet.data;
+  const { incident: i, child: c, group, alerts, emergencyContacts, parentClothingToday, escalateAt, staffNames } = packet.data;
+  const staff = (id: string) => staffNames[id] ?? 'Staff';
   return (
     <Shell testId="incident-page" eyebrow="Mountain response / Patrol" title="Emergency packet" lead="Everything patrol needs on one screen.">
       <Link href="/patrol" className={s.actionQuiet} data-testid="back-to-patrol">
@@ -93,9 +94,9 @@ export default async function IncidentPacketPage({ params, searchParams }: { par
               <dd data-testid="packet-last-seen-at">{resortTime(i.lastSeenAt)}</dd>
               <dt>Where</dt>
               <dd data-testid="packet-last-seen-location">{i.lastSeenLocation}</dd>
-              <dt>Reported clothing</dt>
+              <dt data-testid="packet-reported-clothing-label">Clothing reported by {staff(i.reportedBy)}</dt>
               <dd data-testid="packet-reported-clothing">{i.clothingDescription || 'Not given'}</dd>
-              <dt>Parent clothing today</dt>
+              <dt data-testid="packet-parent-clothing-label">Clothing today, from parent</dt>
               <dd data-testid="packet-parent-clothing">{parentClothingToday ?? 'Not given'}</dd>
               <dt>Equipment</dt>
               <dd data-testid="packet-equipment">{i.equipmentDescription || 'Not given'}</dd>
@@ -123,11 +124,11 @@ export default async function IncidentPacketPage({ params, searchParams }: { par
         <h2 className={s.sectionTitle}>Timeline</h2>
         <ol className={s.timeline} data-testid="timeline">
           <li data-testid="timeline-reported">
-            {resortTime(i.reportedAt)} · Reported missing
+            {resortTime(i.reportedAt)} · Reported missing · {staff(i.reportedBy)}
           </li>
           {i.actions.map((a) => (
             <li key={a.id} data-testid="timeline-entry" data-type={a.type}>
-              {resortTime(a.occurredAt)} · {ACTION_LABEL[a.type]} · {a.staffUserId === user.id ? user.displayName : 'Other staff'} · {a.note}
+              {resortTime(a.occurredAt)} · {ACTION_LABEL[a.type]} · {staff(a.staffUserId)} · {a.note}
             </li>
           ))}
         </ol>

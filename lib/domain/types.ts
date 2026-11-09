@@ -307,6 +307,8 @@ export interface ChildProfile {
   emergencyContacts: EmergencyContact[];
   authorizedAdults: AuthorizedAdult[];
   consent: Consent | null;
+  /** Display name of whoever last changed the medical details (R-008). */
+  medicalUpdatedByName: string | null;
   /** Parent-given jacket/helmet description per lesson day the child attends. */
   clothing: { lessonDate: LessonDate; description: string | null }[];
   completion: Completion;
@@ -404,6 +406,8 @@ export interface IncidentPacket {
   emergencyContacts: Pick<EmergencyContact, 'name' | 'relationship' | 'phone' | 'priority'>[];
   /** The earlier of lastSeenAt + 60 minutes or 4:00 p.m. that day. */
   escalateAt: Timestamp;
+  /** Display names for the staff ids in incident.actions and reportedBy. */
+  staffNames: Record<Id, string>;
 }
 
 /** Patrol search before an incident exists: identity only. */
@@ -429,7 +433,14 @@ export interface OperationsSnapshot {
   checkedIn: number;
   released: number;
   openIncidents: IncidentListItem[];
-  deniedPickups: Pick<DeniedPickup, 'id' | 'childId' | 'statedAdultName' | 'occurredAt'>[];
+  deniedPickups: (Pick<DeniedPickup, 'id' | 'childId' | 'statedAdultName' | 'occurredAt'> & { childName: string })[];
+}
+
+/** Admin: one release record with the names needed to review it, plus any corrections. */
+export interface PickupRecordView extends PickupLog {
+  childName: string;
+  verifiedByName: string;
+  corrections: PickupCorrection[];
 }
 
 // ---------------------------------------------------------------------------
