@@ -69,6 +69,12 @@ export function createMockServices(
   const incidentsFor = (childId: Id, date: LessonDate) =>
     state.incidents.filter((i) => i.childId === childId && i.lessonDate === date);
 
+  const nameOf = (childId: Id) => {
+    const c = findChild(childId);
+    return c ? `${c.firstName} ${c.lastName}` : 'Unknown child';
+  };
+  const staffName = (id: Id) => state.users.find((u) => u.id === id)?.displayName ?? 'Unknown staff';
+
   const profileOf = (child: Child): ChildProfile => {
     const parts = {
       child,
@@ -80,7 +86,8 @@ export function createMockServices(
     const clothing = state.attendance
       .filter((a) => a.childId === child.id)
       .map((a) => ({ lessonDate: a.lessonDate, description: a.clothingToday }));
-    return structuredClone({ ...parts, clothing, completion: computeCompletion(parts) });
+    const medicalUpdatedByName = parts.medical.updatedBy ? (state.users.find((u) => u.id === parts.medical.updatedBy)?.displayName ?? null) : null;
+    return structuredClone({ ...parts, medicalUpdatedByName, clothing, completion: computeCompletion(parts) });
   };
 
   const deskEntry = (child: Child, date: LessonDate): DeskRosterEntry | null => {
@@ -279,14 +286,14 @@ export function createMockServices(
 
     async resolveLessonPass(rawValue, lessonDate, user) {
       if (!is(user, 'desk')) return deny(user, 'LessonPass', '', 'resolve pass');
-      const attempts = state.passAttempts.find((item) => item.lessonDate === lessonDate);
+      const attempts = state.passAttempts.find((item) => item.lessonDate === lessonDate && item.staffUserId === user.id);
       if (attempts?.lockedUntil && Date.parse(attempts.lockedUntil) > now().getTime()) return fail('blocked', 'Too many incorrect codes. Wait five minutes, then try again.');
       if (attempts?.lockedUntil && Date.parse(attempts.lockedUntil) <= now().getTime()) { attempts.count = 0; attempts.lockedUntil = null; }
       const value = rawValue.trim().replace(/^pss:/i, '');
       if (!value) return fail('invalid', 'Scan a pass or enter its 8-digit code.');
       const matches = state.passes.filter((pass) => pass.lessonDate === lessonDate && (pass.token === value || pass.shortCode === value));
       if (matches.length !== 1) {
-        const row = attempts ?? { id: newId('pat'), lessonDate, count: 0, lockedUntil: null };
+        const row = attempts ?? { id: newId('pat'), lessonDate, staffUserId: user.id, count: 0, lockedUntil: null };
         row.count += 1;
         if (row.count >= 5) row.lockedUntil = new Date(now().getTime() + 5 * 60_000).toISOString();
         if (!attempts) state.passAttempts.push(row);
@@ -521,6 +528,7 @@ export function createMockServices(
           .sort((a, b) => a.priority - b.priority)
           .map(({ name, relationship, phone, priority }) => ({ name, relationship, phone, priority })),
         escalateAt: escalationTime(incident.lastSeenAt, incident.lessonDate),
+        staffNames: Object.fromEntries([incident.reportedBy, ...incident.actions.map((a) => a.staffUserId)].map((id) => [id, staffName(id)])),
       });
     },
 
@@ -571,7 +579,7 @@ export function createMockServices(
         checkedIn: day.filter((a) => a.status !== 'Expected').length,
         released: day.filter((a) => a.status === 'Released').length,
         openIncidents: state.incidents.filter((i) => i.lessonDate === lessonDate && i.status !== 'Closed').map(incidentItem),
-        deniedPickups: state.denials.filter((d) => d.lessonDate === lessonDate).map(({ id, childId, statedAdultName, occurredAt }) => ({ id, childId, statedAdultName, occurredAt })),
+        deniedPickups: state.denials.filter((d) => d.lessonDate === lessonDate).map(({ id, childId, statedAdultName, occurredAt }) => ({ id, childId, statedAdultName, occurredAt, childName: nameOf(childId) })),
       });
     },
 
@@ -609,6 +617,15 @@ export function createMockServices(
       group.instructorUserId = instructorUserId;
       audit(user, 'group_assignment_changed', 'LessonGroup', groupId, `Instructor changed from ${from} to ${instructorUserId}`);
       return ok({ groupId, instructorUserId });
+    },
+
+    async listPickups(lessonDate, user) {
+      if (!is(user, 'admin')) return deny(user, 'PickupLog', lessonDate, 'list pickups');
+      return ok(
+        state.pickups
+          .filter((p) => p.lessonDate === lessonDate)
+          .map((p) => ({ ...structuredClone(p), childName: nameOf(p.childId), verifiedByName: staffName(p.verifiedByUserId), corrections: structuredClone(state.corrections.filter((c) => c.pickupLogId === p.id)) })),
+      );
     },
 
     async addPickupCorrection(pickupLogId, reason, note, user) {
