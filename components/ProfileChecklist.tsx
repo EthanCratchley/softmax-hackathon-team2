@@ -29,7 +29,7 @@ export function ProfileChecklist({ missing }: { missing: MissingField[] }) {
   return <section className="checklist" aria-labelledby="checklist-title" data-testid="profile-progress">
     <div className="checklist-head"><div><h2 id="checklist-title">To Complete This Profile</h2><p className="checklist-count">{done} of {total} complete</p></div>
       <progress className="checklist-bar" value={done} max={total}>{done} of {total}</progress></div>
-    <ol className="checklist-items">{items.map(({ field, section, label }, index) => <li key={field}><button type="button" className="checklist-item" onClick={() => goTo(section)}>
+    <ol className="checklist-items">{items.map(({ field, section, label }, index) => <li key={field} data-testid={`missing-${field}`}><button type="button" className="checklist-item" onClick={() => goTo(section)}>
       <span className="checklist-number" aria-hidden="true">{index + 1}</span><span className="checklist-label">{label}</span><span className="checklist-go" aria-hidden="true" />
     </button></li>)}</ol>
     <p className="checklist-foot">Choose an item to open its section. Save whenever you like.</p>

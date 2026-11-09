@@ -58,3 +58,15 @@ export async function patrolOpensPacket(page: Page, childId: string) {
   await page.locator(`[data-child="${childId}"]`).first().click();
   await expect(page.getByTestId('emergency-packet')).toBeVisible();
 }
+
+/** Patrol takes a radio call: search, open the report form, enter last-seen time and place. */
+export async function patrolReports(page: Page, childId: string, q: string, d: { time: string; location: string }) {
+  await signInAs(page, ROB);
+  await page.goto(`/patrol?day=${DAY}&q=${encodeURIComponent(q)}`);
+  await page.getByTestId(`open-incident-${childId}`).click();
+  await expect(page.getByTestId('missing-report-form')).toBeVisible();
+  await page.getByTestId('last-seen-at').fill(`${DAY}T${d.time}`);
+  await page.getByTestId('lastSeenLocation').fill(d.location);
+  await page.getByTestId('submit-report').click();
+  await expect(page.getByTestId('emergency-packet')).toBeVisible();
+}

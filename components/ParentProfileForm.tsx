@@ -7,7 +7,15 @@ import type { ChildProfile, ChildProfileChanges, Medication } from '@/lib/domain
 type Answer = 'none' | 'items';
 type AdultInput = { id?: string; name: string; relationship: string; phone: string; isActive: boolean };
 type SaveState = { ok: boolean; message: string; fields: Record<string, string> };
-const splitItems = (value: string) => value.split(',').map((part) => part.trim()).filter(Boolean);
+// A blank answer is sent as "not answered" (null), so the rest of the profile still saves and stays incomplete (R-004).
+const splitItems = (value: string) => {
+  const items = value.split(',').map((part) => part.trim()).filter(Boolean);
+  return items.length ? items : null;
+};
+const filledMedications = (list: Medication[]) => {
+  const filled = list.filter((m) => m.name.trim() || m.location.trim()).map((m) => ({ ...m, name: m.name.trim(), location: m.location.trim() }));
+  return filled.length ? filled : null;
+};
 
 export function ParentProfileForm({ profile, lessonDate }: { profile: ChildProfile; lessonDate: string }) {
   const [allergyAnswer, setAllergyAnswer] = useState<Answer>(profile.medical.allergies === 'none' ? 'none' : 'items');
@@ -33,7 +41,7 @@ export function ParentProfileForm({ profile, lessonDate }: { profile: ChildProfi
   const changes = useMemo<ChildProfileChanges>(() => ({
     allergies: allergyAnswer === 'none' ? 'none' : splitItems(allergies),
     conditions: conditionAnswer === 'none' ? 'none' : splitItems(conditions),
-    medications: medicationAnswer === 'none' ? 'none' : medications.filter((m) => m.name.trim() || m.location.trim()).map((m) => ({ ...m, name: m.name.trim(), location: m.location.trim() })),
+    medications: medicationAnswer === 'none' ? 'none' : filledMedications(medications),
     safetyInstructions: instructions,
     // Fully empty rows are skipped so a parent can save one contact now and add the second later.
     emergencyContacts: contacts.filter((c) => c.name.trim() || c.relationship.trim() || c.phone.trim()).map((contact, i) => ({ ...contact, priority: (i + 1) as 1 | 2 })),
@@ -70,38 +78,38 @@ export function ParentProfileForm({ profile, lessonDate }: { profile: ChildProfi
 
     <details className="parent-section" data-testid="section-contacts" open={firstIncomplete === 'contacts' || Boolean(Object.keys(state.fields).some((key) => key.startsWith('emergencyContacts.') || key.startsWith('authorizedAdults.')))}>
       <summary><span className="section-heading"><strong>Contacts and pick-up adults</strong><span>Emergency contacts and authorized adults</span></span></summary>
-      <div className="parent-section-body"><h2 className="subsection-title">Emergency contacts</h2><p className="muted section-hint">Provide two people we can reach. Phone numbers need 10 digits.</p>{contacts.map((contact, i) => <div className="subcard" key={i}><h3>Contact {i + 1}</h3>
+      <div className="parent-section-body"><h2 className="subsection-title">Emergency contacts</h2><p className="muted section-hint">Provide two people we can reach. Phone numbers need 10 digits.</p>{contacts.map((contact, i) => <div className="subcard" key={i} data-testid={`contact-${i + 1}`}><h3>Contact {i + 1}</h3>
       <label className="field">Full name<input value={contact.name} onChange={(e) => setContacts((list) => list.map((c, j) => j === i ? { ...c, name: e.target.value } : c))} autoComplete="name" /></label>{fieldError(`emergencyContacts.${i}.name`)}
       <label className="field">Relationship<input value={contact.relationship} onChange={(e) => setContacts((list) => list.map((c, j) => j === i ? { ...c, relationship: e.target.value } : c))} /></label>{fieldError(`emergencyContacts.${i}.relationship`)}
       <label className="field">Phone<input type="tel" inputMode="tel" autoComplete="tel" value={contact.phone} onChange={(e) => setContacts((list) => list.map((c, j) => j === i ? { ...c, phone: e.target.value } : c))} placeholder="604-555-0101" /></label>{fieldError(`emergencyContacts.${i}.phone`)}</div>)}{fieldError('emergencyContacts')}
-      <h2 className="subsection-title">Authorized pick-up adults</h2><p className="muted section-hint">Only active adults on this list can pick up your child. Staff will check photo ID.</p>{adults.map((adult, i) => <div className="subcard" key={adult.id ?? i}>
+      <h2 className="subsection-title">Authorized pick-up adults</h2><p className="muted section-hint">Only active adults on this list can pick up your child. Staff will check photo ID.</p>{adults.map((adult, i) => <div className="subcard" key={adult.id ?? i} data-testid={`pickup-adult-${adult.id ?? i}`}>
         <h3>{adult.name || `Pick-up adult ${i + 1}`}</h3><label className="field">Full name<input value={adult.name} onChange={(e) => setAdults((list) => list.map((a, j) => j === i ? { ...a, name: e.target.value } : a))} /></label>{fieldError(`authorizedAdults.${i}.name`)}
         <label className="field">Relationship<input value={adult.relationship} onChange={(e) => setAdults((list) => list.map((a, j) => j === i ? { ...a, relationship: e.target.value } : a))} /></label>{fieldError(`authorizedAdults.${i}.relationship`)}
         <label className="field">Phone (optional)<input type="tel" inputMode="tel" value={adult.phone} onChange={(e) => setAdults((list) => list.map((a, j) => j === i ? { ...a, phone: e.target.value } : a))} placeholder="604-555-0101" /></label>{fieldError(`authorizedAdults.${i}.phone`)}
         <label className="check-field"><input type="checkbox" checked={adult.isActive} onChange={(e) => setAdults((list) => list.map((a, j) => j === i ? { ...a, isActive: e.target.checked } : a))} /> Authorized to pick up</label>
       </div>)}
-      <div className="subcard add-adult"><h3>Add a pick-up adult</h3><label className="field">Full name<input value={newAdult.name} onChange={(e) => setNewAdult((a) => ({ ...a, name: e.target.value }))} /></label><label className="field">Relationship<input value={newAdult.relationship} onChange={(e) => setNewAdult((a) => ({ ...a, relationship: e.target.value }))} /></label><label className="field">Phone (optional)<input type="tel" inputMode="tel" value={newAdult.phone} onChange={(e) => setNewAdult((a) => ({ ...a, phone: e.target.value }))} /></label></div>
+      <div className="subcard add-adult" data-testid="new-pickup-adult"><h3>Add a pick-up adult</h3><label className="field">Full name<input value={newAdult.name} onChange={(e) => setNewAdult((a) => ({ ...a, name: e.target.value }))} /></label><label className="field">Relationship<input value={newAdult.relationship} onChange={(e) => setNewAdult((a) => ({ ...a, relationship: e.target.value }))} /></label><label className="field">Phone (optional)<input type="tel" inputMode="tel" value={newAdult.phone} onChange={(e) => setNewAdult((a) => ({ ...a, phone: e.target.value }))} /></label></div>
       </div>
     </details>
 
     <details className="parent-section" data-testid="section-lesson">
       <summary><span className="section-heading"><strong>Lesson-day details</strong><span>Clothing and equipment</span></span><span className="section-optional">Optional</span></summary>
       <div className="parent-section-body"><h2 className="subsection-title">What {profile.child.firstName} is wearing</h2><p className="muted section-hint">For the lesson on {new Date(`${lessonDate}T12:00:00`).toLocaleDateString('en-CA', { dateStyle: 'full', timeZone: 'America/Vancouver' })}.</p>
-      <label className="field">Jacket, helmet, and equipment<textarea rows={2} value={clothingToday} onChange={(e) => setClothingToday(e.target.value)} placeholder="For example: red jacket, blue helmet" /></label>{fieldError('clothingToday')}
+      <label className="field">Jacket, helmet, and equipment<textarea rows={2} data-testid="clothing-today" value={clothingToday} onChange={(e) => setClothingToday(e.target.value)} placeholder="For example: red jacket, blue helmet" /></label>{fieldError('clothingToday')}
       </div>
     </details>
 
     <details className="parent-section" data-testid="section-consent" open={firstIncomplete === 'consent' || Boolean(state.fields.consent || state.fields['consent.typedName'] || state.fields.mailingAddress)}>
       <summary><span className="section-heading"><strong>Address and consent</strong><span>Mailing address and program permissions</span></span></summary>
       <div className="parent-section-body">
-      <label className="field">Mailing address<input value={mailingAddress} onChange={(e) => setMailingAddress(e.target.value)} autoComplete="street-address" /></label>{fieldError('mailingAddress')}<p className="small muted section-hint">Used for required follow-up notices. Only authorized administrators can see it.</p>
-      {profile.consent ? <div className="consent-record" role="status"><p className="small muted">Consent recorded on {new Date(profile.consent.consentedAt).toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' })}.</p><p className="small muted">Photo consent: {profile.consent.photoConsent ? 'Granted' : 'Not granted'}.</p></div> : <label className="check-field"><input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} /> I consent to Kestrel Kids using this information for child safety and program operations.</label>}{fieldError('consent')}
-      {consentGiven && !profile.consent && <><label className="field">Type your full name<input value={typedName} onChange={(e) => setTypedName(e.target.value)} autoComplete="name" /></label>{fieldError('consent.typedName')}<label className="check-field"><input type="checkbox" checked={photoConsent} onChange={(e) => setPhotoConsent(e.target.checked)} /> I allow Kestrel Kids to use photos of my child</label></>}
+      <label className="field">Mailing address<input data-testid="mailing-address" value={mailingAddress} onChange={(e) => setMailingAddress(e.target.value)} autoComplete="street-address" /></label>{fieldError('mailingAddress')}<p className="small muted section-hint">Used for required follow-up notices. Only authorized administrators can see it.</p>
+      {profile.consent ? <div className="consent-record" role="status" data-testid="consent-record"><p className="small muted">Consent recorded on {new Date(profile.consent.consentedAt).toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' })}.</p><p className="small muted">Photo consent: {profile.consent.photoConsent ? 'Granted' : 'Not granted'}.</p></div> : <label className="check-field"><input type="checkbox" data-testid="consent-given" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} /> I consent to Kestrel Kids using this information for child safety and program operations.</label>}{fieldError('consent')}
+      {consentGiven && !profile.consent && <><label className="field">Type your full name<input data-testid="consent-name" value={typedName} onChange={(e) => setTypedName(e.target.value)} autoComplete="name" /></label>{fieldError('consent.typedName')}<label className="check-field"><input type="checkbox" checked={photoConsent} onChange={(e) => setPhotoConsent(e.target.checked)} /> I allow Kestrel Kids to use photos of my child</label></>}
       </div>
     </details>
     <input type="hidden" name="profile" value={JSON.stringify(changes)} />
     {state.message && !state.ok && <div className="alert danger" role="alert" data-testid="save-error">{state.message}</div>}
-    {state.ok && <div className="alert ok" role="status">{state.message}</div>}
+    {state.ok && <div className="alert ok" role="status" data-testid="save-ok">{state.message}</div>}
     <div className="form-actions"><button className="button primary save-button" type="submit" disabled={pending} data-testid="save-profile">{pending ? 'Saving…' : 'Save changes'}</button></div>
   </form>;
 }

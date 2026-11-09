@@ -2,6 +2,7 @@
 import { redirect } from 'next/navigation';
 import type { FormState } from '@/components/safety/ActionForm';
 import { lessonDay } from '@/components/safety/time';
+import { lastSeenFromForm } from '@/components/safety/last-seen';
 import type { IncidentActionType, IncidentStatus } from '@/lib/domain/types';
 import type { ServiceError } from '@/lib/services';
 import { services } from '@/lib/services';
@@ -12,16 +13,11 @@ const STATUSES: readonly IncidentStatus[] = ['Located', 'Closed'];
 
 const failed = (error: ServiceError): FormState => ({ error: error.code === 'not_found' ? 'Not found' : error.message, fields: error.fields });
 
-/** A radio call: open an incident with what is known now; patrol fills in the rest on the packet. */
-export async function openIncidentAction(childId: string, rawDay: string): Promise<FormState> {
+/** A radio call: patrol enters the real last-seen time and place, then works from the packet. */
+export async function patrolReportMissingAction(childId: string, rawDay: string, _: FormState, form: FormData): Promise<FormState> {
   const user = await requireUser('patrol');
   const day = lessonDay(rawDay);
-  const result = await services.reportMissingChild(
-    childId,
-    day,
-    { lastSeenAt: new Date().toISOString(), lastSeenLocation: 'Reported by radio — update', clothingDescription: '', equipmentDescription: '', notes: '' },
-    user,
-  );
+  const result = await services.reportMissingChild(childId, day, lastSeenFromForm(form), user);
   if (result.ok) redirect(`/patrol/incidents/${result.data.id}`);
   if (result.error.code === 'blocked') {
     // Already reported (e.g. by the instructor): go straight to that packet.

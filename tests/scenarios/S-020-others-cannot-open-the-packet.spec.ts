@@ -4,13 +4,11 @@
 //   When an instructor, desk staff or a parent requests the packet, or patrol requests one for a child with no incident
 //   Then the request is refused and no details are returned
 import { expect, test } from '@playwright/test';
-import { CASEY, closeIncidentsFor, DAY, HANA, JORDAN, PRIYA, ROB, signInAs } from '../safety-helpers';
+import { CASEY, closeIncidentsFor, HANA, JORDAN, patrolReports, PRIYA, ROB, signInAs } from '../safety-helpers';
 
 test('S-020: Others cannot open the packet', async ({ page }) => {
   await closeIncidentsFor(page, 'chd_owen');
-  await page.goto(`/patrol?day=${DAY}&q=Owen`);
-  await page.getByTestId('open-incident-chd_owen').click();
-  await expect(page.getByTestId('emergency-packet')).toBeVisible();
+  await patrolReports(page, 'chd_owen', 'Owen', { time: '14:30', location: 'Top of the Pigeon chair' });
   const packetUrl = new URL(page.url()).pathname;
 
   for (const email of [JORDAN, CASEY, PRIYA, HANA]) {

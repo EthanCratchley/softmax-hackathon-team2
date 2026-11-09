@@ -1,11 +1,9 @@
 import Link from 'next/link';
-import { ActionForm } from '@/components/safety/ActionForm';
 import { Shell } from '@/components/safety/Shell';
 import { lessonDay, resortTime } from '@/components/safety/time';
 import s from '@/components/safety/workspace.module.css';
 import { services } from '@/lib/services';
 import { requireUser } from '@/lib/session';
-import { openIncidentAction } from './actions';
 
 export default async function PatrolPage({ searchParams }: { searchParams: Promise<{ day?: string; q?: string }> }) {
   const user = await requireUser('patrol');
@@ -78,11 +76,13 @@ export default async function PatrolPage({ searchParams }: { searchParams: Promi
               <p>
                 Age {c.age} · {c.groupNumber === null ? 'No group' : `Group ${c.groupNumber}`}
               </p>
-              <ActionForm action={openIncidentAction.bind(null, c.childId, day)} testId={`open-incident-form-${c.childId}`}>
-                <button type="submit" className={`${s.action} ${s.submitDanger}`} data-testid={`open-incident-${c.childId}`}>
-                  Open incident
-                </button>
-              </ActionForm>
+              <Link
+                href={`/patrol/report-missing/${encodeURIComponent(c.childId)}?day=${day}&q=${encodeURIComponent(q)}`}
+                className={`${s.action} ${s.submitDanger}`}
+                data-testid={`open-incident-${c.childId}`}
+              >
+                Open incident
+              </Link>
             </article>
           ))}
         </div>
