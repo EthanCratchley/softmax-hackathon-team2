@@ -34,6 +34,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:frontend": "playwright test tests/frontend.spec.ts",
+    "test:scenarios": "node scripts/run-scenario-tests.mjs",
     "seed": "tsx --env-file=.env scripts/seed.ts",
     "seed:live": "SEED_TARGET=live tsx --env-file=.env scripts/seed.ts",
     "demo:accounts": "tsx --env-file=.env scripts/demo-accounts.ts",

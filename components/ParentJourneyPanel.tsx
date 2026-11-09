@@ -49,9 +49,10 @@ export function ParentJourneyPanel({ childId, childName, lessonDate, adults, dro
           <select value={selectedAdult?.id ?? ''} onChange={(event) => setAdultId(event.target.value)}>{activeAdults.map((adult) => <option key={adult.id} value={adult.id}>{adult.name} · {adult.relationship}</option>)}</select>
         </label>}
         {purpose === 'pickup' && activeAdults.length === 0 && <p className="small muted">Add an authorized adult in Contacts to create a pick-up pass.</p>}
-        {pass ? <div className="pass-content">
-          <PassQRCode dataUrl={purpose === 'dropoff' ? dropoffQr : (pass.adultId ? pickupQrByAdultId[pass.adultId] : null) ?? null} label={`${purpose} QR pass for ${childName}`} size={176} />
+        {pass ? <div className="pass-content" data-testid="pass-content">
+          <PassQRCode dataUrl={purpose === 'dropoff' ? dropoffQr : (pass.adultId ? pickupQrByAdultId[pass.adultId] : null) ?? null} label={`${purpose} QR pass for ${childName}${purpose === 'pickup' && selectedAdult ? ` · ${selectedAdult.name}` : ''}`} size={176} />
           <div className="pass-code-wrap"><span className="small muted">Or enter this 8-digit code</span><strong className="pass-code" data-testid={`${purpose}-pass-code`}>{pass.shortCode.slice(0, 4)} {pass.shortCode.slice(4)}</strong>
+            {purpose === 'pickup' && selectedAdult && <span className="small" data-testid="pickup-pass-adult">Pick-up pass for {selectedAdult.name}</span>}
             <button className="button" type="button" onClick={copyCode}>{copied ? 'Copied' : 'Copy code'}</button>
             <Link className="button pass-fullscreen-link" href={`/parent/children/${encodeURIComponent(childId)}/pass?purpose=${purpose}${purpose === 'pickup' && selectedAdult ? `&adultId=${encodeURIComponent(selectedAdult.id)}` : ''}`}>Open full-screen pass</Link>
             <span className="small muted">Valid until {new Date(pass.expiresAt).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Vancouver' })}</span>
@@ -60,7 +61,7 @@ export function ParentJourneyPanel({ childId, childName, lessonDate, adults, dro
         <p className="small muted pass-footnote">Staff match the adult against your authorized list and check photo ID. A code alone never releases {childName}.</p>
       </div>
       <div className="activity-card"><div className="activity-heading"><h3>Recent Activity</h3></div>
-        {activity.length ? <ol className="activity-list">{activity.map((event) => <li key={event.id}><span className={`activity-dot ${event.kind}`} aria-hidden="true" /><div><strong>{event.kind === 'checked_in' ? 'Dropped off' : 'Picked up'}</strong>{event.adultName && <span> by {event.adultName}</span>}<time dateTime={event.at}>{new Date(event.at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Vancouver' })}</time></div></li>)}</ol> : <p className="empty-activity">No drop-off or pick-up activity yet.</p>}
+        {activity.length ? <ol className="activity-list" data-testid="activity-list">{activity.map((event) => <li key={event.id}><span className={`activity-dot ${event.kind}`} aria-hidden="true" /><div><strong>{event.kind === 'checked_in' ? 'Dropped off' : 'Picked up'}</strong>{event.adultName && <span> by {event.adultName}</span>}<time dateTime={event.at}>{new Date(event.at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Vancouver' })}</time></div></li>)}</ol> : <p className="empty-activity">No drop-off or pick-up activity yet.</p>}
         <p className="small muted">History is from the desk’s saved attendance and pickup records.</p>
       </div>
     </div>

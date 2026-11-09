@@ -28,6 +28,14 @@ const piezas = new Piezas({ apiKey, apiBaseUrl: process.env.PIEZAS_API_URL });
 
 /** Creates the sign-in account if needed, switches it on, and returns its users-service id. */
 async function ensureUser(email: string, password: string): Promise<string> {
+  // Piezas has no operator set-password endpoint. In the isolated test copy,
+  // recreate each fictional demo account so repeated runs cannot inherit a
+  // stale password or a lockout from an earlier browser run. Live accounts
+  // are never removed or rewritten this way.
+  if (!live) {
+    const existing = (await piezas.users.listUsers({ email })).users.find((u) => u.email === email);
+    if (existing) await piezas.users.deleteUser(existing.id);
+  }
   await piezas.users.signUp({ email, password }).catch((error: unknown) => {
     if (error instanceof PiezasError && error.code === 'conflict') return;
     throw error;

@@ -12,7 +12,10 @@ const port = Number(process.env.PIEZAS_TEST_PORT || 3100);
 export default defineConfig({
   testDir: './tests',
   outputDir: './.piezas/test-results/raw',
-  fullyParallel: true,
+  // Scenario checks use one shared, seeded Piezas test copy; pass redemption
+  // and attendance updates are intentionally single-use and must not race.
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: true,
   retries: 1,
   reporter: 'list',

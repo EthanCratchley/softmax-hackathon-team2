@@ -1,5 +1,51 @@
 {
   "version": 1,
-  "scenarios": {},
+  "scenarios": {
+    "S-043": {
+      "checks": [
+        "expect(page.getByTestId('current-user')).toBeVisible()",
+        "expect(dropoffCode).toHaveText(/^\\d{4}\\d{4}$/)",
+        "expect(page.getByAltText('dropoff QR pass for Ava')).toBeVisible()",
+        "expect(page.getByTestId('pass-content').getByText(/Valid until/)).toBeVisible()",
+        "expect(page.getByTestId('dropoff-pass-code')).toHaveText(savedDropoffCode)",
+        "expect(page.getByAltText(/pickup QR pass for Ava/)).toBeVisible()",
+        "expect(page.getByTestId('pickup-pass-code')).toHaveText(/^\\d{4}\\d{4}$/)",
+        "expect(page.getByLabel('Authorized adult')).toHaveValue('adl_ava_priya')",
+        "expect(page.getByTestId('pickup-pass-adult')).toContainText('Priya Shah')",
+        "expect(page.getByTestId('pass-fullscreen-page')).toContainText('Ava Shah · Priya Shah')",
+        "expect(page.getByTestId('fullscreen-pass-code')).toHaveText(pickupCode)",
+        "expect(page.getByTestId('pass-fullscreen-page').getByText(/Valid until/)).toBeVisible()",
+        "expect(page.getByTestId('pass-fullscreen-page').getByText(/photo ID/)).toBeVisible()",
+        "expect(page.evaluate(()=> document.documentElement.scrollWidth <= innerWidth)).toBe(true)"
+      ],
+      "scenarioFingerprint": "5663ad0a4ab7",
+      "files": [
+        "tests/scenarios/S-043-parent-can-show-scannable-drop-off-and-pickup-passes.spec.ts"
+      ],
+      "recordedAt": "2026-11-09T03:01:30.362Z"
+    },
+    "S-044": {
+      "checks": [
+        "expect(page.getByTestId('current-user')).toBeVisible()",
+        "expect(page).toHaveURL(/\\/login$/)",
+        "expect(page.getByTestId('scan-result')).toContainText('Ava Shah · Drop-off')",
+        "expect(page.getByTestId('desk-notice')).toHaveText('Drop-off recorded.')",
+        "expect(page.getByTestId('scan-result')).toContainText('Ava Shah · Pick-up · Priya Shah')",
+        "expect(page.getByTestId('pass-authorized-adult')).toContainText('Priya Shah')",
+        "expect(page.getByTestId('pass-authorized-adult')).toContainText('active list')",
+        "expect(redeem).toBeDisabled()",
+        "expect(redeem).toBeEnabled()",
+        "expect(page.getByTestId('desk-notice')).toHaveText('Pick-up recorded for Priya Shah.')",
+        "expect(page.getByTestId('journey-panel')).toContainText('Picked up')",
+        "expect(page.getByTestId('activity-list').getByText('Dropped off')).toBeVisible()",
+        "expect(page.getByTestId('activity-list').getByText('Picked up')).toBeVisible()"
+      ],
+      "scenarioFingerprint": "3138313a5741",
+      "files": [
+        "tests/scenarios/S-044-desk-verifies-a-lesson-pass-with-a-safe-fallback.spec.ts"
+      ],
+      "recordedAt": "2026-11-09T03:41:28.753Z"
+    }
+  },
   "history": []
 }

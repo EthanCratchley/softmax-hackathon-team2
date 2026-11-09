@@ -1,11 +1,15 @@
 {
   "version": 2,
-  "ranAt": "2026-11-09T02:06:23.356Z",
-  "validUntil": "2026-11-10T02:06:23.356Z",
-  "sourceFingerprint": "ad2f70352047fab7f52fb72833e8b461c64086ff99078afeeed2dae33fac488b",
+  "ranAt": "2026-11-09T03:41:28.753Z",
+  "validUntil": "2026-11-10T03:41:28.753Z",
+  "sourceFingerprint": "c5037c0b421a8e552450a65f71dc86939b1bf289c6fa58d908cf0bf1a437a86b",
   "specFingerprint": "941929424514c3c5c8634384a0727421399ea7e588a2798588a2fb10e3ff2957",
   "passing": false,
-  "rounds": 1,
+  "rounds": 9,
+  "progress": {
+    "written": 0,
+    "fixed": 1
+  },
   "scenarios": [
     {
       "id": "S-001",
@@ -263,23 +267,21 @@
     {
       "id": "S-043",
       "title": "A parent can show scannable drop-off and pickup passes",
-      "status": "failed",
-      "fp": "66eaf54bf33ee7011c56bdfa",
-      "plain": "The app did not open, so “A parent can show scannable drop-off and pickup passes” could not be tried."
+      "status": "passed",
+      "fp": "5c9d45becf385440420cb589"
     },
     {
       "id": "S-044",
       "title": "Desk verifies a lesson pass with a safe fallback",
-      "status": "failed",
-      "fp": "4dd07235c40c3cf49cde6a68",
-      "plain": "The app did not open, so “Desk verifies a lesson pass with a safe fallback” could not be tried."
+      "status": "passed",
+      "fp": "7529b591030a7d777e481ed2"
     }
   ],
-  "passed": 0,
-  "failed": 43,
+  "passed": 2,
+  "failed": 41,
   "counts": {
-    "passed": 0,
-    "failed": 2,
+    "passed": 2,
+    "failed": 0,
     "notWritten": 41,
     "needsHelp": 1,
     "skipped": 0,
