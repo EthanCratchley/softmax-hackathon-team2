@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { demoPassword } from '../lib/piezas-schema';
 import { CHILD_IDS, DEMO_LESSON_DATE } from '../lib/fixtures';
 
-if (!process.env.DEMO_ACCOUNT_SECRET && existsSync('.env.local')) process.loadEnvFile('.env.local');
+for (const file of ['.env.local', '.env']) if (!process.env.DEMO_ACCOUNT_SECRET && existsSync(file)) process.loadEnvFile(file);
 
 async function signInDesk(page: import('@playwright/test').Page) {
   const secret = process.env.DEMO_ACCOUNT_SECRET;

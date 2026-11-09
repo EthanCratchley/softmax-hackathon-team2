@@ -9,7 +9,7 @@ import styles from '../../roster.module.css';
 
 const statusLabels = { Expected: 'Expected', CheckedIn: 'Checked in', Released: 'Released' } as const;
 const timestamp = (value: string) => new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Vancouver' }).format(new Date(value)) + ' Pacific';
-type PickupPanelView = Pick<DeskPickupView, 'authorizedAdults'> & { entry: DeskRosterEntry; medicationHeld: boolean };
+type PickupPanelView = Pick<DeskPickupView, 'authorizedAdults' | 'deskHeldMedications'> & { entry: DeskRosterEntry };
 
 export default function PickupPanel({ childId, day, view, error }: { childId: string; day: string; view: PickupPanelView | null; error?: string }) {
   const router = useRouter();
@@ -61,7 +61,7 @@ export default function PickupPanel({ childId, day, view, error }: { childId: st
     {error && <p className={styles.blocked} role="alert" data-testid="pickup-load-error">Could not load pickup details: {error}</p>}
     {message && <p className={messageError ? styles.blocked : styles.notice} role={messageError ? 'alert' : 'status'} data-testid="pickup-action-message">{message}</p>}
     {entry?.needsInformation && <p className={styles.warning}>Needs information · Ask parent to update profile.</p>}
-    {view?.medicationHeld && <p className={styles.notice} data-testid="medication-held-indicator">Medication held at the desk</p>}
+    {view?.deskHeldMedications.map(line => <p className={styles.notice} data-testid="medication-held-indicator" key={line}>{line}</p>)}
     {entry && <section className={styles.panel} aria-label="Check-in history" data-testid="check-in-history"><h2>Check-in history</h2>{entry.checkedInAt ? <dl className={styles.record}><dt>Checked in at</dt><dd><time data-testid="pickup-check-in-time" dateTime={entry.checkedInAt}>{timestamp(entry.checkedInAt)}</time></dd>{entry.bibNumber && <><dt>Bib number</dt><dd data-testid="pickup-check-in-bib">{entry.bibNumber}</dd></>}</dl> : <p data-testid="no-check-in-history">No check-in recorded for this lesson.</p>}</section>}
     {entry?.pickup.kind === 'OpenIncident' && <p className={styles.blocked} role="status" data-testid="release-blocked">Release blocked: Call patrol. A missing-child incident is open.</p>}
     {entry?.pickup.kind === 'IncidentToday' && <p className={styles.notice} data-testid="incident-located">An incident happened today. Refer family questions to Hana.</p>}

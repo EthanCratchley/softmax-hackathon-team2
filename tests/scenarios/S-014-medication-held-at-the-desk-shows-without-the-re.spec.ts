@@ -9,9 +9,9 @@ import { expect, test } from '@playwright/test';
 import { demoPassword } from '../../lib/piezas-schema';
 import { CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
 
-if (!process.env.DEMO_ACCOUNT_SECRET && existsSync('.env.local')) process.loadEnvFile('.env.local');
+for (const file of ['.env.local', '.env']) if (!process.env.DEMO_ACCOUNT_SECRET && existsSync(file)) process.loadEnvFile(file);
 
-test('S-014: the desk shows medication-held status without medication or condition values', async ({ page }) => {
+test('S-014: the desk sees which medication it holds, but not the condition', async ({ page }) => {
   const secret = process.env.DEMO_ACCOUNT_SECRET;
   expect(secret, 'DEMO_ACCOUNT_SECRET must be configured for the test copy').toBeTruthy();
   const email = 'casey.morgan@example.test';
@@ -21,6 +21,6 @@ test('S-014: the desk shows medication-held status without medication or conditi
   await page.getByTestId('login-submit').click();
   await expect(page).toHaveURL('/');
   await page.goto(`/desk/children/${CHILD_IDS.noor}?day=${DEMO_LESSON_DATE}`);
-  await expect(page.getByTestId('medication-held-indicator')).toBeVisible();
-  await expect(page.getByTestId('pickup-page')).not.toContainText(/Glucose gel|Type 1 diabetes/i);
+  await expect(page.getByTestId('medication-held-indicator')).toHaveText('Holds Glucose gel for this child');
+  await expect(page.getByTestId('pickup-page')).not.toContainText(/diabetes|shaky or pale/i);
 });

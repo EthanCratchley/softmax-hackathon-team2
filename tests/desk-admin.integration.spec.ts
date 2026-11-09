@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { demoPassword } from '../lib/piezas-schema';
 import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE } from '../lib/fixtures';
 
-if (!process.env.DEMO_ACCOUNT_SECRET && existsSync('.env.local')) process.loadEnvFile('.env.local');
+for (const file of ['.env.local', '.env']) if (!process.env.DEMO_ACCOUNT_SECRET && existsSync(file)) process.loadEnvFile(file);
 test.describe.configure({ mode: 'serial' });
 
 async function signIn(page: import('@playwright/test').Page, email: string) {

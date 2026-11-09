@@ -18,7 +18,7 @@ export default async function PickupPage({ params, searchParams }: {
   const view = result.ok ? {
     entry: result.data.entry,
     authorizedAdults: result.data.authorizedAdults,
-    medicationHeld: result.data.deskHeldMedications.length > 0,
+    deskHeldMedications: result.data.deskHeldMedications,
   } : null;
   return <PickupPanel childId={id} day={lessonDate} view={view} error={result.ok ? undefined : result.error.message} />;
 }
