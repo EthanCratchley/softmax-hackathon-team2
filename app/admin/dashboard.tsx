@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { CompletionSummaryRow, NoticeTask, OperationsSnapshot, PickupRecordView } from '@/lib/domain/types';
+import type { CompletionSummaryRow, GroupOverview, NoticeTask, OperationsSnapshot, PickupRecordView } from '@/lib/domain/types';
 import { CorrectionForm, GroupForms, NoticeDoneForm } from './admin-forms';
 import { lessonDays } from '@/lib/desk/fixtures';
 import desk from '../desk/roster.module.css';
@@ -22,12 +22,14 @@ const timeLabel = (at: string) => new Intl.DateTimeFormat('en-CA', { dateStyle: 
 
 type Option = { id: string; label: string };
 
-export default function AdminDashboard({ lessonDate, completion, operations, pickups, tasks, completionError, operationsError, pickupsError, tasksError, childOptions, groupOptions, instructorOptions, staffNames }: {
+export default function AdminDashboard({ lessonDate, completion, operations, pickups, tasks, groups, groupsError, completionError, operationsError, pickupsError, tasksError, childOptions, groupOptions, instructorOptions, staffNames }: {
   lessonDate: string;
   completion: CompletionSummaryRow[];
   operations: OperationsSnapshot | null;
   pickups: PickupRecordView[];
   tasks: NoticeTask[];
+  groups: GroupOverview[];
+  groupsError?: string;
   completionError?: string;
   operationsError?: string;
   pickupsError?: string;
@@ -81,7 +83,9 @@ export default function AdminDashboard({ lessonDate, completion, operations, pic
       </li>)}</ul>}
     </section>
 
-    <section className={desk.panel} aria-label="Group assignments"><h2>Group assignments</h2><p>Groups hold at most six children. Current members appear on each instructor’s roster.</p>
+    <section className={desk.panel} aria-label="Group assignments"><h2>Group assignments</h2><p>Groups hold at most six children.</p>
+      {groupsError && <p role="alert" className={desk.blocked} data-testid="groups-error">Could not load groups: {groupsError}</p>}
+      <ul className={styles.list} data-testid="group-overview">{groups.map(g => <li key={g.groupId} data-testid={`group-overview-${g.groupId}`}><strong>Group {g.groupNumber} · {g.skiLevel}</strong><p data-testid={`group-instructor-${g.groupId}`}>Instructor: {g.instructorName}</p><p data-testid={`group-count-${g.groupId}`}>{g.children.length} of {g.capacity} places</p><p data-testid={`group-children-${g.groupId}`}>{g.children.length ? g.children.map(c => `${c.firstName} ${c.lastName}`).join(', ') : 'No children'}</p></li>)}</ul>
       <GroupForms kids={childOptions} groups={groupOptions} instructors={instructorOptions} />
     </section>
 

@@ -18,11 +18,12 @@ export default async function AdminPage({ searchParams }: {
   const params = await searchParams;
   const requestedDay = Array.isArray(params.day) ? params.day[0] : params.day;
   const lessonDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDay ?? '') ? requestedDay! : DEMO_LESSON_DATE;
-  const [completion, operations, pickups, tasks] = await Promise.all([
+  const [completion, operations, pickups, tasks, groups] = await Promise.all([
     services.getProfileCompletionSummary(user),
     services.getOperationsSnapshot(lessonDate, user),
     services.listPickups(lessonDate, user),
     services.getNoticeTasks(user),
+    services.listGroups(user),
   ]);
   return <AdminDashboard
     lessonDate={lessonDate}
@@ -30,6 +31,8 @@ export default async function AdminPage({ searchParams }: {
     operations={operations.ok ? operations.data : null}
     pickups={pickups.ok ? pickups.data : []}
     tasks={tasks.ok ? tasks.data : []}
+    groups={groups.ok ? groups.data : []}
+    groupsError={groups.ok ? undefined : groups.error.message}
     completionError={completion.ok ? undefined : completion.error.message}
     operationsError={operations.ok ? undefined : operations.error.message}
     pickupsError={pickups.ok ? undefined : pickups.error.message}

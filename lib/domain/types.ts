@@ -260,6 +260,20 @@ export interface PassLookupView {
   redeemedAt: Timestamp | null;
   canRedeem: boolean;
   blockedReason: string | null;
+  /** Profile is incomplete; shown as a flag only, never with medical details (R-015). */
+  needsInformation: boolean;
+}
+
+/** Admin: who is in each group now (no medical data). */
+export interface GroupOverview {
+  groupId: Id;
+  groupNumber: number;
+  day: LessonDate;
+  skiLevel: SkiLevel;
+  instructorUserId: Id;
+  instructorName: string;
+  children: { childId: Id; firstName: string; lastName: string }[];
+  capacity: number;
 }
 
 export interface ParentActivityEvent {

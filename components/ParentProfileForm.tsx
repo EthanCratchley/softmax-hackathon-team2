@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
 import { saveParentProfile } from '@/app/parent/actions';
 import type { ChildProfile, ChildProfileChanges, Medication } from '@/lib/domain/types';
 
@@ -37,6 +37,17 @@ export function ParentProfileForm({ profile, lessonDate }: { profile: ChildProfi
   const [consentGiven, setConsentGiven] = useState(Boolean(profile.consent));
   const [clothingToday, setClothingToday] = useState(profile.clothing.find((item) => item.lessonDate === lessonDate)?.description ?? '');
   const [state, action, pending] = useActionState<SaveState, FormData>(saveParentProfile.bind(null, profile.child.id), { ok: false, message: '', fields: {} });
+
+  // After a successful save, the adult just added joins the list and the "new adult" fields clear,
+  // so saving again cannot add the same person twice.
+  const handled = useRef(state);
+  useEffect(() => {
+    if (handled.current === state || !state.ok) return;
+    handled.current = state;
+    if (newAdult.name.trim()) setAdults((list) => [...list, newAdult]);
+    setNewAdult({ name: '', relationship: '', phone: '', isActive: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per completed save
+  }, [state]);
 
   const changes = useMemo<ChildProfileChanges>(() => ({
     allergies: allergyAnswer === 'none' ? 'none' : splitItems(allergies),

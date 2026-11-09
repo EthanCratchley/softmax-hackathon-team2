@@ -29,6 +29,7 @@ import type {
   PickupCorrection,
   PickupLog,
   PickupRecordView,
+  GroupOverview,
   VerifiedUser,
 } from '../domain/types';
 
@@ -98,6 +99,8 @@ export interface KestrelServices {
   assignChildToGroup(childId: Id, groupId: Id, user: VerifiedUser): Promise<Result<{ childId: Id; groupId: Id }>>;
   /** Target must be an instructor account. */
   assignInstructorToGroup(groupId: Id, instructorUserId: Id, user: VerifiedUser): Promise<Result<{ groupId: Id; instructorUserId: Id }>>;
+  /** Admin: each group with its instructor and children (no medical data). */
+  listGroups(user: VerifiedUser): Promise<Result<GroupOverview[]>>;
   /** Admin: the day's release records, each with its corrections. Never edited. */
   listPickups(lessonDate: LessonDate, user: VerifiedUser): Promise<Result<PickupRecordView[]>>;
   /** Adds a correction beside the original; the original pickup log is never changed. */

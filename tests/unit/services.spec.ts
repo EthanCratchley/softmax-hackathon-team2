@@ -479,4 +479,48 @@ test.describe('regressions from quality scan', () => {
     expect(errCode(await svc.completeNoticeTask(task.id, admin))).toBe('blocked');
     expect(errCode(await svc.completeNoticeTask('tsk_nope', admin))).toBe('not_found');
   });
+
+  test('saving unchanged sections records no change and keeps who-changed-it intact', async () => {
+    const parent = as(USER_IDS.parentLily);
+    const before = data(await svc.getChildProfile(CHILD_IDS.lily, parent));
+    const auditBefore = state.audit.length;
+    data(await svc.updateChildProfile(CHILD_IDS.lily, {
+      allergies: before.medical.allergies, conditions: before.medical.conditions, medications: before.medical.medications, safetyInstructions: before.medical.safetyInstructions,
+      emergencyContacts: before.emergencyContacts.map(({ name, relationship, phone, priority }) => ({ name, relationship, phone, priority })),
+      authorizedAdults: before.authorizedAdults.map(({ id, name, relationship, phone, isActive }) => ({ id, name, relationship, phone, isActive })),
+      mailingAddress: '49 Cedar Road, Whistler, BC V0N 0A2',
+    }, parent));
+    expect(state.audit.slice(auditBefore)).toEqual([]);
+    const after = data(await svc.getChildProfile(CHILD_IDS.lily, parent));
+    expect(after.medical.updatedAt).toBe(before.medical.updatedAt);
+    expect(after.emergencyContacts.map((c) => c.id)).toEqual(before.emergencyContacts.map((c) => c.id));
+    expect(after.child.mailingAddress).toBe('49 Cedar Road, Whistler, BC V0N 0A2');
+  });
+
+  test('adding the same new pickup adult twice keeps one record', async () => {
+    const parent = as(USER_IDS.parentAva);
+    const grace = { name: 'Grace Okafor', relationship: 'Aunt', phone: '604-555-0141', isActive: true };
+    data(await svc.updateChildProfile(CHILD_IDS.ava, { authorizedAdults: [grace] }, parent));
+    data(await svc.updateChildProfile(CHILD_IDS.ava, { authorizedAdults: [{ ...grace, name: 'grace okafor' }] }, parent));
+    expect(state.adults.filter((a) => a.childId === CHILD_IDS.ava && a.name.toLowerCase() === 'grace okafor')).toHaveLength(1);
+  });
+
+  test('a scanned drop-off pass flags a profile that needs information, without medical details', async () => {
+    const pass = data(await svc.issueLessonPass(CHILD_IDS.owen, { lessonDate: DAY, purpose: 'dropoff' }, as(USER_IDS.parentOwen)));
+    const view = data(await svc.resolveLessonPass(pass.shortCode, DAY, as(USER_IDS.desk)));
+    expect(view.needsInformation).toBe(true);
+    expect(JSON.stringify(view)).not.toMatch(/Asthma|inhaler/i);
+    const lily = data(await svc.issueLessonPass(CHILD_IDS.lily, { lessonDate: DAY, purpose: 'dropoff' }, as(USER_IDS.parentLily)));
+    expect(data(await svc.resolveLessonPass(lily.shortCode, DAY, as(USER_IDS.desk))).needsInformation).toBe(false);
+  });
+
+  test('Hana sees each group with its instructor, children and places; others cannot', async () => {
+    const groups = data(await svc.listGroups(as(USER_IDS.admin)));
+    expect(groups.map((g) => [g.groupNumber, g.instructorName, g.children.map((c) => c.firstName), g.capacity])).toEqual([
+      [9, 'Sam Rivera', ['Lily', 'Noor', 'Mateo'], 6],
+      [14, 'Jordan Lee', ['Ava', 'Owen', 'Ella'], 6],
+    ]);
+    expect(JSON.stringify(groups)).not.toMatch(/Asthma|diabetes|allerg/i);
+    for (const id of [USER_IDS.desk, USER_IDS.instructorGroup14, USER_IDS.parentAva]) expect(errCode(await svc.listGroups(as(id))), id).toBe('forbidden');
+  });
 });
