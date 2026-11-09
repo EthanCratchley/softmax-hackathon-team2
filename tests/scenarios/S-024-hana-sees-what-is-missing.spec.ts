@@ -10,8 +10,17 @@
 // (await expect(page.getByTestId(...)).toBeVisible() / toHaveText(...)).
 // Keep the first line: it tells Piezas which scenario (and which wording of
 // it) this test checks. Never skip the test or fake Piezas.
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { CHILD_IDS } from '../../lib/fixtures';
+import { signIn } from '../sign-in';
 
-test("S-024: Hana sees what is missing", async () => {
-  throw new Error("PIEZAS_NOT_WRITTEN: S-024 has no test yet");
+test('S-024: Hana sees which children are missing details and which fields, without medical values', async ({ page }) => {
+  await signIn(page, 'hana.sato@example.test');
+  await page.goto('/admin');
+  // Mateo is missing a second contact and consent; Noor is complete.
+  await expect(page.getByTestId(`missing-${CHILD_IDS.mateo}-emergencyContacts`)).toHaveText('Emergency contacts');
+  await expect(page.getByTestId(`missing-${CHILD_IDS.mateo}-consent`)).toHaveText('Signed consent');
+  await expect(page.getByTestId(`incomplete-${CHILD_IDS.mateo}`).locator('li')).toHaveCount(2);
+  await expect(page.getByTestId(`incomplete-${CHILD_IDS.noor}`)).toHaveCount(0);
+  await expect(page.getByTestId('admin-dashboard')).not.toContainText(/Asthma|diabetes|Glucose gel|inhaler|2 puffs/i);
 });
