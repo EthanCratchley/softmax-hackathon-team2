@@ -133,6 +133,12 @@ export default async function IncidentPacketPage({ params, searchParams }: { par
           ))}
         </ol>
 
+        {i.status === 'Closed' ? (
+          <p role="status" className={s.notice} data-testid="incident-closed">
+            This incident is closed. The timeline is kept; medical details and contacts are no longer shown.
+          </p>
+        ) : (
+        <>
         <ActionForm action={addIncidentActionAction.bind(null, i.id)} testId="incident-action-form" className={s.form}>
           <h2>Record what was done</h2>
           <label className={s.field}>
@@ -164,6 +170,8 @@ export default async function IncidentPacketPage({ params, searchParams }: { par
             Closed
           </button>
         </ActionForm>
+        </>
+        )}
       </section>
     </Shell>
   );

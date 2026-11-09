@@ -452,4 +452,31 @@ test.describe('regressions from quality scan', () => {
     expect(errCode(await svc.resolveLessonPass('00000000', DAY, desk))).toBe('blocked');
     expect(errCode(await svc.resolveLessonPass('00000000', DAY, otherDesk))).toBe('not_found');
   });
+
+  test('a closed incident still shows its timeline but no medical details or contacts', async () => {
+    const patrol = as(USER_IDS.patrol);
+    const { id } = data(await svc.reportMissingChild(CHILD_IDS.owen, DAY, { lastSeenAt: '2026-12-12T14:30:00-07:00', lastSeenLocation: 'Pigeon chair', clothingDescription: '', equipmentDescription: '', notes: '' }, as(USER_IDS.desk)));
+    data(await svc.updateIncident(id, { kind: 'status', status: 'Closed', note: 'Found at the lodge' }, patrol));
+    const packet = data(await svc.getIncidentPacket(id, patrol));
+    expect(packet.incident.actions.map((a) => a.note)).toEqual(['Open → Closed: Found at the lodge']);
+    expect(packet.alerts).toEqual([]);
+    expect(packet.emergencyContacts).toEqual([]);
+    expect(packet.parentClothingToday).toBeNull();
+    expect(JSON.stringify(packet)).not.toMatch(/Asthma|inhaler|604-555/);
+    expect(errCode(await svc.getIncidentPacket(id, as(USER_IDS.desk)))).toBe('forbidden');
+  });
+
+  test('sharing with police twice makes one task; Hana marks it done', async () => {
+    const patrol = as(USER_IDS.patrol);
+    const admin = as(USER_IDS.admin);
+    const { id } = data(await svc.reportMissingChild(CHILD_IDS.owen, DAY, { lastSeenAt: '2026-12-12T14:30:00-07:00', lastSeenLocation: 'Pigeon chair', clothingDescription: '', equipmentDescription: '', notes: '' }, as(USER_IDS.desk)));
+    for (const note of ['RCMP called', 'Search and rescue briefed']) data(await svc.updateIncident(id, { kind: 'action', type: 'shared_with_police_or_rescuers', note }, patrol));
+    const [task, ...rest] = data(await svc.getNoticeTasks(admin));
+    expect(rest).toEqual([]);
+    expect(errCode(await svc.completeNoticeTask(task.id, as(USER_IDS.patrol)))).toBe('forbidden');
+    expect(data(await svc.completeNoticeTask(task.id, admin)).status).toBe('Done');
+    expect(data(await svc.getNoticeTasks(admin))).toEqual([]);
+    expect(errCode(await svc.completeNoticeTask(task.id, admin))).toBe('blocked');
+    expect(errCode(await svc.completeNoticeTask('tsk_nope', admin))).toBe('not_found');
+  });
 });

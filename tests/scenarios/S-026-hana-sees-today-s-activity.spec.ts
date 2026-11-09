@@ -12,6 +12,7 @@
 // it) this test checks. Never skip the test or fake Piezas.
 import { expect, test } from '@playwright/test';
 import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE } from '../../lib/fixtures';
+import { closeIncidentsFor } from '../safety-helpers';
 import { signIn } from '../sign-in';
 
 const count = async (page: import('@playwright/test').Page, key: string) => Number(await page.getByTestId(`admin-count-${key}`).textContent());
@@ -19,7 +20,7 @@ const count = async (page: import('@playwright/test').Page, key: string) => Numb
 test("S-026: Hana's overview counts match the day's check-ins, releases and denials", async ({ page }) => {
   await signIn(page, 'hana.sato@example.test');
   await page.goto(`/admin?day=${DEMO_LESSON_DATE}`);
-  const before = { expected: await count(page, 'expected'), checkedIn: await count(page, 'checkedIn'), released: await count(page, 'released') };
+  const before = { expected: await count(page, 'expected'), checkedIn: await count(page, 'checkedIn'), released: await count(page, 'released'), missing: await count(page, 'missing') };
 
   await signIn(page, 'casey.morgan@example.test');
   await page.goto(`/desk/children/${CHILD_IDS.noor}?day=${DEMO_LESSON_DATE}`);
@@ -34,11 +35,19 @@ test("S-026: Hana's overview counts match the day's check-ins, releases and deni
   await page.getByTestId('id-confirmation').check();
   await page.getByTestId('release-child').click();
   await expect(page.getByTestId('release-record')).toContainText('Leila Haddad');
+  // An open incident: the desk reports Mateo missing for his instructor.
+  await page.goto(`/desk/children/${CHILD_IDS.mateo}/report-missing?day=${DEMO_LESSON_DATE}`);
+  await page.getByTestId('lastSeenLocation').fill('Magic carpet');
+  await page.getByTestId('submit-report').click();
+  await expect(page.getByTestId('release-blocked')).toBeVisible();
 
   await signIn(page, 'hana.sato@example.test');
   await page.goto(`/admin?day=${DEMO_LESSON_DATE}`);
   expect(await count(page, 'expected')).toBe(before.expected);
   expect(await count(page, 'checkedIn')).toBe(before.checkedIn + 1);
   expect(await count(page, 'released')).toBe(before.released + 1);
+  expect(await count(page, 'missing')).toBe(before.missing + 1);
+  await expect(page.getByTestId('admin-open-incidents')).toContainText('Mateo Silva');
   await expect(page.getByTestId('admin-denials')).toContainText('Attempted pickup: Unlisted Visitor');
+  await closeIncidentsFor(page, CHILD_IDS.mateo);
 });

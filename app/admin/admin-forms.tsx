@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { addCorrectionAction, assignChildAction, assignInstructorAction, type AdminFormState } from './actions';
+import { addCorrectionAction, assignChildAction, assignInstructorAction, completeNoticeAction, type AdminFormState } from './actions';
 import desk from '../desk/roster.module.css';
 import styles from './dashboard.module.css';
 
@@ -45,5 +45,13 @@ export function CorrectionForm({ pickupLogId }: { pickupLogId: string }) {
       <button type="submit" disabled={pending} data-testid={`correction-submit-${pickupLogId}`}>{pending ? 'Saving…' : 'Add correction'}</button>
     </div>
     <Feedback state={state} testId={`correction-message-${pickupLogId}`} />
+  </form>;
+}
+
+export function NoticeDoneForm({ taskId }: { taskId: string }) {
+  const [state, run, pending] = useActionState(completeNoticeAction.bind(null, taskId), null);
+  return <form action={run}>
+    <button type="submit" disabled={pending} data-testid={`notice-done-${taskId}`}>{pending ? 'Saving…' : 'Mark notice as mailed'}</button>
+    <Feedback state={state} testId={`notice-done-message-${taskId}`} />
   </form>;
 }

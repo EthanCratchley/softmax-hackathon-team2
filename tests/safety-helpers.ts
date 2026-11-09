@@ -33,7 +33,7 @@ export async function closeIncidentsFor(page: Page, childId: string) {
     if ((await row.count()) === 0) return;
     await row.click();
     await page.getByTestId('status-closed').click();
-    await expect(page.getByTestId('packet-error')).toHaveText('This incident is closed.');
+    await expect(page.getByTestId('incident-closed')).toBeVisible();
   }
 }
 
@@ -69,4 +69,12 @@ export async function patrolReports(page: Page, childId: string, q: string, d: {
   await page.getByTestId('lastSeenLocation').fill(d.location);
   await page.getByTestId('submit-report').click();
   await expect(page.getByTestId('emergency-packet')).toBeVisible();
+}
+
+/** Hana's audit trail: the action names recorded for an entity id (newest first). */
+export async function auditActionsFor(page: Page, entityId: string): Promise<string[]> {
+  await signInAs(page, HANA);
+  await page.goto('/admin/audit');
+  await expect(page.getByTestId('audit-log')).toBeVisible();
+  return page.getByTestId('audit-log').locator('li', { hasText: entityId }).evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-action') ?? ''));
 }

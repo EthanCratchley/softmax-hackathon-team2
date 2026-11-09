@@ -210,6 +210,7 @@ export type AuditAction =
   | 'admin_viewed_child_details'
   | 'group_assignment_changed'
   | 'notice_task_created'
+  | 'notice_task_completed'
   | 'pass_issued'
   | 'pass_redeemed'
   | 'pass_lookup_failed'
