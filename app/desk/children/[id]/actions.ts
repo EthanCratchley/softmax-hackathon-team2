@@ -1,6 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import type { FormState } from '@/components/safety/ActionForm';
+import { lastSeenFromForm } from '@/components/safety/last-seen';
+import { lessonDay } from '@/components/safety/time';
 import { services } from '@/lib/services';
 import { requireUser } from '@/lib/session';
 import type { LessonDate } from '@/lib/domain/types';
@@ -41,4 +45,13 @@ export async function deniedPickupAction(childId: string, lessonDate: string, fo
   if (!result.ok) return { ok: false, message: result.error.message };
   refreshDeskViews(childId);
   return { ok: true, message: 'Denied pickup attempt recorded.' };
+}
+
+export async function deskReportMissingAction(childId: string, rawDay: string, _: FormState, form: FormData): Promise<FormState> {
+  const user = await requireUser('desk');
+  const day = lessonDay(rawDay);
+  const result = await services.reportMissingChild(childId, day, lastSeenFromForm(form), user);
+  if (!result.ok) return { error: result.error.code === 'not_found' ? 'Not found' : result.error.message, fields: result.error.fields };
+  refreshDeskViews(childId);
+  redirect(`/desk/children/${encodeURIComponent(childId)}?day=${day}`);
 }

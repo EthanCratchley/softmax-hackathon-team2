@@ -25,3 +25,7 @@ const clock = new Intl.DateTimeFormat('en-CA', {
 
 /** e.g. "Dec 12, 3:30 p.m." in resort time. */
 export const resortTime = (ts: Timestamp) => clock.format(new Date(ts));
+
+/** Current resort clock as "HH:MM", to prefill a last-seen time. */
+export const resortNowHHMM = () =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: RESORT_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date());
