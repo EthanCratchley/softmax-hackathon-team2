@@ -78,7 +78,7 @@ export function ageOn(birthDate: LessonDate, on: LessonDate): number {
 }
 
 /** UTC offset of the resort on a given date, e.g. "-08:00". */
-function resortOffset(date: LessonDate): string {
+export function resortOffset(date: LessonDate): string {
   const name = new Intl.DateTimeFormat('en-US', { timeZone: RESORT_TIME_ZONE, timeZoneName: 'longOffset' })
     .formatToParts(new Date(`${date}T12:00:00Z`))
     .find((p) => p.type === 'timeZoneName')?.value;

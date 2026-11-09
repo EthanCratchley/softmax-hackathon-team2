@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ageOn, computeCompletion, escalationTime, isValidPhone, matchesName, normalizePhone, safetyAlerts } from '../../lib/domain/rules';
+import { ageOn, computeCompletion, escalationTime, isValidPhone, matchesName, normalizePhone, resortOffset, safetyAlerts } from '../../lib/domain/rules';
 import { CHILD_IDS, createDemoState } from '../../lib/fixtures';
 
 test.describe('phone validation (R-003)', () => {
@@ -100,4 +100,16 @@ test('name search matches any name, case-insensitive (R-014)', () => {
   const owen = { firstName: 'Owen', lastName: 'Parr', otherNames: ['Owen Okafor-Parr', 'Okafor-Parr'] };
   for (const q of ['parr', 'Okafor', 'okafor-parr', 'owen parr', 'OW']) expect(matchesName(owen, q), q).toBe(true);
   expect(matchesName(owen, 'Shah')).toBe(false);
+});
+
+test.describe('resort UTC offset (instructor last-seen time)', () => {
+  test('standard time in winter, daylight time in summer', () => {
+    expect(resortOffset('2026-12-12')).toBe('-08:00');
+    expect(resortOffset('2027-07-01')).toBe('-07:00');
+  });
+
+  test('follows the March change', () => {
+    expect(resortOffset('2027-03-13')).toBe('-08:00');
+    expect(resortOffset('2027-03-15')).toBe('-07:00');
+  });
 });
