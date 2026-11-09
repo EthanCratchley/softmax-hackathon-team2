@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/session';
-import { users as demoUsers } from '@/lib/fixtures';
 import { signInAction } from './actions';
 
 const MESSAGES: Record<string, string> = {
@@ -13,18 +12,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (await getCurrentUser()) redirect('/');
   const { error } = await searchParams;
   const message = error ? (MESSAGES[error] ?? MESSAGES.invalid_credentials) : null;
-  const demoPasswordAlias = process.env.NODE_ENV !== 'production'
-    && (process.env.KESTREL_DATA === 'mock' || Boolean(process.env.PIEZAS_TEST_API_KEY));
 
   return (
     <main className="page narrow" data-testid="login-page">
       <h1>Sign in</h1>
       <p className="muted">Kestrel Kids staff and families.</p>
-      <aside className="card demo-logins" aria-labelledby="demo-logins-title">
-        <h2 id="demo-logins-title">Demo logins</h2>
-        <p className="small muted">{demoPasswordAlias ? <>Use password <code>kestrel</code> for any demo account.</> : <>Run <code>npm run demo:accounts</code> for each account’s password.</>}</p>
-        <ul>{demoUsers.map((user) => <li key={user.id}><span>{user.role}</span><code>{user.email}</code></li>)}</ul>
-      </aside>
       {message && (
         <p role="alert" className="alert" data-testid="login-error">
           {message}

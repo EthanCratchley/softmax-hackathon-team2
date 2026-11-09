@@ -66,14 +66,18 @@ test.describe('parent updates (S-002 to S-005)', () => {
     expect(data(await svc.getChildProfile(CHILD_IDS.ava, parent)).medical.allergies).toEqual(['Tree nuts']);
   });
 
+  test('a parent can save one valid contact now and add the second later', async () => {
+    const r = data(await svc.updateChildProfile(CHILD_IDS.ava, { emergencyContacts: [{ name: 'Priya Shah', relationship: 'Mother', phone: '604-555-0101', priority: 1 }] }, as(USER_IDS.parentAva)));
+    expect(r.emergencyContacts).toHaveLength(1);
+    expect(r.completion.missing).toContain('emergencyContacts');
+    expect(errCode(await svc.updateChildProfile(CHILD_IDS.ava, { emergencyContacts: [1, 2, 3].map((n) => ({ name: `C${n}`, relationship: 'Aunt', phone: '604-555-0101', priority: 1 as const })) }, as(USER_IDS.parentAva)))).toBe('invalid');
+  });
+
   test('a 9-digit phone is rejected and nothing is saved', async () => {
     const before = structuredClone(state.contacts);
     const r = await svc.updateChildProfile(
       CHILD_IDS.lily,
-      { emergencyContacts: [
-        { name: 'Dana Whitfield', relationship: 'Mother', phone: '604555-187', priority: 1 },
-        { name: 'Tom Whitfield', relationship: 'Father', phone: '604-555-0112', priority: 2 },
-      ] },
+      { emergencyContacts: [{ name: 'Dana Whitfield', relationship: 'Mother', phone: '604555-187', priority: 1 }] },
       as(USER_IDS.parentLily),
     );
     expect(r.ok).toBe(false);
@@ -146,6 +150,10 @@ test.describe('desk and pickup (S-009 to S-014)', () => {
     const lookup = data(await svc.resolveLessonPass(pass.shortCode, DAY, desk));
     expect(lookup).toMatchObject({ purpose: 'pickup', adultName: 'Tom Whitfield', adultOnList: true, canRedeem: true });
     expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: false }, desk))).toBe('invalid');
+    for (const id of [USER_IDS.admin, USER_IDS.parentLily, USER_IDS.instructorGroup9, USER_IDS.patrol]) {
+      expect(errCode(await svc.resolveLessonPass(pass.shortCode, DAY, as(id))), id).toBe('forbidden');
+      expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: true }, as(id))), id).toBe('forbidden');
+    }
     data(await svc.redeemLessonPass(pass.id, { idChecked: true }, desk));
     expect(state.pickups.at(-1)).toMatchObject({ childId: CHILD_IDS.lily, adultNameSnapshot: 'Tom Whitfield', idChecked: true });
     expect(data(await svc.listParentActivity(CHILD_IDS.lily, parent)).at(0)).toMatchObject({ kind: 'released', adultName: 'Tom Whitfield' });

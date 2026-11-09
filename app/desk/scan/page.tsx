@@ -5,5 +5,5 @@ import { requireUser } from '@/lib/session';
 
 export default async function DeskScanPage() {
   await requireUser('desk');
-  return <main className="page desk-scan-page"><Link href="/" className="back-link">← Home</Link><DeskPassScanner /></main>;
+  return <main className="page desk-scan-page"><Link href="/desk" className="back-link">← Desk roster</Link><DeskPassScanner /></main>;
 }

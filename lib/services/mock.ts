@@ -5,6 +5,7 @@ import { createDemoState, type DemoState } from '../fixtures';
 import {
   ageOn,
   computeCompletion,
+  endOfLessonDay,
   escalationTime,
   isValidPhone,
   matchesName,
@@ -141,7 +142,7 @@ export function createMockServices(
       });
     } else if (meds !== undefined && meds !== null && meds !== 'none') errors.medications = 'Enter each medication, or choose "none".';
     if (changes.emergencyContacts) {
-      if (changes.emergencyContacts.length !== 2) errors.emergencyContacts = 'Enter exactly two emergency contacts.';
+      if (changes.emergencyContacts.length > 2) errors.emergencyContacts = 'Enter up to two emergency contacts.';
       changes.emergencyContacts.forEach((c, i) => {
         if (!c.name?.trim()) errors[`emergencyContacts.${i}.name`] = 'Enter a name.';
         if (!c.relationship?.trim()) errors[`emergencyContacts.${i}.relationship`] = 'Enter the relationship.';
@@ -263,7 +264,7 @@ export function createMockServices(
       while (state.passes.some((pass) => pass.lessonDate === input.lessonDate && pass.shortCode === shortCode)) {
         shortCode = String(crypto.getRandomValues(new Uint32Array(1))[0] % 100_000_000).padStart(8, '0');
       }
-      const expires = new Date(`${input.lessonDate}T23:59:59-08:00`).toISOString();
+      const expires = endOfLessonDay(input.lessonDate);
       const pass = { id: newId('pss'), childId, lessonDate: input.lessonDate, purpose: input.purpose, adultId, adultName, token, shortCode, createdAt: stamp(), expiresAt: expires, redeemedAt: null, redeemedByStaffId: null, idChecked: false };
       state.passes.push(pass);
       audit(user, 'pass_issued', 'LessonPass', pass.id, `Issued ${input.purpose} pass`);
@@ -277,7 +278,7 @@ export function createMockServices(
     },
 
     async resolveLessonPass(rawValue, lessonDate, user) {
-      if (!is(user, 'desk', 'admin')) return deny(user, 'LessonPass', '', 'resolve pass');
+      if (!is(user, 'desk')) return deny(user, 'LessonPass', '', 'resolve pass');
       const attempts = state.passAttempts.find((item) => item.lessonDate === lessonDate);
       if (attempts?.lockedUntil && Date.parse(attempts.lockedUntil) > now().getTime()) return fail('blocked', 'Too many incorrect codes. Wait five minutes, then try again.');
       if (attempts?.lockedUntil && Date.parse(attempts.lockedUntil) <= now().getTime()) { attempts.count = 0; attempts.lockedUntil = null; }
@@ -304,7 +305,7 @@ export function createMockServices(
     },
 
     async redeemLessonPass(passId, input, user) {
-      if (!is(user, 'desk', 'admin')) return deny(user, 'LessonPass', passId, 'redeem pass');
+      if (!is(user, 'desk')) return deny(user, 'LessonPass', passId, 'redeem pass');
       const pass = state.passes.find((item) => item.id === passId);
       if (!pass) return NOT_FOUND;
       const child = findChild(pass.childId);

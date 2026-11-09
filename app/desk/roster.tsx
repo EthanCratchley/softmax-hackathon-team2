@@ -32,6 +32,7 @@ export default function DeskRoster({ roster, day, error }: { roster: DeskRosterE
       <header className={styles.header}><span className={styles.brand}>▲ KESTREL KIDS</span><span className={styles.tag}>DESK</span></header>
       <div className={styles.title}><p className={styles.eyebrow}>LESSON DAY OPERATIONS</p><h1>Ready for the mountain.</h1><p>Find a child, check their information status, and get them checked in.</p></div>
       <p className={styles.notice}>Open a child to check them in, release them to an authorized adult, or record a denied pickup.</p>
+      <Link className={styles.pickupLink} data-testid="open-pass-scanner" href={`/desk/scan?day=${day}`}>Scan a parent's lesson pass →</Link>
       <section className={styles.summary} aria-label="Lesson day attendance">
         {(['Expected', 'CheckedIn', 'Released'] as const).map(status => <div key={status}><strong data-testid={`count-${status === 'CheckedIn' ? 'checked-in' : status.toLowerCase()}`}>{counts[status]}</strong><span>{statusLabels[status]}</span></div>)}
       </section>

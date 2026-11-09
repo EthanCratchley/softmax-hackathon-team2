@@ -38,7 +38,7 @@ export default async function ParentLessonPassPage({ params, searchParams }: {
   return <main className="page pass-fullscreen-page" data-testid="pass-fullscreen-page">
     <Link className="back-link" href={`/parent/children/${encodeURIComponent(id)}`}>← Back to {profile.data.child.firstName}’s profile</Link>
     <section className="pass-fullscreen-card" aria-labelledby="full-pass-title">
-      <p className="eyebrow">Lesson day · {new Date(`${DEMO_LESSON_DATE}T12:00:00-08:00`).toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Vancouver' })}</p>
+      <p className="eyebrow">Lesson day · {new Date(`${DEMO_LESSON_DATE}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Vancouver' })}</p>
       <h1 id="full-pass-title">{title}</h1>
       <p className="pass-fullscreen-name">{childName}{purpose === 'pickup' && selectedAdult ? ` · ${selectedAdult.name}` : ''}</p>
       <PassQRCode dataUrl={qrDataUrl} label={`${purpose} QR pass for ${childName}`} size={320} />

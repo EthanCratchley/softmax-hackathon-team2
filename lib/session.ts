@@ -39,16 +39,11 @@ const mockSessions = (mockStore.__kestrelSessions ??= new Map());
 
 async function mockSignIn(email: string, password: string): Promise<SignInError | null> {
   const secret = process.env.DEMO_ACCOUNT_SECRET;
+  if (!secret) return 'not_configured';
   const user = fixtureUsers.find((u) => u.email === email);
-  if (!user) return 'invalid_credentials';
-  const generatedPasswordMatches = secret
-    ? (() => {
-      const expected = Buffer.from(demoPassword(secret, email));
-      const given = Buffer.from(password);
-      return expected.length === given.length && timingSafeEqual(expected, given);
-    })()
-    : false;
-  if (password !== 'kestrel' && !generatedPasswordMatches) return 'invalid_credentials';
+  const expected = Buffer.from(demoPassword(secret, email));
+  const given = Buffer.from(password);
+  if (!user || expected.length !== given.length || !timingSafeEqual(expected, given)) return 'invalid_credentials';
   const token = randomBytes(32).toString('base64url');
   mockSessions.set(token, user.id);
   await setSessionCookie(token);
@@ -61,17 +56,8 @@ export async function signIn(email: string, password: string): Promise<{ ok: tru
     const error = await mockSignIn(normalized, password);
     return error ? { ok: false, error } : { ok: true };
   }
-  // The shared alias is only for fixture users against a development test key.
-  // Piezas still validates the real, per-account generated password.
-  const isTestFixture = process.env.NODE_ENV !== 'production'
-    && Boolean(process.env.PIEZAS_TEST_API_KEY)
-    && Boolean(process.env.DEMO_ACCOUNT_SECRET)
-    && fixtureUsers.some((user) => user.email === normalized);
-  const passwordForPiezas = password === 'kestrel' && isTestFixture
-    ? demoPassword(process.env.DEMO_ACCOUNT_SECRET!, normalized)
-    : password;
   const result = await piezas()
-    .users.signIn({ email: normalized, password: passwordForPiezas })
+    .users.signIn({ email: normalized, password })
     .catch((error: unknown) => {
       if (error instanceof PiezasError && ['invalid_credentials', 'account_pending', 'account_locked'].includes(error.code)) return null;
       throw error;
@@ -124,7 +110,7 @@ export async function requireUser(...roles: Role[]): Promise<VerifiedUser> {
 export const ROLE_HOME: Record<Role, string> = {
   parent: '/parent',
   instructor: '/instructor',
-  desk: '/desk/scan',
+  desk: '/desk',
   patrol: '/patrol',
   admin: '/admin',
 };

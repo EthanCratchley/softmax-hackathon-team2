@@ -25,7 +25,7 @@ export function ParentJourneyPanel({ childId, childName, lessonDate, adults, dro
   const today = activity.filter((event) => event.lessonDate === lessonDate);
   const checkedIn = today.some((event) => event.kind === 'checked_in');
   const pickedUp = today.some((event) => event.kind === 'released');
-  const lessonDayLabel = new Date(`${lessonDate}T12:00:00-08:00`).toLocaleDateString('en-CA', {
+  const lessonDayLabel = new Date(`${lessonDate}T12:00:00Z`).toLocaleDateString('en-CA', {
     weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Vancouver',
   });
 
