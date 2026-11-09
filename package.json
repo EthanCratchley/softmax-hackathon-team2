@@ -25,6 +25,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "practice": "node scripts/start-practice.mjs",
     "typecheck": "tsc --noEmit",
     "test:frontend": "playwright test tests/frontend.spec.ts"
   }

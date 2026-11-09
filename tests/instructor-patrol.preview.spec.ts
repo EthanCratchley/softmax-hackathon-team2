@@ -72,6 +72,7 @@ test('patrol sees both clothing descriptions, contacts and a timed action histor
   await page.getByTestId('action-note').fill('Information shared by the patroller.');
   await page.getByTestId('add-action').click();
   await expect(page.getByTestId('notice-task')).toBeVisible();
+  await page.getByTestId('located-place').fill('Pigeon Chair base');
   await page.getByTestId('status-located').click();
   await expect(page.getByTestId('incident-timeline')).toContainText('Status changed to Located');
   await page.getByTestId('status-closed').click();
@@ -104,4 +105,32 @@ test('unknown incident and empty lesson day are clear', async ({ page }) => {
   await page.getByTestId('instructor-nav').click();
   await page.getByTestId('lesson-day').fill('2026-12-13');
   await expect(page.getByTestId('empty-roster')).toBeVisible();
+});
+
+
+test('Group 14 shows Tyler and Owen asthma information', async ({ page }) => {
+  await page.goto('/instructor');
+  await expect(page.getByTestId('safety-workspace')).toContainText('Tyler Ng');
+  await expect(page.getByTestId('safety-workspace')).toContainText('Group 14');
+  await expect(page.getByTestId('alert-child-owen')).toContainText('Asthma');
+  await expect(page.getByTestId('alert-child-owen')).toContainText('Inhaler');
+});
+
+test('preview rejects another lesson day and prevents skipping Located', async ({ page }) => {
+  await page.goto('/instructor/report-missing/child-ava');
+  await page.getByTestId('last-seen').fill('2026-12-13T14:30');
+  await page.getByTestId('last-place').fill('Pigeon Chair');
+  await page.getByTestId('reported-clothing').fill('Unknown');
+  await page.getByTestId('reported-helmet').fill('Unknown');
+  await page.getByTestId('equipment').fill('Unknown');
+  await page.getByTestId('submit-report').click();
+  await expect(page.getByTestId('report-error')).toContainText('lesson day');
+  await expect(page.getByTestId('report-success')).toHaveCount(0);
+  await page.goto('/patrol/incidents/incident-owen');
+  await expect(page.getByTestId('status-closed')).toBeDisabled();
+  await page.getByTestId('located-place').fill('Pigeon Chair base');
+  await page.getByTestId('status-located').click();
+  await expect(page.getByTestId('status-open')).toBeDisabled();
+  await page.getByTestId('status-closed').click();
+  await expect(page.getByTestId('add-action')).toBeDisabled();
 });

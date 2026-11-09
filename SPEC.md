@@ -1,5 +1,13 @@
 # Product Spec: Kestrel Kids Safety
 
+## Current branch delivery scope
+
+The owner approved a test-only "Reset practice session" control for instructor and patrol. It requires explicit server configuration, a verified test key bound to the expected non-live app, and a private practice namespace. Practice workflow records must be isolated from ordinary records; reset starts a fresh session without deleting previous incidents, actions, or audit history. Child profiles, accounts, credentials, attendance/pickup records, and teammates' shared data remain intact. Both roles keep normal server authorization and same-origin checks. The control is unavailable by default and must fail closed on incorrect configuration.
+
+The owner has requested that `feature/instructor-patrol` contain only Raakin's instructor and patrol work, with shared backend initialization also allowed. This branch delivers instructor rosters and safety alerts, headcounts, missing-child reports, patrol emergency packets and incident actions, plus the shared sign-in, types, data access, and synthetic setup they require. It is not the final integrated team app.
+
+Parent profiles and one-day pickup links belong to Anthony's branch; desk check-in/release and the admin screens belong to Noah's branch; shared platform integration, including check-in/release email delivery and deployment, belongs to Ethan. Those workflows are intentionally absent from this branch and preserved locally for handoff. Their absence is expected for this scoped delivery. They remain requirements of the final integrated app described below, and their existing acceptance tests must remain unchanged and pass after team integration. Do not publish this partial branch as the complete application.
+
 Sources: "Pending Chaos at Kestrel Kids" case (Case), Team 2 shared product spec and build split (Team), Hackathon Launch deck (Launch). Each requirement is tagged [Stated] when a source says it and [Assumed] when we decided it. Provenance follows each claim.
 
 ## Overview
@@ -479,3 +487,17 @@ Then they see "Instructor not responding: try the radio", with no claim about th
 ## Open Conflicts
 
 none
+
+### S-042: A practice reset starts a clean instructor and patrol session
+
+covers: test-only practice reset approved by the owner
+Given an explicitly configured isolated practice environment and a signed-in instructor or patroller
+When they confirm Reset practice session after reporting a child missing, recording a search action, or confirming a headcount
+Then original synthetic group assignments and fresh headcount state appear, patrol has no current incidents or search actions, profiles and accounts are unchanged, and previous records and reset history remain auditable; a second reset has the same clean result
+
+### S-043: Practice reset cannot affect normal or shared data
+
+covers: practice isolation and preserved authorization
+Given a normal app, a mismatched or live key, an unauthenticated person, or a role other than instructor/patrol
+When a practice reset is requested
+Then it is refused; ordinary records and audit history remain unchanged, and practice records are never mixed with ordinary workflow records
