@@ -12,14 +12,12 @@
 // it) this test checks. Never skip the test or fake Piezas.
 import { expect, test } from '@playwright/test';
 import { CHILD_IDS } from '../../lib/fixtures';
-import { closeIncidentsFor, DAY, HANA } from '../safety-helpers';
+import { closeIncidentsFor, HANA, patrolReports } from '../safety-helpers';
 import { signIn } from '../sign-in';
 
 test("S-023: Sharing with police creates Hana's notice task", async ({ page }) => {
   await closeIncidentsFor(page, CHILD_IDS.owen);
-  await page.goto(`/patrol?day=${DAY}&q=Owen`);
-  await page.getByTestId(`open-incident-${CHILD_IDS.owen}`).click();
-  await expect(page.getByTestId('emergency-packet')).toBeVisible();
+  await patrolReports(page, CHILD_IDS.owen, 'Owen', { time: '14:30', location: 'Top of Pigeon chair' });
   const incidentId = page.url().split('/patrol/incidents/')[1].split('?')[0];
 
   await page.getByTestId('incident-action-type').selectOption('shared_with_police_or_rescuers');
