@@ -3,15 +3,44 @@
 //   Given Owen has an open incident
 //   When a patroller adds "family contacted", marks him Located and later Closed
 //   Then the timeline shows each step with the patroller and time, and each is in the audit trail
-//
-// NOT WRITTEN YET. Replace the test body with the real steps, driven against
-// the running app: open the page (page.goto), do what the When line says
-// (click, fill, ...), and check what the Then line says is visible
-// (await expect(page.getByTestId(...)).toBeVisible() / toHaveText(...)).
-// Keep the first line: it tells Piezas which scenario (and which wording of
-// it) this test checks. Never skip the test or fake Piezas.
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { closeIncidentsFor, DAY } from '../safety-helpers';
 
-test("S-021: Patrol logs actions and closes an incident", async () => {
-  throw new Error("PIEZAS_NOT_WRITTEN: S-021 has no test yet");
+test('S-021: Patrol logs actions and closes an incident', async ({ page }) => {
+  await closeIncidentsFor(page, 'chd_owen');
+  await page.goto(`/patrol?day=${DAY}&q=Owen`);
+  await page.getByTestId('open-incident-chd_owen').click();
+  await expect(page.getByTestId('emergency-packet')).toBeVisible();
+  const packetUrl = page.url();
+
+  // A blank note is refused by the server (bypassing the browser's required check).
+  await page.getByTestId('incident-action-note').evaluate((el) => el.removeAttribute('required'));
+  await page.getByTestId('incident-action-save').click();
+  await expect(page.getByTestId('incident-action-form-error')).toHaveText('Add a note for this action.');
+
+  await page.getByTestId('incident-action-type').selectOption('family_contacted');
+  await page.getByTestId('incident-action-note').fill('Called mother, she is on her way');
+  await page.getByTestId('incident-action-save').click();
+  await expect(page.getByTestId('saved')).toHaveText('Action recorded.');
+  const entries = page.getByTestId('timeline-entry');
+  await expect(entries).toHaveCount(1);
+  await expect(entries.nth(0)).toContainText(/Family contacted · Rob Fournier · Called mother, she is on her way/);
+  await expect(entries.nth(0)).toContainText(/\d{1,2}:\d{2}\s[ap]\.m\./);
+
+  await page.getByTestId('status-located').click();
+  await expect(page.getByTestId('saved')).toHaveText('Marked as located.');
+  await expect(page.getByTestId('packet-status')).toHaveText('Located');
+  await expect(entries).toHaveCount(2);
+  await expect(entries.nth(1)).toContainText('Status change · Rob Fournier · Open → Located');
+  await expect(page.getByTestId('status-located')).toHaveCount(0);
+
+  await page.getByTestId('status-closed').click();
+  await expect(page.getByTestId('saved')).toHaveText('Incident closed.');
+  await expect(page.getByTestId('packet-error')).toHaveText('This incident is closed.');
+  await expect(page.getByTestId('emergency-packet')).toHaveCount(0);
+
+  await page.goto(packetUrl);
+  await expect(page.getByTestId('packet-error')).toHaveText('This incident is closed.');
+  await page.goto('/patrol');
+  await expect(page.locator('[data-child="chd_owen"]')).toHaveCount(0);
 });

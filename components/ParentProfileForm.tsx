@@ -35,7 +35,8 @@ export function ParentProfileForm({ profile, lessonDate }: { profile: ChildProfi
     conditions: conditionAnswer === 'none' ? 'none' : splitItems(conditions),
     medications: medicationAnswer === 'none' ? 'none' : medications.filter((m) => m.name.trim() || m.location.trim()).map((m) => ({ ...m, name: m.name.trim(), location: m.location.trim() })),
     safetyInstructions: instructions,
-    emergencyContacts: contacts.map((contact, i) => ({ ...contact, priority: (i + 1) as 1 | 2 })),
+    // Fully empty rows are skipped so a parent can save one contact now and add the second later.
+    emergencyContacts: contacts.filter((c) => c.name.trim() || c.relationship.trim() || c.phone.trim()).map((contact, i) => ({ ...contact, priority: (i + 1) as 1 | 2 })),
     authorizedAdults: [...adults, ...(newAdult.name.trim() || newAdult.relationship.trim() || newAdult.phone.trim() ? [newAdult] : [])],
     mailingAddress,
     clothingToday: { lessonDate, description: clothingToday },

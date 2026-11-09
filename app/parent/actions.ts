@@ -16,7 +16,6 @@ export async function saveParentProfile(childId: string, _previous: unknown, for
   try {
     const current = await services.getChildProfile(childId, user);
     if (!current.ok) return { ok: false as const, message: current.error.message, fields: {} };
-    if (!current.data.consent && !changes.consent) return { ok: false as const, message: 'Consent is required before this profile can be completed.', fields: { consent: 'Please provide consent and type your full name.' } };
     const result = await services.updateChildProfile(childId, changes, user);
     if (!result.ok) return { ok: false as const, message: result.error.message, fields: result.error.fields ?? {} };
     revalidatePath('/parent');

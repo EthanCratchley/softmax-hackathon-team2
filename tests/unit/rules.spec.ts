@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ageOn, computeCompletion, endOfLessonDay, escalationTime, isValidPhone, matchesName, normalizePhone, safetyAlerts } from '../../lib/domain/rules';
+import { ageOn, computeCompletion, endOfLessonDay, escalationTime, isValidPhone, matchesName, normalizePhone, resortOffset, safetyAlerts } from '../../lib/domain/rules';
 import { CHILD_IDS, createDemoState } from '../../lib/fixtures';
 
 test.describe('phone validation (R-003)', () => {
@@ -100,6 +100,18 @@ test('name search matches any name, case-insensitive (R-014)', () => {
   const owen = { firstName: 'Owen', lastName: 'Parr', otherNames: ['Owen Okafor-Parr', 'Okafor-Parr'] };
   for (const q of ['parr', 'Okafor', 'okafor-parr', 'owen parr', 'OW']) expect(matchesName(owen, q), q).toBe(true);
   expect(matchesName(owen, 'Shah')).toBe(false);
+});
+
+test.describe('resort UTC offset (instructor last-seen time)', () => {
+  test('winter standard time before BC moved to permanent UTC-7', () => {
+    expect(resortOffset('2025-12-12')).toBe('-08:00');
+    expect(resortOffset('2025-07-01')).toBe('-07:00');
+  });
+
+  test('the demo lesson day uses the permanent offset', () => {
+    expect(resortOffset('2026-12-12')).toBe('-07:00');
+    expect(resortOffset('2027-01-15')).toBe('-07:00');
+  });
 });
 
 test('a lesson day ends at 11:59:59 p.m. resort time', () => {
