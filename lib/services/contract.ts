@@ -20,6 +20,9 @@ import type {
   InstructorRosterGroup,
   LastSeenDetails,
   LessonDate,
+  LessonPass,
+  PassLookupView,
+  ParentActivityEvent,
   MyChildSummary,
   NoticeTask,
   OperationsSnapshot,
@@ -54,6 +57,11 @@ export interface KestrelServices {
   /** Parent: own child only (else not_found). Admin: use openChildDetailsWithReason. */
   getChildProfile(childId: Id, user: VerifiedUser): Promise<Result<ChildProfile>>;
   updateChildProfile(childId: Id, changes: ChildProfileChanges, user: VerifiedUser): Promise<Result<ChildProfile>>;
+  issueLessonPass(childId: Id, input: { lessonDate: LessonDate; purpose: 'dropoff' | 'pickup'; adultId?: Id }, user: VerifiedUser): Promise<Result<LessonPass>>;
+  listLessonPasses(childId: Id, lessonDate: LessonDate, user: VerifiedUser): Promise<Result<LessonPass[]>>;
+  resolveLessonPass(value: string, lessonDate: LessonDate, user: VerifiedUser): Promise<Result<PassLookupView>>;
+  redeemLessonPass(passId: Id, input: { idChecked: boolean; bibNumber?: string }, user: VerifiedUser): Promise<Result<{ redeemedAt: string; adultName: string | null }>>;
+  listParentActivity(childId: Id, user: VerifiedUser): Promise<Result<ParentActivityEvent[]>>;
 
   // Instructor --------------------------------------------------------------
   getInstructorRoster(lessonDate: LessonDate, user: VerifiedUser): Promise<Result<InstructorRosterGroup[]>>;

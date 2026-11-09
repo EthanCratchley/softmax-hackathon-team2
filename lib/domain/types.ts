@@ -210,6 +210,9 @@ export type AuditAction =
   | 'admin_viewed_child_details'
   | 'group_assignment_changed'
   | 'notice_task_created'
+  | 'pass_issued'
+  | 'pass_redeemed'
+  | 'pass_lookup_failed'
   | 'access_denied';
 
 /** Append-only. `detailsSummary` never contains medical values. */
@@ -221,6 +224,49 @@ export interface AuditEvent {
   entityId: Id;
   occurredAt: Timestamp;
   detailsSummary: string;
+}
+
+export type PassPurpose = 'dropoff' | 'pickup';
+
+/** Server-held bearer pass. The UI receives only the token/code for display. */
+export interface LessonPass {
+  id: Id;
+  childId: Id;
+  lessonDate: LessonDate;
+  purpose: PassPurpose;
+  adultId: Id | null;
+  adultName: string | null;
+  token: string;
+  shortCode: string;
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
+  redeemedAt: Timestamp | null;
+  redeemedByStaffId: Id | null;
+  idChecked: boolean;
+}
+
+export interface PassLookupView {
+  passId: Id;
+  childId: Id;
+  childFirstName: string;
+  childLastName: string;
+  groupNumber: number | null;
+  lessonDate: LessonDate;
+  purpose: PassPurpose;
+  adultName: string | null;
+  adultOnList: boolean;
+  expiresAt: Timestamp;
+  redeemedAt: Timestamp | null;
+  canRedeem: boolean;
+  blockedReason: string | null;
+}
+
+export interface ParentActivityEvent {
+  id: Id;
+  kind: 'checked_in' | 'released';
+  at: Timestamp;
+  lessonDate: LessonDate;
+  adultName?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -248,6 +294,8 @@ export interface MyChildSummary {
   firstName: string;
   lastName: string;
   groupNumber: number | null;
+  skiLevel: SkiLevel | null;
+  lessonDay: LessonDate | null;
   completion: Completion;
   updatedAt: Timestamp;
 }

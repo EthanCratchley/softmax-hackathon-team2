@@ -1,7 +1,7 @@
 // In-memory implementation of the service contract over the synthetic seed.
 // Authorization here is the real policy: the Piezas implementation must keep
 // identical behaviour, and tests/unit/services.spec.ts holds both to it.
-import type { DemoState } from '../fixtures';
+import { createDemoState, type DemoState } from '../fixtures';
 import {
   ageOn,
   computeCompletion,
@@ -27,6 +27,7 @@ import type {
   VerifiedUser,
 } from '../domain/types';
 import type { KestrelServices, Result, ServiceError } from './contract';
+import { DEMO_LESSON_DATE } from '../fixtures';
 
 const ok = <T>(data: T): Result<T> => ({ ok: true, data });
 const fail = (code: ServiceError['code'], message: string, fields?: Record<string, string>): Result<never> => ({
@@ -42,6 +43,7 @@ export function createMockServices(
 ): KestrelServices {
   const stamp = () => now().toISOString();
   const newId = (prefix: string) => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+  const defaultGroups = new Map(createDemoState().groups.map((group) => [group.id, group]));
 
   const audit = (user: VerifiedUser, action: AuditAction, entityType: string, entityId: Id, detailsSummary: string) => {
     state.audit.push({ id: newId('aud'), actorUserId: user.id, action, entityType, entityId, occurredAt: stamp(), detailsSummary });
@@ -122,7 +124,7 @@ export function createMockServices(
 
   const validateList = (answer: MedicalAnswer<string> | undefined, key: string, errors: Record<string, string>) => {
     if (answer === undefined || answer === null || answer === 'none') return;
-    if (!Array.isArray(answer) || answer.some((v) => typeof v !== 'string' || !v.trim()))
+    if (!Array.isArray(answer) || answer.length === 0 || answer.some((v) => typeof v !== 'string' || !v.trim()))
       errors[key] = 'Enter each item, or choose "none".';
   };
 
@@ -132,13 +134,14 @@ export function createMockServices(
     validateList(changes.conditions, 'conditions', errors);
     const meds = changes.medications;
     if (Array.isArray(meds)) {
+      if (meds.length === 0) errors.medications = 'Enter a medication, or choose "none".';
       meds.forEach((m, i) => {
         if (!m.name?.trim()) errors[`medications.${i}.name`] = 'Enter the medication name.';
         if (!m.location?.trim()) errors[`medications.${i}.location`] = 'Say where it is kept.';
       });
     } else if (meds !== undefined && meds !== null && meds !== 'none') errors.medications = 'Enter each medication, or choose "none".';
     if (changes.emergencyContacts) {
-      if (changes.emergencyContacts.length > 2) errors.emergencyContacts = 'Enter up to two emergency contacts.';
+      if (changes.emergencyContacts.length !== 2) errors.emergencyContacts = 'Enter exactly two emergency contacts.';
       changes.emergencyContacts.forEach((c, i) => {
         if (!c.name?.trim()) errors[`emergencyContacts.${i}.name`] = 'Enter a name.';
         if (!c.relationship?.trim()) errors[`emergencyContacts.${i}.relationship`] = 'Enter the relationship.';
@@ -167,14 +170,19 @@ export function createMockServices(
       return ok(
         state.children
           .filter((c) => ownsChild(user, c))
-          .map((c) => ({
+          .map((c) => {
+            const group = groupOf(c);
+            const defaultGroup = c.groupId ? defaultGroups.get(c.groupId) : undefined;
+            return ({
             id: c.id,
             firstName: c.firstName,
             lastName: c.lastName,
-            groupNumber: groupOf(c)?.groupNumber ?? null,
+            groupNumber: group?.groupNumber ?? null,
+            skiLevel: group?.skiLevel || c.skiLevel || defaultGroup?.skiLevel || null,
+            lessonDay: group ? group.day || defaultGroup?.day || DEMO_LESSON_DATE : null,
             completion: profileOf(c).completion,
             updatedAt: c.updatedAt,
-          })),
+          }); }),
       );
     },
 
@@ -234,6 +242,108 @@ export function createMockServices(
       }
       child.updatedAt = at;
       return ok(profileOf(child));
+    },
+
+    async issueLessonPass(childId, input, user) {
+      const child = findChild(childId);
+      if (!child || !ownsChild(user, child)) return deny(user, 'LessonPass', childId, 'issue pass', NOT_FOUND);
+      if (!attendanceFor(childId, input.lessonDate)) return fail('invalid', 'This child has no lesson on that day.');
+      let adultId: string | null = null;
+      let adultName: string | null = null;
+      if (input.purpose === 'pickup') {
+        const adult = state.adults.find((item) => item.id === input.adultId && item.childId === childId && item.isActive);
+        if (!adult) return fail('invalid', 'Choose an active authorized pick-up adult.');
+        adultId = adult.id;
+        adultName = adult.name;
+      } else if (input.adultId) return fail('invalid', 'A drop-off pass is not tied to an adult.');
+      const existing = state.passes.find((pass) => pass.childId === childId && pass.lessonDate === input.lessonDate && pass.purpose === input.purpose && pass.adultId === adultId);
+      if (existing) return ok(structuredClone(existing));
+      const token = [...crypto.getRandomValues(new Uint8Array(32))].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+      let shortCode = String(crypto.getRandomValues(new Uint32Array(1))[0] % 100_000_000).padStart(8, '0');
+      while (state.passes.some((pass) => pass.lessonDate === input.lessonDate && pass.shortCode === shortCode)) {
+        shortCode = String(crypto.getRandomValues(new Uint32Array(1))[0] % 100_000_000).padStart(8, '0');
+      }
+      const expires = new Date(`${input.lessonDate}T23:59:59-08:00`).toISOString();
+      const pass = { id: newId('pss'), childId, lessonDate: input.lessonDate, purpose: input.purpose, adultId, adultName, token, shortCode, createdAt: stamp(), expiresAt: expires, redeemedAt: null, redeemedByStaffId: null, idChecked: false };
+      state.passes.push(pass);
+      audit(user, 'pass_issued', 'LessonPass', pass.id, `Issued ${input.purpose} pass`);
+      return ok(structuredClone(pass));
+    },
+
+    async listLessonPasses(childId, lessonDate, user) {
+      const child = findChild(childId);
+      if (!child || !ownsChild(user, child)) return deny(user, 'LessonPass', childId, 'list passes', NOT_FOUND);
+      return ok(structuredClone(state.passes.filter((pass) => pass.childId === childId && pass.lessonDate === lessonDate)));
+    },
+
+    async resolveLessonPass(rawValue, lessonDate, user) {
+      if (!is(user, 'desk', 'admin')) return deny(user, 'LessonPass', '', 'resolve pass');
+      const attempts = state.passAttempts.find((item) => item.lessonDate === lessonDate);
+      if (attempts?.lockedUntil && Date.parse(attempts.lockedUntil) > now().getTime()) return fail('blocked', 'Too many incorrect codes. Wait five minutes, then try again.');
+      if (attempts?.lockedUntil && Date.parse(attempts.lockedUntil) <= now().getTime()) { attempts.count = 0; attempts.lockedUntil = null; }
+      const value = rawValue.trim().replace(/^pss:/i, '');
+      if (!value) return fail('invalid', 'Scan a pass or enter its 8-digit code.');
+      const matches = state.passes.filter((pass) => pass.lessonDate === lessonDate && (pass.token === value || pass.shortCode === value));
+      if (matches.length !== 1) {
+        const row = attempts ?? { id: newId('pat'), lessonDate, count: 0, lockedUntil: null };
+        row.count += 1;
+        if (row.count >= 5) row.lockedUntil = new Date(now().getTime() + 5 * 60_000).toISOString();
+        if (!attempts) state.passAttempts.push(row);
+        audit(user, 'pass_lookup_failed', 'LessonPass', '', 'Pass lookup failed');
+        return fail(matches.length ? 'blocked' : 'not_found', matches.length ? 'That number matches more than one pass. Scan the QR code.' : 'No pass matches that code for today.');
+      }
+      if (attempts) attempts.count = 0;
+      const pass = matches[0];
+      const child = findChild(pass.childId);
+      if (!child) return NOT_FOUND;
+      const adult = pass.adultId ? state.adults.find((item) => item.id === pass.adultId && item.childId === child.id && item.isActive) : null;
+      const expired = Date.parse(pass.expiresAt) <= now().getTime();
+      const openIncident = pass.purpose === 'pickup' && incidentsFor(child.id, lessonDate).some((incident) => incident.status === 'Open');
+      const blockedReason = expired ? 'This pass has expired.' : pass.redeemedAt ? 'This pass has already been used once.' : pass.purpose === 'pickup' && !adult ? 'That adult is no longer on the active pickup list.' : openIncident ? 'Release blocked: call patrol.' : null;
+      return ok({ passId: pass.id, childId: child.id, childFirstName: child.firstName, childLastName: child.lastName, groupNumber: groupOf(child)?.groupNumber ?? null, lessonDate, purpose: pass.purpose, adultName: adult?.name ?? pass.adultName, adultOnList: pass.purpose !== 'pickup' || Boolean(adult), expiresAt: pass.expiresAt, redeemedAt: pass.redeemedAt, canRedeem: !blockedReason, blockedReason });
+    },
+
+    async redeemLessonPass(passId, input, user) {
+      if (!is(user, 'desk', 'admin')) return deny(user, 'LessonPass', passId, 'redeem pass');
+      const pass = state.passes.find((item) => item.id === passId);
+      if (!pass) return NOT_FOUND;
+      const child = findChild(pass.childId);
+      const attendance = attendanceFor(pass.childId, pass.lessonDate);
+      if (!child || !attendance) return NOT_FOUND;
+      if (Date.parse(pass.expiresAt) <= now().getTime()) return fail('blocked', 'This pass has expired.');
+      if (pass.redeemedAt) return fail('blocked', 'This pass has already been used once.');
+      if (pass.purpose === 'dropoff') {
+        if (attendance.status !== 'Expected') return fail('blocked', 'This child is already checked in or released.');
+        if (!input.bibNumber?.trim()) return fail('invalid', 'Enter the child’s bib number.', { bibNumber: 'Enter the child’s bib number.' });
+        Object.assign(attendance, { status: 'CheckedIn', bibNumber: input.bibNumber.trim(), checkedInAt: stamp(), checkedInBy: user.id });
+        audit(user, 'child_checked_in', 'Attendance', attendance.id, 'Checked in using a lesson pass');
+      } else {
+        if (!input.idChecked) return fail('invalid', 'Confirm that you checked the adult’s photo ID.');
+        if (attendance.status !== 'CheckedIn') return fail('blocked', 'The child must be checked in before pick-up.');
+        if (incidentsFor(child.id, pass.lessonDate).some((incident) => incident.status === 'Open')) return fail('blocked', 'Release blocked: call patrol.');
+        const adult = pass.adultId ? state.adults.find((item) => item.id === pass.adultId && item.childId === child.id && item.isActive) : null;
+        if (!adult) return fail('blocked', 'That adult is no longer on the active pick-up list.');
+        if (state.pickups.some((item) => item.childId === child.id && item.lessonDate === pass.lessonDate)) return fail('blocked', 'This child has already been picked up.');
+        const pickup = { id: newId('pkp'), childId: child.id, lessonDate: pass.lessonDate, authorizedAdultId: adult.id, adultNameSnapshot: adult.name, verifiedByUserId: user.id, idChecked: true as const, releasedAt: stamp() };
+        state.pickups.push(pickup);
+        attendance.status = 'Released';
+        audit(user, 'child_released', 'PickupLog', pickup.id, 'Released using a lesson pass after an ID check');
+      }
+      pass.redeemedAt = stamp();
+      pass.redeemedByStaffId = user.id;
+      pass.idChecked = input.idChecked;
+      audit(user, 'pass_redeemed', 'LessonPass', pass.id, `Redeemed ${pass.purpose} pass`);
+      return ok({ redeemedAt: pass.redeemedAt, adultName: pass.adultName });
+    },
+
+    async listParentActivity(childId, user) {
+      const child = findChild(childId);
+      if (!child || !ownsChild(user, child)) return deny(user, 'Child', childId, 'view activity', NOT_FOUND);
+      const entries = [
+        ...state.attendance.filter((item) => item.childId === childId && item.checkedInAt).map((item) => ({ id: item.id, kind: 'checked_in' as const, at: item.checkedInAt!, lessonDate: item.lessonDate })),
+        ...state.pickups.filter((item) => item.childId === childId).map((item) => ({ id: item.id, kind: 'released' as const, at: item.releasedAt, lessonDate: item.lessonDate, adultName: item.adultNameSnapshot })),
+      ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+      return ok(entries);
     },
 
     async getInstructorRoster(lessonDate, user) {

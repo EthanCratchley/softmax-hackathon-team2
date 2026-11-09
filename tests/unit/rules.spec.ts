@@ -60,15 +60,15 @@ test.describe('profile completion (R-004, R-005)', () => {
 
 test.describe('escalation time (R-029, S-022)', () => {
   test('60 minutes after last seen when that is before 4 p.m.', () => {
-    expect(escalationTime('2026-12-12T14:30:00-07:00', '2026-12-12')).toBe(new Date('2026-12-12T15:30:00-07:00').toISOString());
+    expect(escalationTime('2026-12-12T14:30:00-08:00', '2026-12-12')).toBe(new Date('2026-12-12T15:30:00-08:00').toISOString());
   });
 
   test('4 p.m. when last seen + 60 is later', () => {
-    expect(escalationTime('2026-12-12T15:30:00-07:00', '2026-12-12')).toBe(new Date('2026-12-12T16:00:00-07:00').toISOString());
+    expect(escalationTime('2026-12-12T15:30:00-08:00', '2026-12-12')).toBe(new Date('2026-12-12T16:00:00-08:00').toISOString());
   });
 
   test('exactly at the boundary', () => {
-    expect(escalationTime('2026-12-12T15:00:00-07:00', '2026-12-12')).toBe(new Date('2026-12-12T16:00:00-07:00').toISOString());
+    expect(escalationTime('2026-12-12T15:00:00-08:00', '2026-12-12')).toBe(new Date('2026-12-12T16:00:00-08:00').toISOString());
   });
 
   test('uses daylight time after the March change', () => {

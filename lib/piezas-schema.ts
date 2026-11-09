@@ -22,6 +22,8 @@ export const COLLECTIONS = {
   incidents: 'kk_incident',
   audit: 'kk_audit_event',
   noticeTasks: 'kk_notice_task',
+  passes: 'kk_lesson_pass',
+  passAttempts: 'kk_pass_attempt',
 } as const satisfies Record<keyof DemoState, string>;
 
 export type Collection = keyof typeof COLLECTIONS;

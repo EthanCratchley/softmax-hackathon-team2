@@ -1,16 +1,11 @@
 {
   "version": 2,
-  "ranAt": "2026-11-07T23:49:22.926Z",
-  "validUntil": "2026-11-08T23:49:22.926Z",
-  "sourceFingerprint": "ad54e3de088a4214f85d70eee3a982d382a9ec3ce1866ecc217c5f21f192efc0",
-  "specFingerprint": "3e9412ead13e2bd583c3d5100abe2d11b594d8dbfdf26821b98f174e9402f788",
+  "ranAt": "2026-11-09T02:06:23.356Z",
+  "validUntil": "2026-11-10T02:06:23.356Z",
+  "sourceFingerprint": "ad2f70352047fab7f52fb72833e8b461c64086ff99078afeeed2dae33fac488b",
+  "specFingerprint": "941929424514c3c5c8634384a0727421399ea7e588a2798588a2fb10e3ff2957",
   "passing": false,
-  "rounds": 2,
-  "stuck": 1,
-  "progress": {
-    "written": 0,
-    "fixed": 0
-  },
+  "rounds": 1,
   "scenarios": [
     {
       "id": "S-001",
@@ -258,14 +253,34 @@
       "title": "Lost contact prompts a radio call",
       "status": "not-written",
       "fp": "333739e7199ef9e1bfdd6c91"
+    },
+    {
+      "id": "S-042",
+      "title": "A parent sees their child's drop-off and pickup history",
+      "status": "not-written",
+      "fp": "3337e6bdae566a8006e64f69"
+    },
+    {
+      "id": "S-043",
+      "title": "A parent can show scannable drop-off and pickup passes",
+      "status": "failed",
+      "fp": "66eaf54bf33ee7011c56bdfa",
+      "plain": "The app did not open, so “A parent can show scannable drop-off and pickup passes” could not be tried."
+    },
+    {
+      "id": "S-044",
+      "title": "Desk verifies a lesson pass with a safe fallback",
+      "status": "failed",
+      "fp": "4dd07235c40c3cf49cde6a68",
+      "plain": "The app did not open, so “Desk verifies a lesson pass with a safe fallback” could not be tried."
     }
   ],
   "passed": 0,
-  "failed": 40,
+  "failed": 43,
   "counts": {
     "passed": 0,
-    "failed": 0,
-    "notWritten": 40,
+    "failed": 2,
+    "notWritten": 41,
     "needsHelp": 1,
     "skipped": 0,
     "changedChecks": 0
