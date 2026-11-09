@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ageOn, computeCompletion, escalationTime, isValidPhone, matchesName, normalizePhone, safetyAlerts } from '../../lib/domain/rules';
+import { ageOn, computeCompletion, endOfLessonDay, escalationTime, isValidPhone, matchesName, normalizePhone, safetyAlerts } from '../../lib/domain/rules';
 import { CHILD_IDS, createDemoState } from '../../lib/fixtures';
 
 test.describe('phone validation (R-003)', () => {
@@ -100,4 +100,8 @@ test('name search matches any name, case-insensitive (R-014)', () => {
   const owen = { firstName: 'Owen', lastName: 'Parr', otherNames: ['Owen Okafor-Parr', 'Okafor-Parr'] };
   for (const q of ['parr', 'Okafor', 'okafor-parr', 'owen parr', 'OW']) expect(matchesName(owen, q), q).toBe(true);
   expect(matchesName(owen, 'Shah')).toBe(false);
+});
+
+test('a lesson day ends at 11:59:59 p.m. resort time', () => {
+  expect(endOfLessonDay('2026-12-12')).toBe(new Date('2026-12-12T23:59:59-07:00').toISOString());
 });

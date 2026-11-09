@@ -85,6 +85,11 @@ function resortOffset(date: LessonDate): string {
   return name?.replace('GMT', '') || '+00:00';
 }
 
+/** The last second of a lesson day in resort time, as an ISO timestamp. */
+export function endOfLessonDay(date: LessonDate): Timestamp {
+  return new Date(`${date}T23:59:59${resortOffset(date)}`).toISOString();
+}
+
 /** Earlier of (last seen + 60 min) or 4:00 p.m. resort time on the lesson date. */
 export function escalationTime(lastSeenAt: Timestamp, lessonDate: LessonDate): Timestamp {
   const byMinutes = new Date(lastSeenAt).getTime() + ESCALATION_MINUTES * 60_000;

@@ -17,6 +17,7 @@ import type {
   PickupLog,
   AuditEvent,
   NoticeTask,
+  LessonPass,
   User,
 } from './domain/types';
 
@@ -92,6 +93,8 @@ export interface DemoState {
   incidents: Incident[];
   audit: AuditEvent[];
   noticeTasks: NoticeTask[];
+  passes: LessonPass[];
+  passAttempts: { id: string; lessonDate: LessonDate; count: number; lockedUntil: string | null }[];
 }
 
 /** A fresh deep copy of the seed, so mocks and tests never share mutations. */
@@ -164,5 +167,7 @@ export function createDemoState(): DemoState {
     incidents: [],
     audit: [],
     noticeTasks: [],
+    passes: [],
+    passAttempts: [],
   } satisfies DemoState);
 }

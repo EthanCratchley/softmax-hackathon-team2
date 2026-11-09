@@ -22,7 +22,7 @@ test('each role signs in and sees only its own authorized summary', async ({ pag
   const secret = process.env.DEMO_ACCOUNT_SECRET;
   expect(secret, 'DEMO_ACCOUNT_SECRET must be set (in .env) for the sign-in check').toBeTruthy();
   const cases = [
-    ['priya.shah@example.test', 'Priya Shah · Parent', '1 linked child(ren) · 1 need information'],
+    ['priya.shah@example.test', 'Priya Shah · Parent', 'Some required details are missing. Review the list and update each child’s profile before lesson day.'],
     ['jordan.lee@example.test', 'Jordan Lee · Instructor', 'Group 14 · 3 children · 1 with safety alerts'],
     ['casey.morgan@example.test', 'Casey Morgan · Desk', '6 expected · 1 checked in · 0 released'],
     ['rob.fournier@example.test', 'Rob Fournier · Patrol', '0 open incident(s)'],

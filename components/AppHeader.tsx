@@ -10,7 +10,7 @@ export async function AppHeader() {
   return (
     <header className="app-header" data-testid="app-header">
       <Link href="/" className="brand">
-        ▲ Kestrel Kids
+        Kestrel Kids
       </Link>
       {user && (
         <div className="who">

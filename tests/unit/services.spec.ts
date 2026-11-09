@@ -66,6 +66,13 @@ test.describe('parent updates (S-002 to S-005)', () => {
     expect(data(await svc.getChildProfile(CHILD_IDS.ava, parent)).medical.allergies).toEqual(['Tree nuts']);
   });
 
+  test('a parent can save one valid contact now and add the second later', async () => {
+    const r = data(await svc.updateChildProfile(CHILD_IDS.ava, { emergencyContacts: [{ name: 'Priya Shah', relationship: 'Mother', phone: '604-555-0101', priority: 1 }] }, as(USER_IDS.parentAva)));
+    expect(r.emergencyContacts).toHaveLength(1);
+    expect(r.completion.missing).toContain('emergencyContacts');
+    expect(errCode(await svc.updateChildProfile(CHILD_IDS.ava, { emergencyContacts: [1, 2, 3].map((n) => ({ name: `C${n}`, relationship: 'Aunt', phone: '604-555-0101', priority: 1 as const })) }, as(USER_IDS.parentAva)))).toBe('invalid');
+  });
+
   test('a 9-digit phone is rejected and nothing is saved', async () => {
     const before = structuredClone(state.contacts);
     const r = await svc.updateChildProfile(
@@ -116,6 +123,52 @@ test.describe('parent updates (S-002 to S-005)', () => {
 });
 
 test.describe('desk and pickup (S-009 to S-014)', () => {
+  test('drop-off pass is private to its parent, one-day scoped and single-use', async () => {
+    const parent = as(USER_IDS.parentAva);
+    const pass = data(await svc.issueLessonPass(CHILD_IDS.ava, { lessonDate: DAY, purpose: 'dropoff' }, parent));
+    expect(pass.token).toHaveLength(64);
+    expect(pass.shortCode).toMatch(/^\d{8}$/);
+    expect(pass.expiresAt).toContain('2026-12-13');
+    expect(errCode(await svc.issueLessonPass(CHILD_IDS.lily, { lessonDate: DAY, purpose: 'dropoff' }, parent))).toBe('not_found');
+
+    const desk = as(USER_IDS.desk);
+    const lookup = data(await svc.resolveLessonPass(`pss:${pass.token}`, DAY, desk));
+    expect(lookup).toMatchObject({ childId: CHILD_IDS.ava, purpose: 'dropoff', canRedeem: true });
+    expect(JSON.stringify(lookup)).not.toMatch(/Tree nuts|Alder Lane|604-555/);
+    expect(errCode(await svc.resolveLessonPass(pass.shortCode, '2026-12-13', desk))).toBe('not_found');
+    expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: false, bibNumber: '7' }, desk))).toBe('ok');
+    expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: false, bibNumber: '8' }, desk))).toBe('blocked');
+    expect(state.attendance.find((item) => item.childId === CHILD_IDS.ava)?.status).toBe('CheckedIn');
+    expect(data(await svc.listParentActivity(CHILD_IDS.ava, parent))).toMatchObject([{ kind: 'checked_in', lessonDate: DAY }]);
+    expect(errCode(await svc.listParentActivity(CHILD_IDS.lily, parent))).toBe('not_found');
+  });
+
+  test('pick-up pass requires an active listed adult and checked photo ID', async () => {
+    const parent = as(USER_IDS.parentLily);
+    const pass = data(await svc.issueLessonPass(CHILD_IDS.lily, { lessonDate: DAY, purpose: 'pickup', adultId: ADULT_IDS.lilyFather }, parent));
+    const desk = as(USER_IDS.desk);
+    const lookup = data(await svc.resolveLessonPass(pass.shortCode, DAY, desk));
+    expect(lookup).toMatchObject({ purpose: 'pickup', adultName: 'Tom Whitfield', adultOnList: true, canRedeem: true });
+    expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: false }, desk))).toBe('invalid');
+    for (const id of [USER_IDS.admin, USER_IDS.parentLily, USER_IDS.instructorGroup9, USER_IDS.patrol]) {
+      expect(errCode(await svc.resolveLessonPass(pass.shortCode, DAY, as(id))), id).toBe('forbidden');
+      expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: true }, as(id))), id).toBe('forbidden');
+    }
+    data(await svc.redeemLessonPass(pass.id, { idChecked: true }, desk));
+    expect(state.pickups.at(-1)).toMatchObject({ childId: CHILD_IDS.lily, adultNameSnapshot: 'Tom Whitfield', idChecked: true });
+    expect(data(await svc.listParentActivity(CHILD_IDS.lily, parent)).at(0)).toMatchObject({ kind: 'released', adultName: 'Tom Whitfield' });
+  });
+
+  test('deactivated pick-up adult cannot redeem an already issued pass', async () => {
+    const parent = as(USER_IDS.parentLily);
+    const pass = data(await svc.issueLessonPass(CHILD_IDS.lily, { lessonDate: DAY, purpose: 'pickup', adultId: ADULT_IDS.lilyFather }, parent));
+    data(await svc.updateChildProfile(CHILD_IDS.lily, { authorizedAdults: [{ id: ADULT_IDS.lilyFather, name: 'Tom Whitfield', relationship: 'Father', phone: '604-555-0112', isActive: false }] }, parent));
+    const lookup = data(await svc.resolveLessonPass(pass.token, DAY, as(USER_IDS.desk)));
+    expect(lookup.canRedeem).toBe(false);
+    expect(lookup.blockedReason).toContain('no longer on the active pickup list');
+    expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: true }, as(USER_IDS.desk)))).toBe('blocked');
+  });
+
   test('search by other name, check in, flag needs-information without medical data', async () => {
     const desk = as(USER_IDS.desk);
     expect(data(await svc.getDeskRoster(DAY, desk, 'Okafor')).map((e) => e.childId)).toEqual([CHILD_IDS.owen]);
