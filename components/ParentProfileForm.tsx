@@ -6,7 +6,7 @@ import type { ChildProfile, ChildProfileChanges, Medication } from '@/lib/domain
 
 type Answer = 'none' | 'items';
 type AdultInput = { id?: string; name: string; relationship: string; phone: string; isActive: boolean };
-type SaveState = { ok: boolean; message: string; fields: Record<string, string> };
+type SaveState = { ok: boolean; message: string; fields: Record<string, string>; adults?: AdultInput[] };
 // A blank answer is sent as "not answered" (null), so the rest of the profile still saves and stays incomplete (R-004).
 const splitItems = (value: string) => {
   const items = value.split(',').map((part) => part.trim()).filter(Boolean);
@@ -38,15 +38,14 @@ export function ParentProfileForm({ profile, lessonDate }: { profile: ChildProfi
   const [clothingToday, setClothingToday] = useState(profile.clothing.find((item) => item.lessonDate === lessonDate)?.description ?? '');
   const [state, action, pending] = useActionState<SaveState, FormData>(saveParentProfile.bind(null, profile.child.id), { ok: false, message: '', fields: {} });
 
-  // After a successful save, the adult just added joins the list and the "new adult" fields clear,
-  // so saving again cannot add the same person twice.
+  // After a successful save, the form takes the saved pickup list (with server ids) and clears the
+  // "new adult" fields, so later edits change that record instead of adding the person again.
   const handled = useRef(state);
   useEffect(() => {
     if (handled.current === state || !state.ok) return;
     handled.current = state;
-    if (newAdult.name.trim()) setAdults((list) => [...list, newAdult]);
+    if (state.adults) setAdults(state.adults);
     setNewAdult({ name: '', relationship: '', phone: '', isActive: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per completed save
   }, [state]);
 
   const changes = useMemo<ChildProfileChanges>(() => ({
