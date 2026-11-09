@@ -4,13 +4,11 @@
 //   When a patroller adds "family contacted", marks him Located and later Closed
 //   Then the timeline shows each step with the patroller and time, and each is in the audit trail
 import { expect, test } from '@playwright/test';
-import { closeIncidentsFor, DAY } from '../safety-helpers';
+import { closeIncidentsFor, patrolReports } from '../safety-helpers';
 
 test('S-021: Patrol logs actions and closes an incident', async ({ page }) => {
   await closeIncidentsFor(page, 'chd_owen');
-  await page.goto(`/patrol?day=${DAY}&q=Owen`);
-  await page.getByTestId('open-incident-chd_owen').click();
-  await expect(page.getByTestId('emergency-packet')).toBeVisible();
+  await patrolReports(page, 'chd_owen', 'Owen', { time: '14:30', location: 'Top of the Pigeon chair' });
   const packetUrl = page.url();
 
   // A blank note is refused by the server (bypassing the browser's required check).
