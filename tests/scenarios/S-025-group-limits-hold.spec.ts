@@ -64,6 +64,7 @@ test('S-025: Hana fills a group to six through the admin screen and the roster s
 });
 
 test('S-025: Hana cannot move a seventh child into a full group through the admin screen', async ({ page }) => {
+  test.skip(process.env.KESTREL_DATA === 'mock', 'This scenario writes a temporary record to the Piezas test copy.');
   const key = process.env.PIEZAS_TEST_API_KEY;
   // A test key (sk_test_) can only reach the test copy, never live data.
   if (!key?.startsWith('sk_test_')) throw new Error('This check requires the Piezas test copy (a sk_test_ key).');

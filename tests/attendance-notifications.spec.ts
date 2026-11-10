@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './scenario-test';
 import { signIn } from './sign-in';
 
 test.skip(process.env.KESTREL_DATA !== 'mock', 'This workflow test must use the in-memory service mock.');

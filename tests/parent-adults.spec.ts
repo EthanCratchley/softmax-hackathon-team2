@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './scenario-test';
 import { CHILD_IDS, DEMO_LESSON_DATE } from '../lib/fixtures';
 import { CASEY, openSection, saveProfile } from './parent-helpers';
 import { signIn } from './sign-in';

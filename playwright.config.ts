@@ -11,6 +11,9 @@ const port = Number(process.env.PIEZAS_TEST_PORT || 3100);
 
 export default defineConfig({
   testDir: './tests',
+  // The Piezas record-store suite writes to the shared TEST copy and is never
+  // part of a mock-only Playwright run.
+  testIgnore: process.env.KESTREL_DATA === 'mock' ? '**/integration/**' : undefined,
   outputDir: './.piezas/test-results/raw',
   // Scenario checks use one shared, seeded Piezas test copy; pass redemption
   // and attendance updates are intentionally single-use and must not race.

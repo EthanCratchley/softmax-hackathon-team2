@@ -47,3 +47,32 @@
 .summary span, .child p { font-size: 15px; }
 .desk input, .desk select, .desk textarea { font-size: 16px; }
 .desk :is(input, select, button, textarea):focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+
+/* Keep the desk's high-frequency controls easy to scan and hit on phones. */
+.title { display: grid; gap: 6px; }
+.title h1 { margin: 0; }
+.title > p:last-child { max-width: 58ch; }
+.filters { align-items: end; }
+.filters > label { min-width: 0; }
+.child { align-items: center; transition: border-color var(--motion-smooth, 200ms ease), box-shadow var(--motion-smooth, 200ms ease); }
+.attendance { display: grid; align-content: start; justify-items: start; gap: 8px; }
+.status { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--navy); }
+.complete, .warning { border-radius: 999px; }
+.pickupLink, .backLink { border-radius: 8px; text-underline-offset: 4px; }
+.pickupLink:focus-visible, .backLink:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  .child:hover { border-color: #b9cbd5; box-shadow: 0 7px 20px rgb(22 50 71 / 8%); }
+}
+@media (max-width: 620px) {
+  .desk { padding: 20px 16px 36px; }
+  .title { margin: 22px 0 16px; padding: 20px; }
+  .title h1 { font-size: clamp(26px, 8vw, 32px); }
+  .summary { margin: 18px 0; }
+  .summary strong { font-size: 26px; }
+  .filters { gap: 12px; padding: 14px 0; }
+  .child { padding: 18px; gap: 12px; }
+  .attendance { width: 100%; max-width: none; padding-top: 12px; border-top: 1px solid var(--line); }
+  .child .pickupLink { display: flex; width: 100%; justify-content: center; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); }
+  .child .pickupLink:hover { background: var(--surface-2); }
+  .listHeading { margin-top: 18px; }
+}

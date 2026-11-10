@@ -16,3 +16,24 @@
 
 .group, .protected { background: var(--surface); border-radius: 16px; border-color: var(--line); box-shadow: var(--shadow-card); padding: 20px; }
 .admin textarea:focus-visible { outline-color: var(--teal); }
+
+.summary { gap: 0; overflow: hidden; }
+.summary > div { min-width: 0; }
+.summary strong { color: var(--navy); font-variant-numeric: tabular-nums; }
+.summary span { color: var(--muted); line-height: 1.4; }
+.columns { gap: 16px; }
+.list > li { min-width: 0; overflow-wrap: anywhere; }
+.correction { border-radius: 0 10px 10px 0; }
+.form :is(input, select, textarea):focus-visible,
+.admin textarea:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; box-shadow: 0 0 0 2px white; }
+
+@media (max-width: 760px) {
+  .columns { gap: 0; }
+  .summary { margin: 18px 0; }
+}
+
+@media (max-width: 500px) {
+  .summary > div { padding: 14px 10px; }
+  .summary strong { font-size: 25px; }
+  .form { gap: 12px; margin-top: 18px; }
+}

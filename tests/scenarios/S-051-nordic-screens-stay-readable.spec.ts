@@ -12,13 +12,14 @@ import { signIn } from '../sign-in';
 for (const width of [375, 1280]) {
   test(`S-051: Nordic dashboards are readable at ${width}px`, async ({ page }) => {
     test.setTimeout(180_000);
-    await page.setViewportSize({ width, height: 900 });
     for (const [role, email] of [
       ['parent', 'priya.shah@example.test'], ['instructor', 'jordan.lee@example.test'],
       ['desk', 'casey.morgan@example.test'], ['patrol', 'rob.fournier@example.test'],
       ['admin', 'hana.sato@example.test'],
     ]) {
+      await page.setViewportSize({ width: 1280, height: 900 });
       await signIn(page, email);
+      await page.setViewportSize({ width, height: 900 });
       await page.getByRole('link', { name: `${role === 'parent' ? 'Parent' : role[0].toUpperCase() + role.slice(1)} workspace` }).click();
       await expect(page).toHaveURL(new RegExp(`/${role}(?:\\?|$)`));
       await expect(page.locator('main')).toBeVisible();
@@ -54,7 +55,10 @@ for (const width of [375, 1280]) {
       expect(result.failures, `${role} contrast`).toEqual([]);
       expect(result.font).toMatch(/geist/i);
       expect(result.loaded, 'Geist loaded locally').toBe(true);
-      const workspaceLink = page.getByRole('navigation').getByRole('link', { name: /workspace$/ });
+      const workspaceLink = page.getByRole('navigation').getByRole('link', {
+        name: `${role === 'parent' ? 'Parent' : role[0].toUpperCase() + role.slice(1)} workspace`,
+        exact: true,
+      });
       await page.keyboard.press('Tab');
       await workspaceLink.focus();
       expect(await workspaceLink.evaluate(el => getComputedStyle(el).outlineStyle)).toBe('solid');

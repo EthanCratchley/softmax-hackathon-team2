@@ -45,7 +45,7 @@ function Disclosure({ title, meta, urgent = false, children, testId, onToggle }:
   };
   return <article className={`communication-card${urgent ? ' urgent' : ''}`} data-testid={testId}>
     <button className="communication-toggle" type="button" aria-expanded={open} onClick={toggle}>
-      <span className="communication-card-copy"><strong>{title}</strong>{meta && <span>{meta}</span>}</span>
+      <span className="communication-card-copy"><strong>{title}</strong>{urgent && <span className="urgent-badge">Urgent safety alert</span>}{meta && <span>{meta}</span>}</span>
       <Chevron open={open} />
     </button>
     <div className={`communication-disclosure${open ? ' expanded' : ''}`} aria-hidden={!open} inert={!open}>
