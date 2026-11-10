@@ -4,6 +4,7 @@ import { AppHeader } from '@/components/AppHeader';
 import './globals.css';
 import './kestrel-ui.css';
 import './nordic.css';
+import './communications.css';
 import { ReportProblem } from './report-problem';
 
 const geist = localFont({ src: '../public/fonts/geist-variable.ttf', variable: '--font-geist', display: 'swap', weight: '100 900' });

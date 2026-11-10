@@ -20,6 +20,7 @@ import type {
   LessonPass,
   User,
 } from './domain/types';
+import type { CommAlertRecipient, CommAnnouncement, CommConversation, CommEmergencyAlert, CommMessage, CommReadState } from './domain/communications';
 
 export const DEMO_LESSON_DATE: LessonDate = '2026-12-12';
 const SEEDED_AT = '2026-11-07T09:00:00-07:00';
@@ -95,6 +96,12 @@ export interface DemoState {
   noticeTasks: NoticeTask[];
   passes: LessonPass[];
   passAttempts: { id: string; lessonDate: LessonDate; staffUserId: string; count: number; lockedUntil: string | null }[];
+  conversations: CommConversation[];
+  messages: CommMessage[];
+  announcements: CommAnnouncement[];
+  emergencyAlerts: CommEmergencyAlert[];
+  alertRecipients: CommAlertRecipient[];
+  communicationReadStates: CommReadState[];
 }
 
 /** A fresh deep copy of the seed, so mocks and tests never share mutations. */
@@ -169,5 +176,11 @@ export function createDemoState(): DemoState {
     noticeTasks: [],
     passes: [],
     passAttempts: [],
+    conversations: [],
+    messages: [],
+    announcements: [],
+    emergencyAlerts: [],
+    alertRecipients: [],
+    communicationReadStates: [],
   } satisfies DemoState);
 }

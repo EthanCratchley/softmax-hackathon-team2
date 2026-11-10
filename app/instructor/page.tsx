@@ -15,6 +15,7 @@ export default async function InstructorPage({ searchParams }: { searchParams: P
 
   return (
     <Shell testId="instructor-page" eyebrow="On the mountain / Instructor" title="Your group. Every child." lead={`${user.displayName} · Know your group. Keep safety in sight.`} day={day}>
+      <p className={s.notice}><Link href="/instructor/communications" data-testid="instructor-communications-link">Messages & group announcements →</Link></p>
       {reported && (
         <p role="status" className={s.notice} data-testid="report-confirmation">
           Missing report sent for {reported.firstName} {reported.lastName}. Patrol has it now; keep your radio on.

@@ -65,7 +65,8 @@ export async function commitState(clients: Clients, { state, index }: Loaded): P
       if (existing?.json === json) continue;
       if (existing && APPEND_ONLY.has(name)) throw new Error(`Refused to edit append-only ${name} record ${key}`);
       const data = { key, payload: json };
-      writes.push(existing ? clients[name].update(existing.recordId, { data }) : clients[name].create({ title: key, data }));
+      if (existing) writes.push(clients[name].update(existing.recordId, { data }));
+      else writes.push(clients[name].create({ title: key, data }));
     }
     for (const [key, { recordId }] of index[name]) {
       if (seen.has(key)) continue;

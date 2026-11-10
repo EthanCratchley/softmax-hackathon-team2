@@ -113,6 +113,12 @@ Every role check happens on the server against the signed-in person. There is no
 - R-048: [Stated] Desk staff and Hana see "Instructor not responding: try the radio" when an instructor's roster has had no contact for 20 minutes during lesson time. The wording does not claim the battery is dead, because the app cannot tell a dead phone from a locked one or no signal. (Team feature list: dead battery alert; Case section 2; the 20 minutes is assumed)
 - R-049: [Assumed] A parent sees check-in and release alerts and a newest-first activity history for each linked child, derived from that child's attendance and pickup records. The view includes event time and the pickup adult's name, never another child's events or medical details.
 - R-050: [Assumed] For each lesson day, a parent can show a drop-off QR or enter its short numeric alternative. For pickup, the parent selects an active authorized adult and shows that adult's QR or the same numeric alternative. A code is scoped to one child, adult (for pickup), purpose and lesson day; it cannot release a child by itself. Desk staff still check photo ID and record release once.
+- R-051: [Stated] A parent can start a private, persistent conversation with the instructor assigned to their child; both sides see timestamped messages, and parents cannot read another family's conversation.
+- R-052: [Stated] An instructor can publish an announcement to one or more assigned lesson groups. A parent can respond only in a private conversation with the instructor, never in a group-visible reply.
+- R-053: [Stated] An authorized admin can create an urgent alert for all parents or selected lesson groups. Each alert records its reason, pickup location, pickup time, detailed instructions, optional contact information, recipients, and each recipient's acknowledgement timestamp.
+- R-054: [Stated] A parent sees alerts addressed to their family prominently in the parent portal. An alert expands to show all safety details and provides an acknowledgement action; alerting does not change the authorized-adult list or desk ID verification requirements.
+- R-055: [Assumed] Conversation and announcement previews omit child medical or other sensitive safety details. Expanding a private conversation is still limited to its two participants.
+- R-056: [Stated] Communication panels work with mouse, keyboard, and touch; expandable cards animate gently, expose their expanded state accessibly, and respect reduced-motion settings.
 
 ## Data
 
@@ -139,6 +145,10 @@ Every role check happens on the server against the signed-in person. There is no
 - Denied pickup: child, lesson date, stated adult name, reason, staff, time
 - Incident: child, reported by, last seen at, last seen place, clothing, equipment, notes, status, escalation time, located at
 - Incident action: incident, type, note, staff, time
+- Private conversation: parent, assigned instructor, linked child reference, messages, sender, sent time
+- Group announcement: instructor, assigned lesson group(s), body, sent time; parent replies use a private conversation
+- Emergency alert: admin sender, target groups or all-parent target, reason, pickup location, pickup time, instructions, optional contact information, creation time
+- Emergency alert recipient: alert, parent account, acknowledgement time
 
 All records use stable IDs, never names, as keys. (Team section 5)
 
@@ -148,8 +158,11 @@ One app, built phone-first. (Team section 7)
 
 - `/` sends each signed-in person to their role's home.
 - `/parent` shows my children and their completion status.
+- `/parent/communications` shows only the parent's private instructor conversations, their group announcements, and alerts addressed to their family.
 - `/parent/children/[id]` edits contacts, medical details, pickup adults and consent.
 - `/instructor` shows assigned groups and alerts.
+- `/instructor/communications` shows private parent conversations and group announcement tools for assigned groups.
+- `/admin/communications` creates all-parent or selected-group emergency alerts and tracks acknowledgements.
 - `/instructor/report-missing/[childId]` is the missing-child report.
 - `/patrol` lists open incidents and finds a child.
 - `/patrol/incidents/[id]` is the one-screen packet and timeline.
@@ -505,6 +518,48 @@ covers: R-050
 Given desk staff scan a drop-off or pickup QR, or enter its numeric alternative
 When the pass matches the child, lesson day and purpose
 Then the desk sees only the child and required pass details; pickup remains blocked until staff match the active authorized adult and confirm photo ID
+
+### S-045: A parent starts a private instructor conversation
+
+covers: R-051, R-055
+Given a parent with a linked child assigned to an instructor
+When the parent sends a message to that instructor
+Then the conversation shows the message and timestamp, and a different family's conversation is absent
+
+### S-046: An instructor responds privately to a parent
+
+covers: R-051, R-055
+Given an instructor with an assigned lesson group and a parent's private conversation
+When the instructor replies
+Then the parent sees the timestamped response in that private conversation and unrelated parents do not
+
+### S-047: An instructor announces to an assigned lesson group
+
+covers: R-052, R-055
+Given an instructor assigned to two groups
+When the instructor publishes an announcement to one selected group
+Then only families in that group see it, and a parent's reply opens a private conversation rather than a group reply
+
+### S-048: A parent expands and acknowledges an emergency alert
+
+covers: R-053, R-054, R-056
+Given an alert addressed to the parent's family
+When the parent expands the alert and acknowledges it
+Then the reason, pickup location, pickup time, instructions, optional contact details, and acknowledgement time are shown, while authorized pickup and ID verification stay in force
+
+### S-049: An admin targets an emergency alert
+
+covers: R-053, R-054
+Given an admin with multiple lesson groups
+When they create an all-parent alert or target selected groups
+Then recipients are recorded for only the chosen audience and acknowledgement status is tracked per parent
+
+### S-050: Communication sections support accessible expansion
+
+covers: R-056
+Given a parent or instructor on a phone or desktop
+When they expand and collapse a conversation, announcement, or alert using touch or keyboard
+Then details open and close accessibly, chevrons rotate, and reduced-motion preferences suppress animation
 
 ## Open Conflicts
 

@@ -32,6 +32,7 @@ import type {
   GroupOverview,
   VerifiedUser,
 } from '../domain/types';
+import type { CommunicationWorkspace, EmergencyAlertInput } from '../domain/communications';
 
 export type ServiceErrorCode =
   /** Missing, or exists but the actor may not know it exists. */
@@ -54,6 +55,19 @@ export interface ServiceError {
 export type Result<T> = { ok: true; data: T } | { ok: false; error: ServiceError };
 
 export interface KestrelServices {
+  // Communications ---------------------------------------------------------
+  getCommunicationWorkspace(user: VerifiedUser): Promise<Result<CommunicationWorkspace>>;
+  getCommunicationUnreadCount(user: VerifiedUser): Promise<Result<number>>;
+  markConversationRead(conversationId: Id, lastVisibleMessageId: Id, user: VerifiedUser): Promise<Result<{ readAt: string }>>;
+  markAnnouncementRead(announcementId: Id, user: VerifiedUser): Promise<Result<{ readAt: string }>>;
+  startPrivateConversation(childId: Id, body: string, user: VerifiedUser): Promise<Result<{ conversationId: Id }>>;
+  replyToAnnouncement(announcementId: Id, childId: Id, body: string, user: VerifiedUser): Promise<Result<{ conversationId: Id }>>;
+  replyToConversation(conversationId: Id, body: string, user: VerifiedUser): Promise<Result<{ conversationId: Id }>>;
+  createGroupAnnouncement(groupIds: Id[], body: string, user: VerifiedUser): Promise<Result<{ announcementId: Id }>>;
+  createEmergencyAlert(input: EmergencyAlertInput, user: VerifiedUser): Promise<Result<{ alertId: Id }>>;
+  markEmergencyAlertViewed(alertId: Id, user: VerifiedUser): Promise<Result<{ viewedAt: string }>>;
+  acknowledgeEmergencyAlert(alertId: Id, user: VerifiedUser): Promise<Result<{ acknowledgedAt: string }>>;
+
   // Parent ------------------------------------------------------------------
   getMyChildren(user: VerifiedUser): Promise<Result<MyChildSummary[]>>;
   /** Parent: own child only (else not_found). Admin: use openChildDetailsWithReason. */

@@ -3,12 +3,18 @@ import { requireUser } from '@/lib/session';
 import { services } from '@/lib/services';
 import { formatMissingFields } from '@/lib/domain/parent-copy';
 import { DEMO_LESSON_DATE } from '@/lib/fixtures';
+import type { CommunicationWorkspace } from '@/lib/domain/communications';
+import { ParentUrgentAlerts } from '@/components/communications/CommunicationsWorkbench';
 
 export default async function ParentHome() {
   const user = await requireUser('parent');
   const result = await services.getMyChildren(user);
+  const communicationResult = await services.getCommunicationWorkspace(user);
+  const communications: CommunicationWorkspace | null = communicationResult.ok ? communicationResult.data : null;
   return <main className="page parent-page" data-testid="parent-home">
     <header className="parent-page-heading"><p className="eyebrow">Parent portal</p><h1>My Children</h1><p className="page-intro">Keep each child’s safety and pick-up details up to date.</p><p className="small muted first-lesson">First lesson {new Date(`${DEMO_LESSON_DATE}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/Vancouver' })}</p></header>
+    <div className="parent-communication-links"><Link className="button" href="/parent/communications">Messages & updates</Link></div>
+    <ParentUrgentAlerts workspace={communications} />
     {!result.ok ? <div className="alert danger" role="alert">{result.error.message}</div> : result.data.length === 0 ? <div className="empty-state"><h2>No linked children yet</h2><p>Children connected to your account will appear here.</p></div> :
       <div className="children-list">{result.data.map((child) => {
         const requiredMissing = child.completion.missing.filter((field) => field !== 'parent');
