@@ -37,7 +37,7 @@
   pointer-events: none;
 }
 .eyebrow { margin: 0 0 12px; color: #9ed5d8; font-size: 11px; letter-spacing: .17em; font-weight: 700; text-transform: uppercase; }
-.hero h1 { margin: 0 0 12px; font-size: clamp(30px, 5.6vw, 56px); line-height: 1.05; letter-spacing: -.04em; }
+.hero h1 { margin: 0 0 12px; font-size: clamp(30px, 5.6vw, 56px); line-height: 1.05; letter-spacing: -.04em; color: #f4f9f8; }
 .hero p { margin: 0; font-size: 14px; color: #c0d8e1; line-height: 1.6; }
 .dayForm { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
 .dayForm label { display: flex; flex-direction: column; gap: 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #c0d8e1; }

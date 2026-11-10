@@ -24,7 +24,7 @@ export function Shell(props: { eyebrow: string; title: string; lead: string; day
         )}
       </section>
       <p className={s.radioNotice}>
-        <span aria-hidden="true">↗</span> Use radios and resort procedures when urgent help is needed. Fictional demo information only.
+        Use radios and resort procedures when urgent help is needed. Fictional demo information only.
       </p>
       {props.children}
       <footer className={s.footer}>People contact families and rescuers. The app records what happened; it never calls them automatically.</footer>
