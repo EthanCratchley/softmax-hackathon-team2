@@ -1,10 +1,16 @@
-import { test, expect } from '@playwright/test';
+// piezas-scenario: S-051
+// S-051: Nordic screens stay readable on phones and desktops
+//   Given a signed-in parent, instructor, desk worker, patroller or admin
+//   When they open their dashboard at phone and desktop widths and use the workspace navigation
+//   Then content fits the viewport, text meets AA contrast, the locally hosted Geist font loads, and keyboard focus is visible
+//
+import { test, expect } from '../scenario-test';
 import { signIn } from '../sign-in';
 
 // Read-only checks against the same Piezas TEST copy as the existing suite.
 // No state reset is needed: this scenario never changes business records.
 for (const width of [375, 1280]) {
-  test(`S-045: Nordic dashboards are readable at ${width}px`, async ({ page }) => {
+  test(`S-051: Nordic dashboards are readable at ${width}px`, async ({ page }) => {
     test.setTimeout(180_000);
     await page.setViewportSize({ width, height: 900 });
     for (const [role, email] of [
@@ -48,7 +54,7 @@ for (const width of [375, 1280]) {
       expect(result.failures, `${role} contrast`).toEqual([]);
       expect(result.font).toMatch(/geist/i);
       expect(result.loaded, 'Geist loaded locally').toBe(true);
-      const workspaceLink = page.getByRole('navigation').getByRole('link');
+      const workspaceLink = page.getByRole('navigation').getByRole('link', { name: /workspace$/ });
       await page.keyboard.press('Tab');
       await workspaceLink.focus();
       expect(await workspaceLink.evaluate(el => getComputedStyle(el).outlineStyle)).toBe('solid');

@@ -3,11 +3,9 @@ import { services } from '@/lib/services';
 import { requireUser } from '@/lib/session';
 import AdminDashboard from './dashboard';
 
-// There is no group-listing service, so the seeded groups and accounts supply
-// only ids and display names for the pickers; the services enforce every change.
+// Children and groups for the pickers come from the live group listing. Instructor
+// accounts come from the seeded accounts (display only); the services enforce every change.
 const demo = createDemoState();
-const childOptions = demo.children.map((c) => ({ id: c.id, label: `${c.firstName} ${c.lastName}` }));
-const groupOptions = demo.groups.map((g) => ({ id: g.id, label: `Group ${g.groupNumber} · ${g.skiLevel}` }));
 const instructorOptions = demo.users.filter((u) => u.role === 'instructor').map((u) => ({ id: u.id, label: u.displayName }));
 const staffNames = Object.fromEntries(demo.users.map((u) => [u.id, u.displayName]));
 
@@ -39,8 +37,8 @@ export default async function AdminPage({ searchParams }: {
     operationsError={operations.ok ? undefined : operations.error.message}
     pickupsError={pickups.ok ? undefined : pickups.error.message}
     tasksError={tasks.ok ? undefined : tasks.error.message}
-    childOptions={childOptions}
-    groupOptions={groupOptions}
+    childOptions={groups.ok ? groups.data.flatMap((g) => g.children.map((c) => ({ id: c.childId, label: `${c.firstName} ${c.lastName}` }))) : []}
+    groupOptions={groups.ok ? groups.data.map((g) => ({ id: g.groupId, label: `Group ${g.groupNumber} · ${g.skiLevel}` })) : []}
     instructorOptions={instructorOptions}
     staffNames={staffNames}
     />

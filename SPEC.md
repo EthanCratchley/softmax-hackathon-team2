@@ -119,13 +119,9 @@ Every role check happens on the server against the signed-in person. There is no
 - R-054: [Stated] A parent sees alerts addressed to their family prominently in the parent portal. An alert expands to show all safety details and provides an acknowledgement action; alerting does not change the authorized-adult list or desk ID verification requirements.
 - R-055: [Assumed] Conversation and announcement previews omit child medical or other sensitive safety details. Expanding a private conversation is still limited to its two participants.
 - R-056: [Stated] Communication panels work with mouse, keyboard, and touch; expandable cards animate gently, expose their expanded state accessibly, and respect reduced-motion settings.
+- R-057: [Stated] All role dashboards use the Nordic winter design: locally hosted Geist typography, readable safety alerts, visible keyboard focus and responsive cards. Body text meets WCAG AA contrast, and the instructor and patrol workflows keep their existing behavior. (Owner redesign request, November 9, 2026)
 
 ## Data
-
-### Nordic interface redesign
-
-- R-051: [Stated] All existing role dashboards use Nordic winter colors, locally hosted Geist typography, readable safety alerts, visible keyboard focus, and responsive cards. Body text meets WCAG AA contrast; the instructor and patrol workflows retain their existing behavior. (Owner redesign request, November 9, 2026)
-
 
 - Pickup link: child, parent, authorized adult, lesson date, hidden link code, cancelled at, last opened at
 - Alert message: child, parent, type (check-in, release), sent or failed, time
@@ -561,14 +557,13 @@ Given a parent or instructor on a phone or desktop
 When they expand and collapse a conversation, announcement, or alert using touch or keyboard
 Then details open and close accessibly, chevrons rotate, and reduced-motion preferences suppress animation
 
-## Open Conflicts
+### S-051: Nordic screens stay readable on phones and desktops
 
-### S-045: Nordic screens stay readable on phones and desktops
-
-covers: R-051
+covers: R-057
 Given a signed-in parent, instructor, desk worker, patroller or admin
 When they open their dashboard at phone and desktop widths and use the workspace navigation
 Then content fits the viewport, text meets AA contrast, the locally hosted Geist font loads, and keyboard focus is visible
 
+## Open Conflicts
 
 none

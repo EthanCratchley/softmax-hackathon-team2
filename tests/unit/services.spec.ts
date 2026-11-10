@@ -670,4 +670,12 @@ test.describe('regressions from quality scan', () => {
     expect(JSON.stringify(groups)).not.toMatch(/Asthma|diabetes|allerg/i);
     for (const id of [USER_IDS.desk, USER_IDS.instructorGroup14, USER_IDS.parentAva]) expect(errCode(await svc.listGroups(as(id))), id).toBe('forbidden');
   });
+
+  test('a child with no medical record yet shows as unanswered instead of breaking screens', async () => {
+    state.children.push({ ...structuredClone(state.children[0]), id: 'chd_new', firstName: 'New', lastName: 'Child', groupId: GROUP_IDS.group14 });
+    const rows = data(await svc.getProfileCompletionSummary(as(USER_IDS.admin)));
+    expect(rows.find((r) => r.childId === 'chd_new')?.missing).toEqual(expect.arrayContaining(['allergies', 'conditions', 'medications']));
+    const roster = data(await svc.getInstructorRoster(DAY, as(USER_IDS.instructorGroup14)));
+    expect(roster.flatMap((g) => g.children).find((c) => c.childId === 'chd_new')?.alerts).toEqual([]);
+  });
 });
