@@ -16,9 +16,12 @@ test('an instructor announces to an assigned group and parents reply privately',
   await page.goto('/parent/communications');
   await expect(page.getByText('Hot chocolate break moves to 11:30 today.')).toHaveCount(0);
 
+  // A Group 14 family receives it.
   await signIn(page, 'priya.shah@example.test');
   await page.goto('/parent/communications');
-  await expect(page.getByText('Group 14 announcement').first()).toBeVisible();
+  const fresh = page.locator('[data-testid^="announcement-ann_"]:not([data-testid="announcement-ann_group14"]):not([data-testid="announcement-ann_group9"])').first();
+  await fresh.getByRole('button').first().click();
+  await expect(fresh).toContainText('Hot chocolate break moves to 11:30 today.');
   const announcement = page.getByTestId('announcement-ann_group14');
   await announcement.getByRole('button').click();
   await announcement.getByTestId('announcement-private-reply-ann_group14').fill('Will the meeting point be the same tomorrow?');
