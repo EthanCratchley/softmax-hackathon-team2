@@ -1,5 +1,5 @@
 // piezas-scenario: S-049 v=1
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { signIn } from '../sign-in';
 
 test('an admin targets an emergency alert to selected groups', async ({ page }) => {

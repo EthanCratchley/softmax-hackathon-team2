@@ -18,6 +18,8 @@ export default defineConfig({
   workers: 1,
   forbidOnly: true,
   retries: 1,
+  // Scenario checks reset the shared test copy and sign in several roles against real Piezas.
+  timeout: 60_000,
   reporter: 'list',
   use: {
     baseURL: process.env.PW_BASE_URL || `http://localhost:${port}`,
