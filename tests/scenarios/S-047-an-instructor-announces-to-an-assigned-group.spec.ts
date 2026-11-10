@@ -9,7 +9,7 @@ test('an instructor announces to an assigned group and parents reply privately',
   await announcement.getByRole('button').click();
   await announcement.getByTestId('announcement-private-reply-ann_group14').fill('Will the meeting point be the same tomorrow?');
   await announcement.getByRole('button', { name: 'Reply privately' }).click();
-  await expect(announcement.getByRole('status')).toHaveText('Private reply added to your instructor conversation.');
+  await expect(page.getByRole('status')).toHaveText('Private reply sent to your instructor.');
   const privateThread = page.getByTestId('conversation-msg_parent_ava');
   await privateThread.locator(':scope > .communication-toggle').click();
   await expect(privateThread.getByText('Will the meeting point be the same tomorrow?')).toBeVisible();

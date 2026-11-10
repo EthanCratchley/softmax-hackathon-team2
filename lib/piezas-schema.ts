@@ -24,12 +24,20 @@ export const COLLECTIONS = {
   noticeTasks: 'kk_notice_task',
   passes: 'kk_lesson_pass',
   passAttempts: 'kk_pass_attempt',
+  conversations: 'kk_private_conversation',
+  messages: 'kk_private_message',
+  announcements: 'kk_group_announcement',
+  emergencyAlerts: 'kk_emergency_alert',
+  alertRecipients: 'kk_alert_recipient',
+  communicationReadStates: 'kk_communication_read_state',
 } as const satisfies Record<keyof DemoState, string>;
 
 export type Collection = keyof typeof COLLECTIONS;
 
 /** Records here are never edited or deleted once written (R-034). */
-export const APPEND_ONLY: ReadonlySet<Collection> = new Set(['pickups', 'corrections', 'denials', 'audit']);
+export const APPEND_ONLY: ReadonlySet<Collection> = new Set([
+  'pickups', 'corrections', 'denials', 'audit', 'conversations', 'messages', 'announcements', 'emergencyAlerts',
+]);
 
 const definition: EntityDefinition = {
   fields: { key: { type: 'text', required: true }, payload: { type: 'longtext', required: true } },

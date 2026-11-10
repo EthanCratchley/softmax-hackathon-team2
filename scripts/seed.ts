@@ -11,6 +11,7 @@
 // print them with `npm run demo:accounts`.
 import { Piezas, PiezasError, type EntityClient, type EntityRecord } from '@piezas/sdk';
 import { createDemoState } from '../lib/fixtures';
+import { communicationsTestSeed } from '../lib/communications-test-fixtures';
 import { demoPassword, entityDefinitionsFor, keyOf, slugsFor, type AccountPayload, type Collection } from '../lib/piezas-schema';
 
 const live = process.env.SEED_TARGET === 'live';
@@ -75,6 +76,9 @@ async function syncCollection(name: Collection, client: EntityClient, desired: o
 export async function seed() {
   await piezas.users.configurePolicy({ requireEmailVerification: false });
   const state = createDemoState();
+  // The Piezas test copy gets fictional communications. Never add these canned
+  // alert or message records to the live app through the seed command.
+  if (!live) Object.assign(state, communicationsTestSeed);
 
   const accounts: AccountPayload[] = [];
   for (const user of state.users)

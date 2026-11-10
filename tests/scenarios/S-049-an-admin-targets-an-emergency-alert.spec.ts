@@ -12,8 +12,8 @@ test('an admin targets an emergency alert to selected groups', async ({ page }) 
   await page.locator('[name="pickupTime"]').fill('12:30 p.m.');
   await page.locator('[name="instructions"]').fill('Collect your child from the desk; staff will check photo ID.');
   await page.getByRole('button', { name: 'Create urgent alert' }).click();
-  const alert = page.getByTestId(/admin-alert-alert-/).first();
-  await expect(alert).toContainText('0 of 3 acknowledged');
+  const alert = page.getByTestId(/^admin-alert-alert_/).filter({ hasText: 'Group 14 pickup update' }).first();
+  await expect(alert).toContainText('3 targeted · 0 viewed · 0 acknowledged');
   await alert.getByRole('button').click();
   await expect(alert.getByText('Priya Shah')).toBeVisible();
   await expect(alert.getByText('Ngozi Okafor')).toBeVisible();

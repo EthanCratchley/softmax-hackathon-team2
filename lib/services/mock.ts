@@ -28,6 +28,7 @@ import type {
   VerifiedUser,
 } from '../domain/types';
 import type { KestrelServices, Result, ServiceError } from './contract';
+import type { CommunicationWorkspace, EmergencyAlertInput, CommReadState } from '../domain/communications';
 import { DEMO_LESSON_DATE } from '../fixtures';
 
 const ok = <T>(data: T): Result<T> => ({ ok: true, data });
@@ -74,6 +75,131 @@ export function createMockServices(
     return c ? `${c.firstName} ${c.lastName}` : 'Unknown child';
   };
   const staffName = (id: Id) => state.users.find((u) => u.id === id)?.displayName ?? 'Unknown staff';
+  const communicationGroupAssigned = (user: VerifiedUser, groupId: Id) =>
+    user.role === 'instructor' && state.groups.some((group) => group.id === groupId && group.instructorUserId === user.id);
+  const validMessage = (body: string, maxLength: number) => body.trim().length > 0 && body.trim().length <= maxLength;
+  const readStateId = (targetType: CommReadState['targetType'], targetId: Id, userId: Id) => `${targetType}_${targetId}_${userId}`;
+  const orderedMessages = (conversationId: Id) => state.messages
+    .filter((message) => message.conversationId === conversationId)
+    .slice()
+    .sort((a, b) => Date.parse(a.sentAt) - Date.parse(b.sentAt));
+  const canReadConversation = (conversationId: Id, user: VerifiedUser) => {
+    const conversation = state.conversations.find((entry) => entry.id === conversationId);
+    const child = conversation && findChild(conversation.childId);
+    if (!conversation || !child) return false;
+    return user.role === 'parent'
+      ? conversation.parentUserId === user.id && ownsChild(user, child)
+      : user.role === 'instructor' && conversation.instructorUserId === user.id && child.groupId === conversation.groupId && communicationGroupAssigned(user, conversation.groupId);
+  };
+  const accessibleConversations = (user: VerifiedUser) => state.conversations.filter((conversation) => canReadConversation(conversation.id, user));
+
+  const communicationWorkspace = (user: VerifiedUser): Result<CommunicationWorkspace> => {
+    if (!is(user, 'parent', 'instructor', 'admin')) return FORBIDDEN;
+    const ownChildren = state.children.filter((child) => ownsChild(user, child));
+    const assignedGroups = state.groups.filter((group) => user.role === 'admin' || (user.role === 'instructor' && group.instructorUserId === user.id));
+    const childRows = ownChildren.flatMap((child) => {
+      const group = groupOf(child);
+      const instructor = group && state.users.find((entry) => entry.id === group.instructorUserId);
+      return group && instructor ? [{ id: child.id, name: child.firstName, groupId: group.id, groupNumber: group.groupNumber, instructorUserId: instructor.id, instructorName: instructor.displayName }] : [];
+    });
+    const conversations = user.role === 'admin' ? [] : accessibleConversations(user)
+      .filter((conversation) => user.role !== 'parent' || ownChildren.some((child) => child.id === conversation.childId))
+      .map((conversation) => {
+        const child = findChild(conversation.childId)!;
+        const parent = state.users.find((entry) => entry.id === conversation.parentUserId);
+        const instructor = state.users.find((entry) => entry.id === conversation.instructorUserId);
+        const group = groupOf(child)!;
+        return {
+          ...conversation,
+          parentName: parent?.displayName ?? 'Parent',
+          childName: child.firstName,
+          instructorName: instructor?.displayName ?? 'Instructor',
+          groupNumber: group?.groupNumber ?? 0,
+          messages: orderedMessages(conversation.id).map((message) => {
+            const announcement = message.announcementId
+              ? state.announcements.find((entry) => entry.id === message.announcementId && entry.instructorUserId === conversation.instructorUserId && entry.groupIds.includes(conversation.groupId))
+              : null;
+            const groupNumbers = announcement?.groupIds.map((id) => state.groups.find((entry) => entry.id === id)?.groupNumber ?? 0) ?? [];
+            const excerpt = announcement?.body.trim() ?? '';
+            return {
+              ...message,
+              senderName: state.users.find((entry) => entry.id === message.senderUserId)?.displayName ?? 'User',
+              announcementContext: announcement ? {
+                id: announcement.id,
+                title: `Group${groupNumbers.length === 1 ? '' : 's'} ${groupNumbers.join(', ')} announcement`,
+                excerpt: excerpt.length > 180 ? `${excerpt.slice(0, 177).trimEnd()}…` : excerpt,
+                sentAt: announcement.sentAt,
+              } : null,
+            };
+          }),
+        };
+      });
+    const visibleGroupIds = user.role === 'parent'
+      ? new Set(ownChildren.map((child) => child.groupId).filter((id): id is string => Boolean(id)))
+      : new Set(assignedGroups.map((group) => group.id));
+    const announcements = user.role === 'admin' ? [] : state.announcements
+      .filter((announcement) => user.role === 'parent'
+        ? announcement.groupIds.some((id) => visibleGroupIds.has(id))
+        : announcement.instructorUserId === user.id && announcement.groupIds.every((id) => communicationGroupAssigned(user, id)))
+      .map((announcement) => ({
+        ...announcement,
+        instructorName: staffName(announcement.instructorUserId),
+        groupNumbers: announcement.groupIds.map((id) => state.groups.find((group) => group.id === id)?.groupNumber ?? 0),
+      }));
+    const alerts = user.role === 'instructor' ? [] : state.emergencyAlerts
+      .filter((alert) => user.role === 'admin' || state.alertRecipients.some((recipient) => recipient.alertId === alert.id && recipient.parentUserId === user.id))
+      .slice()
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+      .map((alert) => {
+        const recipients = user.role === 'admin' ? state.alertRecipients.filter((entry) => entry.alertId === alert.id).map((entry) => ({
+          userId: entry.parentUserId,
+          name: state.users.find((account) => account.id === entry.parentUserId)?.displayName ?? 'Parent',
+          createdAt: entry.createdAt,
+          viewedAt: entry.viewedAt,
+          acknowledgedAt: entry.acknowledgedAt,
+        })) : [];
+        const own = state.alertRecipients.find((entry) => entry.alertId === alert.id && entry.parentUserId === user.id);
+        return {
+          ...alert,
+          issuerName: staffName(alert.issuedByUserId),
+          recipient: own ? { createdAt: own.createdAt, viewedAt: own.viewedAt, acknowledgedAt: own.acknowledgedAt } : null,
+          recipients,
+        };
+      });
+    return ok({
+      role: user.role as CommunicationWorkspace['role'],
+      userId: user.id,
+      displayName: user.displayName,
+      groups: assignedGroups.map(({ id, groupNumber, instructorUserId }) => ({ id, groupNumber, instructorUserId })),
+      children: user.role === 'parent' ? childRows : [],
+      conversations,
+      announcements,
+      alerts,
+    });
+  };
+
+  const communicationUnreadCount = (user: VerifiedUser): Result<number> => {
+    if (!is(user, 'parent', 'instructor')) return FORBIDDEN;
+    let unreadMessages = 0;
+    for (const conversation of accessibleConversations(user)) {
+      const messages = orderedMessages(conversation.id);
+      const marker = state.communicationReadStates.find((entry) => entry.id === readStateId('conversation', conversation.id, user.id));
+      const readIndex = marker?.lastReadMessageId ? messages.findIndex((message) => message.id === marker.lastReadMessageId) : -1;
+      unreadMessages += messages.filter((message, index) => index > readIndex && message.senderUserId !== user.id).length;
+    }
+    let unreadAnnouncements = 0;
+    if (user.role === 'parent') {
+      const childGroupIds = new Set(state.children.filter((child) => ownsChild(user, child)).map((child) => child.groupId).filter((id): id is string => Boolean(id)));
+      unreadAnnouncements = state.announcements.filter((announcement) =>
+        announcement.groupIds.some((groupId) => childGroupIds.has(groupId)) &&
+        !state.communicationReadStates.some((entry) => entry.id === readStateId('announcement', announcement.id, user.id)),
+      ).length;
+    }
+    const unreadAlerts = user.role === 'parent'
+      ? state.alertRecipients.filter((recipient) => recipient.parentUserId === user.id && !recipient.viewedAt).length
+      : 0;
+    return ok(unreadMessages + unreadAnnouncements + unreadAlerts);
+  };
 
   const profileOf = (child: Child): ChildProfile => {
     const parts = {
@@ -173,6 +299,166 @@ export function createMockServices(
     Array.isArray(answer) ? answer.map(map) : answer;
 
   return {
+    async getCommunicationWorkspace(user) {
+      return communicationWorkspace(user);
+    },
+
+    async getCommunicationUnreadCount(user) {
+      return communicationUnreadCount(user);
+    },
+
+    async markConversationRead(conversationId, lastVisibleMessageId, user) {
+      if (!is(user, 'parent', 'instructor')) return FORBIDDEN;
+      if (!canReadConversation(conversationId, user)) return deny(user, 'Conversation', conversationId, 'mark private conversation read', NOT_FOUND);
+      const messages = orderedMessages(conversationId);
+      const lastVisibleIndex = messages.findIndex((message) => message.id === lastVisibleMessageId);
+      if (lastVisibleIndex < 0) return fail('invalid', 'Refresh the conversation before marking it read.');
+      const id = readStateId('conversation', conversationId, user.id);
+      const current = state.communicationReadStates.find((entry) => entry.id === id);
+      const currentIndex = current?.lastReadMessageId ? messages.findIndex((message) => message.id === current.lastReadMessageId) : -1;
+      if (current && currentIndex >= lastVisibleIndex) return ok({ readAt: current.readAt });
+      const readAt = stamp();
+      if (current) {
+        current.lastReadMessageId = lastVisibleMessageId;
+        current.readAt = readAt;
+      } else {
+        state.communicationReadStates.push({ id, recipientUserId: user.id, targetType: 'conversation', targetId: conversationId, lastReadMessageId: lastVisibleMessageId, readAt });
+      }
+      return ok({ readAt });
+    },
+
+    async markAnnouncementRead(announcementId, user) {
+      if (!is(user, 'parent')) return FORBIDDEN;
+      const announcement = state.announcements.find((entry) => entry.id === announcementId);
+      const groupIds = new Set(state.children.filter((child) => ownsChild(user, child)).map((child) => child.groupId).filter((id): id is string => Boolean(id)));
+      if (!announcement || !announcement.groupIds.some((groupId) => groupIds.has(groupId)))
+        return deny(user, 'Announcement', announcementId, 'mark announcement read', NOT_FOUND);
+      const id = readStateId('announcement', announcementId, user.id);
+      const existing = state.communicationReadStates.find((entry) => entry.id === id);
+      if (existing) return ok({ readAt: existing.readAt });
+      const readAt = stamp();
+      state.communicationReadStates.push({ id, recipientUserId: user.id, targetType: 'announcement', targetId: announcementId, lastReadMessageId: null, readAt });
+      return ok({ readAt });
+    },
+
+    async startPrivateConversation(childId, body, user) {
+      if (!is(user, 'parent')) return FORBIDDEN;
+      const child = findChild(childId);
+      if (!child || !ownsChild(user, child) || !child.groupId) return deny(user, 'Conversation', childId, 'start private conversation', NOT_FOUND);
+      const group = groupOf(child);
+      if (!group?.instructorUserId) return fail('blocked', 'This child does not have an assigned instructor yet.');
+      if (!validMessage(body, 1000)) return fail('invalid', 'Enter a message of 1 to 1,000 characters.', { body: 'Enter a message of 1 to 1,000 characters.' });
+      let conversation = state.conversations.find((entry) => entry.parentUserId === user.id && entry.childId === child.id && entry.instructorUserId === group.instructorUserId);
+      if (!conversation) {
+        conversation = { id: newId('conv'), parentUserId: user.id, instructorUserId: group.instructorUserId, childId: child.id, groupId: group.id, createdAt: stamp() };
+        state.conversations.push(conversation);
+      }
+      const message = { id: newId('msg'), conversationId: conversation.id, senderUserId: user.id, body: body.trim(), sentAt: stamp() };
+      state.messages.push(message);
+      return ok({ conversationId: conversation.id });
+    },
+
+    async replyToAnnouncement(announcementId, childId, body, user) {
+      if (!is(user, 'parent')) return FORBIDDEN;
+      const announcement = state.announcements.find((entry) => entry.id === announcementId);
+      const child = findChild(childId);
+      if (!announcement || !child || !ownsChild(user, child) || !child.groupId || !announcement.groupIds.includes(child.groupId))
+        return deny(user, 'Announcement', announcementId, 'reply privately', NOT_FOUND);
+      const group = groupOf(child);
+      if (!group || group.instructorUserId !== announcement.instructorUserId) return NOT_FOUND;
+      if (!validMessage(body, 1000)) return fail('invalid', 'Enter a message of 1 to 1,000 characters.', { body: 'Enter a message of 1 to 1,000 characters.' });
+      let conversation = state.conversations.find((entry) => entry.parentUserId === user.id && entry.childId === child.id && entry.instructorUserId === group.instructorUserId);
+      if (!conversation) {
+        conversation = { id: newId('conv'), parentUserId: user.id, instructorUserId: group.instructorUserId, childId: child.id, groupId: group.id, createdAt: stamp() };
+        state.conversations.push(conversation);
+      }
+      state.messages.push({ id: newId('msg'), conversationId: conversation.id, senderUserId: user.id, body: body.trim(), sentAt: stamp(), announcementId });
+      return ok({ conversationId: conversation.id });
+    },
+
+    async replyToConversation(conversationId, body, user) {
+      if (!is(user, 'parent', 'instructor')) return FORBIDDEN;
+      const conversation = state.conversations.find((entry) => entry.id === conversationId);
+      if (!conversation) return NOT_FOUND;
+      if (!canReadConversation(conversationId, user)) return deny(user, 'Conversation', conversationId, 'reply to private conversation', NOT_FOUND);
+      if (!validMessage(body, 1000)) return fail('invalid', 'Enter a message of 1 to 1,000 characters.', { body: 'Enter a message of 1 to 1,000 characters.' });
+      state.messages.push({ id: newId('msg'), conversationId, senderUserId: user.id, body: body.trim(), sentAt: stamp() });
+      return ok({ conversationId });
+    },
+
+    async createGroupAnnouncement(groupIds, body, user) {
+      if (!is(user, 'instructor')) return FORBIDDEN;
+      const uniqueIds = [...new Set(groupIds)];
+      if (!uniqueIds.length || uniqueIds.length !== groupIds.length || uniqueIds.some((id) => !communicationGroupAssigned(user, id)))
+        return fail('forbidden', 'Choose only your assigned lesson groups.', { groupIds: 'Choose only your assigned lesson groups.' });
+      if (!validMessage(body, 2000)) return fail('invalid', 'Enter an announcement of 1 to 2,000 characters.', { body: 'Enter an announcement of 1 to 2,000 characters.' });
+      const announcement = { id: newId('ann'), instructorUserId: user.id, groupIds: uniqueIds, body: body.trim(), sentAt: stamp() };
+      state.announcements.push(announcement);
+      return ok({ announcementId: announcement.id });
+    },
+
+    async createEmergencyAlert(input, user) {
+      if (!is(user, 'admin')) return FORBIDDEN;
+      const title = input.title.trim();
+      const reason = input.reason.trim();
+      const pickupLocation = input.pickupLocation.trim();
+      const pickupTime = input.pickupTime.trim();
+      const instructions = input.instructions.trim();
+      const contactInfo = input.contactInfo?.trim() || null;
+      const errors: Record<string, string> = {};
+      if (!title || title.length > 120) errors.title = 'Enter a title up to 120 characters.';
+      if (!reason || reason.length > 300) errors.reason = 'Enter a reason up to 300 characters.';
+      if (!pickupLocation || pickupLocation.length > 240) errors.pickupLocation = 'Enter a pickup location up to 240 characters.';
+      if (!pickupTime || pickupTime.length > 100) errors.pickupTime = 'Enter a pickup time up to 100 characters.';
+      if (!instructions || instructions.length > 2000) errors.instructions = 'Enter instructions up to 2,000 characters.';
+      if (contactInfo && contactInfo.length > 240) errors.contactInfo = 'Contact information must be 240 characters or fewer.';
+      const groupIds = [...new Set(input.groupIds)];
+      if (!input.allParents && (!groupIds.length || groupIds.length !== input.groupIds.length || groupIds.some((id) => !state.groups.some((group) => group.id === id))))
+        errors.groupIds = 'Choose one or more valid lesson groups, or select all parents.';
+      if (Object.keys(errors).length) return fail('invalid', 'Please complete the alert fields.', errors);
+      const alert = { id: newId('alert'), issuedByUserId: user.id, title, reason, pickupLocation, pickupTime, instructions, contactInfo, groupIds: input.allParents ? null : groupIds, createdAt: stamp() };
+      const targetedGroupIds = input.allParents ? new Set(state.groups.map((group) => group.id)) : new Set(groupIds);
+      const parentGroups = new Map<string, Set<string>>();
+      if (input.allParents) {
+        for (const account of state.users.filter((entry) => entry.role === 'parent')) parentGroups.set(account.id, new Set());
+      }
+      for (const child of state.children) {
+        if (!child.groupId || !targetedGroupIds.has(child.groupId)) continue;
+        for (const parentId of child.parentUserIds) {
+          const groups = parentGroups.get(parentId) ?? new Set<string>();
+          groups.add(child.groupId);
+          parentGroups.set(parentId, groups);
+        }
+      }
+      state.emergencyAlerts.push(alert);
+      for (const [parentUserId, groups] of parentGroups) state.alertRecipients.push({
+        id: `${alert.id}_${parentUserId}`,
+        alertId: alert.id,
+        parentUserId,
+        groupIds: [...groups],
+        createdAt: alert.createdAt,
+        viewedAt: null,
+        acknowledgedAt: null,
+      });
+      return ok({ alertId: alert.id });
+    },
+
+    async markEmergencyAlertViewed(alertId, user) {
+      if (!is(user, 'parent')) return FORBIDDEN;
+      const recipient = state.alertRecipients.find((entry) => entry.alertId === alertId && entry.parentUserId === user.id);
+      if (!recipient) return deny(user, 'EmergencyAlert', alertId, 'view alert', NOT_FOUND);
+      recipient.viewedAt ??= stamp();
+      return ok({ viewedAt: recipient.viewedAt });
+    },
+
+    async acknowledgeEmergencyAlert(alertId, user) {
+      if (!is(user, 'parent')) return FORBIDDEN;
+      const recipient = state.alertRecipients.find((entry) => entry.alertId === alertId && entry.parentUserId === user.id);
+      if (!recipient) return deny(user, 'EmergencyAlert', alertId, 'acknowledge alert', NOT_FOUND);
+      recipient.acknowledgedAt ??= stamp();
+      return ok({ acknowledgedAt: recipient.acknowledgedAt });
+    },
+
     async getMyChildren(user) {
       if (!is(user, 'parent')) return FORBIDDEN;
       return ok(

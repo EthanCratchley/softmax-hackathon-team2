@@ -3,13 +3,14 @@ import { requireUser } from '@/lib/session';
 import { services } from '@/lib/services';
 import { formatMissingFields } from '@/lib/domain/parent-copy';
 import { DEMO_LESSON_DATE } from '@/lib/fixtures';
-import { getDemoCommunications } from '@/lib/communications-demo';
+import type { CommunicationWorkspace } from '@/lib/domain/communications';
 import { ParentUrgentAlerts } from '@/components/communications/CommunicationsWorkbench';
 
 export default async function ParentHome() {
   const user = await requireUser('parent');
   const result = await services.getMyChildren(user);
-  const communications = getDemoCommunications(user);
+  const communicationResult = await services.getCommunicationWorkspace(user);
+  const communications: CommunicationWorkspace | null = communicationResult.ok ? communicationResult.data : null;
   return <main className="page parent-page" data-testid="parent-home">
     <header className="parent-page-heading"><p className="eyebrow">Parent portal</p><h1>My Children</h1><p className="page-intro">Keep each child’s safety and pick-up details up to date.</p><p className="small muted first-lesson">First lesson {new Date(`${DEMO_LESSON_DATE}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/Vancouver' })}</p></header>
     <div className="parent-communication-links"><Link className="button" href="/parent/communications">Messages & updates</Link></div>

@@ -122,6 +122,115 @@ test.describe('parent updates (S-002 to S-005)', () => {
   });
 });
 
+test.describe('persistent communications authorization', () => {
+  test('parent starts a private conversation and only its participants can read or reply', async () => {
+    const parent = as(USER_IDS.parentAva);
+    const instructor = as(USER_IDS.instructorGroup14);
+    const otherParent = as(USER_IDS.parentLily);
+    const created = data(await svc.startPrivateConversation(CHILD_IDS.ava, 'Synthetic meeting question', parent));
+    expect(state.messages).toHaveLength(1);
+    expect(state.messages[0]).toMatchObject({ conversationId: created.conversationId, senderUserId: parent.id, sentAt: '2026-12-12T22:00:00.000Z' });
+    expect(data(await svc.getCommunicationWorkspace(otherParent)).conversations).toHaveLength(0);
+    expect(errCode(await svc.replyToConversation(created.conversationId, 'Unauthorized synthetic reply', otherParent))).toBe('not_found');
+    data(await svc.replyToConversation(created.conversationId, 'Synthetic instructor reply', instructor));
+    const parentWorkspace = data(await svc.getCommunicationWorkspace(parent));
+    const instructorWorkspace = data(await svc.getCommunicationWorkspace(instructor));
+    expect(parentWorkspace.conversations[0].messages.map((message) => message.body)).toEqual(['Synthetic meeting question', 'Synthetic instructor reply']);
+    expect(instructorWorkspace.conversations[0].messages).toHaveLength(2);
+    expect(parentWorkspace.conversations[0].messages.every((message) => message.announcementContext === null)).toBe(true);
+  });
+
+  test('instructor announcements target assigned groups and parent replies remain private', async () => {
+    const instructor = as(USER_IDS.instructorGroup14);
+    const unrelatedInstructor = as(USER_IDS.instructorGroup9);
+    const parent = as(USER_IDS.parentAva);
+    const otherParent = as(USER_IDS.parentOwen);
+    const forbidden = await svc.createGroupAnnouncement([GROUP_IDS.group9], 'Wrong group synthetic notice', instructor);
+    expect(errCode(forbidden)).toBe('forbidden');
+    const announcement = data(await svc.createGroupAnnouncement([GROUP_IDS.group14], 'Synthetic group update', instructor));
+    expect(data(await svc.getCommunicationWorkspace(parent)).announcements.map((item) => item.id)).toContain(announcement.announcementId);
+    expect(data(await svc.getCommunicationWorkspace(otherParent)).announcements.map((item) => item.id)).toContain(announcement.announcementId);
+    const { conversationId } = data(await svc.replyToAnnouncement(announcement.announcementId, CHILD_IDS.ava, 'Private synthetic reply', parent));
+    const parentThread = data(await svc.getCommunicationWorkspace(parent)).conversations[0];
+    expect(parentThread.messages.at(-1)?.body).toBe('Private synthetic reply');
+    expect(parentThread.id).toBe(conversationId);
+    expect(parentThread.messages.at(-1)?.announcementContext).toEqual({
+      id: announcement.announcementId,
+      title: 'Group 14 announcement',
+      excerpt: 'Synthetic group update',
+      sentAt: '2026-12-12T22:00:00.000Z',
+    });
+    data(await svc.replyToConversation(conversationId, 'Synthetic instructor follow-up', instructor));
+    const instructorThread = data(await svc.getCommunicationWorkspace(instructor)).conversations[0];
+    expect(instructorThread.id).toBe(conversationId);
+    expect(instructorThread.messages.at(-2)?.announcementContext?.id).toBe(announcement.announcementId);
+    expect(instructorThread.messages.at(-1)?.announcementContext).toBeNull();
+    expect(instructorThread.messages.at(-1)?.body).toBe('Synthetic instructor follow-up');
+    expect(data(await svc.getCommunicationWorkspace(otherParent)).conversations).toHaveLength(0);
+    expect(errCode(await svc.replyToAnnouncement(announcement.announcementId, CHILD_IDS.ava, 'Unauthorized', unrelatedInstructor))).toBe('forbidden');
+  });
+
+  test('admin alerts track created, viewed, and acknowledged statuses once per parent', async () => {
+    const admin = as(USER_IDS.admin);
+    const parent = as(USER_IDS.parentAva);
+    const unrelatedParent = as(USER_IDS.parentLily);
+    const alert = data(await svc.createEmergencyAlert({
+      title: 'Synthetic early pickup', reason: 'Synthetic weather reason', pickupLocation: 'Synthetic south entrance',
+      pickupTime: '12:30 synthetic', instructions: 'Use the desk and present photo ID.', contactInfo: '', allParents: false, groupIds: [GROUP_IDS.group14],
+    }, admin));
+    const recipients = state.alertRecipients.filter((item) => item.alertId === alert.alertId);
+    expect(recipients.map((item) => item.parentUserId).sort()).toEqual([USER_IDS.parentAva, USER_IDS.parentOwen, USER_IDS.parentOther].sort());
+    expect(errCode(await svc.markEmergencyAlertViewed(alert.alertId, unrelatedParent))).toBe('not_found');
+    const createdAt = data(await svc.markEmergencyAlertViewed(alert.alertId, parent)).viewedAt;
+    const ackAt = data(await svc.acknowledgeEmergencyAlert(alert.alertId, parent)).acknowledgedAt;
+    expect(data(await svc.acknowledgeEmergencyAlert(alert.alertId, parent)).acknowledgedAt).toBe(ackAt);
+    expect(state.alertRecipients.filter((item) => item.alertId === alert.alertId && item.parentUserId === parent.id)).toHaveLength(1);
+    expect(state.alertRecipients.find((item) => item.alertId === alert.alertId && item.parentUserId === parent.id)).toMatchObject({ createdAt: '2026-12-12T22:00:00.000Z', viewedAt: createdAt, acknowledgedAt: ackAt });
+    const adminView = data(await svc.getCommunicationWorkspace(admin)).alerts.find((item) => item.id === alert.alertId)!;
+    expect(adminView.recipients.find((item) => item.userId === parent.id)?.acknowledgedAt).toBe(ackAt);
+    expect(data(await svc.getCommunicationWorkspace(unrelatedParent)).alerts.some((item) => item.id === alert.alertId)).toBe(false);
+  });
+
+  test('unread messages are private per account and clear only through the visible message', async () => {
+    const parent = as(USER_IDS.parentAva);
+    const instructor = as(USER_IDS.instructorGroup14);
+    const unrelatedParent = as(USER_IDS.parentLily);
+    const { conversationId } = data(await svc.startPrivateConversation(CHILD_IDS.ava, 'Synthetic unread check', parent));
+    expect(data(await svc.getCommunicationUnreadCount(instructor))).toBe(1);
+    expect(data(await svc.getCommunicationUnreadCount(unrelatedParent))).toBe(0);
+
+    const firstVisible = data(await svc.getCommunicationWorkspace(instructor)).conversations[0].messages.at(-1)!;
+    data(await svc.markConversationRead(conversationId, firstVisible.id, instructor));
+    expect(data(await svc.getCommunicationUnreadCount(instructor))).toBe(0);
+
+    data(await svc.replyToConversation(conversationId, 'Synthetic reply one', instructor));
+    const parentView = data(await svc.getCommunicationWorkspace(parent)).conversations[0];
+    const lastVisible = parentView.messages.at(-1)!;
+    data(await svc.markConversationRead(conversationId, lastVisible.id, parent));
+    data(await svc.replyToConversation(conversationId, 'Synthetic reply two', instructor));
+    expect(data(await svc.getCommunicationUnreadCount(parent))).toBe(1);
+    expect(errCode(await svc.markConversationRead(conversationId, 'not-a-visible-message', unrelatedParent))).toBe('not_found');
+  });
+
+  test('announcements and emergency alert views count as unread separately from acknowledgement', async () => {
+    const instructor = as(USER_IDS.instructorGroup14);
+    const parent = as(USER_IDS.parentAva);
+    const unrelatedParent = as(USER_IDS.parentLily);
+    const announcement = data(await svc.createGroupAnnouncement([GROUP_IDS.group14], 'Synthetic unread announcement', instructor));
+    expect(data(await svc.getCommunicationUnreadCount(parent))).toBeGreaterThanOrEqual(1);
+    expect(data(await svc.getCommunicationUnreadCount(unrelatedParent))).toBe(0);
+    data(await svc.markAnnouncementRead(announcement.announcementId, parent));
+    expect(state.communicationReadStates.filter((entry) => entry.targetId === announcement.announcementId && entry.recipientUserId === parent.id)).toHaveLength(1);
+    expect(errCode(await svc.markAnnouncementRead(announcement.announcementId, unrelatedParent))).toBe('not_found');
+
+    const alert = data(await svc.createEmergencyAlert({ title: 'Synthetic alert', reason: 'Synthetic wind', pickupLocation: 'Synthetic lodge', pickupTime: '12:00', instructions: 'Use the desk.', contactInfo: '', allParents: false, groupIds: [GROUP_IDS.group14] }, as(USER_IDS.admin)));
+    expect(data(await svc.getCommunicationUnreadCount(parent))).toBeGreaterThanOrEqual(1);
+    data(await svc.markEmergencyAlertViewed(alert.alertId, parent));
+    expect(data(await svc.getCommunicationUnreadCount(parent))).toBe(0);
+    expect(state.alertRecipients.find((item) => item.alertId === alert.alertId && item.parentUserId === parent.id)?.acknowledgedAt).toBeNull();
+  });
+});
+
 test.describe('desk and pickup (S-009 to S-014)', () => {
   test('drop-off pass is private to its parent, one-day scoped and single-use', async () => {
     const parent = as(USER_IDS.parentAva);
