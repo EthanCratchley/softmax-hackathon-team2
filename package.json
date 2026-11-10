@@ -37,6 +37,7 @@
     "test:scenarios": "node scripts/run-scenario-tests.mjs",
     "seed": "tsx --env-file=.env scripts/seed.ts",
     "seed:live": "SEED_TARGET=live tsx --env-file=.env scripts/seed.ts",
+    "reset:live": "SEED_TARGET=live SEED_RESET=yes tsx --env-file=.env scripts/seed.ts",
     "demo:accounts": "tsx --env-file=.env scripts/demo-accounts.ts",
     "test:unit": "playwright test tests/unit"
   }
