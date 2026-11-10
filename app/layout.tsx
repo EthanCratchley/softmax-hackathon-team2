@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { AppHeader } from '@/components/AppHeader';
 import './globals.css';
 import './kestrel-ui.css';
+import './communications.css';
 import { ReportProblem } from './report-problem';
 
 export const metadata: Metadata = {

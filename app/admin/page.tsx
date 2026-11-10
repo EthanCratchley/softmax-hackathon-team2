@@ -25,7 +25,9 @@ export default async function AdminPage({ searchParams }: {
     services.getNoticeTasks(user),
     services.listGroups(user),
   ]);
-  return <AdminDashboard
+  return <>
+    <main className="page admin-communications-link"><a className="button" href="/admin/communications" data-testid="admin-communications-link">Emergency communications →</a></main>
+    <AdminDashboard
     lessonDate={lessonDate}
     completion={completion.ok ? completion.data : []}
     operations={operations.ok ? operations.data : null}
@@ -41,5 +43,6 @@ export default async function AdminPage({ searchParams }: {
     groupOptions={groupOptions}
     instructorOptions={instructorOptions}
     staffNames={staffNames}
-  />;
+    />
+  </>;
 }
