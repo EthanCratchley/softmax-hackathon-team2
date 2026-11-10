@@ -14,7 +14,7 @@ export default async function InstructorPage({ searchParams }: { searchParams: P
   const reported = roster.ok ? roster.data.flatMap((g) => g.children).find((c) => c.childId === params.reported) : undefined;
 
   return (
-    <Shell testId="instructor-page" eyebrow="On the mountain / Instructor" title="Your group. Every child." lead="Know your group. Keep safety in sight." day={day}>
+    <Shell testId="instructor-page" eyebrow="On the mountain / Instructor" title="Your group. Every child." lead={`${user.displayName} · Know your group. Keep safety in sight.`} day={day}>
       {reported && (
         <p role="status" className={s.notice} data-testid="report-confirmation">
           Missing report sent for {reported.firstName} {reported.lastName}. Patrol has it now; keep your radio on.

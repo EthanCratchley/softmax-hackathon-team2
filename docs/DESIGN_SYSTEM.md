@@ -1,5 +1,7 @@
 # Kestrel Kids — design system
 
+The Nordic redesign in [NORDIC_DESIGN.md](NORDIC_DESIGN.md) supersedes the palette, typography, card shadows, and disabled-state rules below. The interaction and copy guidance remains applicable.
+
 The rules behind `app/kestrel-ui.css`. `globals.css` is the team's file and stays as it is; this sheet
 loads after it and refines it. Deleting the `import './kestrel-ui.css'` line in `app/layout.tsx` reverts
 every decision below.

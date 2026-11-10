@@ -12,48 +12,57 @@
  *     a person sees cannot drift apart.
  *  2. SEVEN TYPE ROLES, no more: display, title, card-title, body, ui, meta,
  *     numeric. A new size is a design decision, not a fix for one screen.
- *  3. ONE CARD IDIOM. White surface, hairline border, no shadow. Shadow is for
- *     things that float above the page (the save dock) and nothing else.
+ *  3. ONE CARD IDIOM. White surface, frost border, restrained shadow.
  */
 
 /* ------------------------------------------------------------------ tokens */
 :root {
   color-scheme: light;
 
-  /* Neutrals: one family, warm-green. Everything else is derived. */
-  --bg: #f2f5f1;
+  /* Nordic winter surfaces and accessible dark typography. */
+  --navy: #163247;
+  --teal: #176b73;
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --surface-2: #f7faf6;
-  --surface-3: #eef3ec;
-  --ink: #102a22;
-  --ink-2: #33544a;
-  --muted: #5d7269;
-  --line: #e0e7df;
-  --line-2: #cbd6cc;
+  --surface-2: #eaf2f5;
+  --surface-3: #dfeaf0;
+  --ink: #172b36;
+  --ink-2: #163247;
+  --muted: #475569;
+  --line: #d6e2e8;
+  --line-2: #6c8392;
+  --line-strong: var(--line-2);
 
   /* Brand: one green, three weights. */
-  --brand: #1c5a48;
-  --brand-hover: #154638;
-  --brand-soft: #e9f1ec;
+  --brand: #176b73;
+  --brand-hover: #12535a;
+  --brand-soft: #eaf2f5;
 
   /* Status. Amber means "something is needed", nothing else. */
-  --needs: #7a5310;
+  --needs: #92400e;
   --needs-bg: #fdf6e6;
   --needs-line: #ecd9a8;
-  --ok: #07603c;
+  --ok: #166534;
   --ok-bg: #eaf6ef;
   --ok-line: #c0e3cc;
-  --bad: #9f2a1f;
+  --bad: #b42332;
   --bad-bg: #fdf1ef;
   --bad-line: #f2cdc7;
 
   /* Type scale — see DESIGN_SYSTEM.md §3. */
-  --text-display: clamp(26px, 3.6vw, 34px);
-  --text-title: 19px;
-  --text-card: 16px;
+  --danger: var(--bad);
+  --danger-bg: var(--bad-bg);
+  --danger-line: var(--bad-line);
+  --warn: var(--needs);
+  --warn-bg: var(--needs-bg);
+  --warn-line: var(--needs-line);
+  --focus: #176b73;
+  --text-display: clamp(28px, 3.6vw, 32px);
+  --text-title: 22px;
+  --text-card: 18px;
   --text-body: 16px;
   --text-ui: 14px;
-  --text-meta: 12.5px;
+  --text-meta: 14px;
 
   /* Space scale — 4px base, only these steps. */
   --s1: 4px;
@@ -65,7 +74,7 @@
 
   /* Two radii and one pill. */
   --r-control: 10px;
-  --r-card: 14px;
+  --r-card: 16px;
   --r-pill: 999px;
 
   /* Two control heights only. */
@@ -73,7 +82,8 @@
   --h-sm: 40px;
 
   --shadow-float: 0 2px 6px rgb(16 42 34 / 7%), 0 18px 32px -20px rgb(16 42 34 / 55%);
-  --ring: 0 0 0 2px var(--bg), 0 0 0 5px #7fb6a1;
+  --ring: 0 0 0 2px var(--bg), 0 0 0 5px var(--teal);
+  --shadow-card: 0 4px 18px rgb(22 50 71 / 5%);
   --ease: 120ms cubic-bezier(0.2, 0, 0.2, 1);
 
   --gutter: clamp(16px, 4vw, 32px);
@@ -97,7 +107,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-family: var(--font-geist), 'Inter', system-ui, sans-serif;
   font-size: var(--text-body);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -209,11 +219,11 @@ code {
   align-items: center;
   justify-content: space-between;
   gap: var(--s3);
-  min-height: 58px;
+  min-height: 80px;
   padding: var(--s2) var(--gutter);
-  border-bottom: 1px solid var(--line);
-  background: rgb(255 255 255 / 92%);
-  backdrop-filter: saturate(150%) blur(8px);
+  border-bottom: 1px solid #355369;
+  background: var(--navy);
+  color: white;
 }
 
 /* The wordmark is a name, so it is set like a name: sentence case, tight. */
@@ -221,8 +231,8 @@ code {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
-  color: var(--ink);
-  font-size: var(--text-ui);
+  color: white;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.01em;
   text-decoration: none;
@@ -230,7 +240,7 @@ code {
 }
 
 .brand::before {
-  content: '';
+  content: none;
   flex: 0 0 auto;
   width: 22px;
   height: 22px;
@@ -2188,7 +2198,8 @@ summary:focus-visible,
 
 /* ------------------------------------------------------------- utilities */
 :focus-visible {
-  outline: none;
+  outline: 3px solid var(--teal);
+  outline-offset: 3px;
   box-shadow: var(--ring);
 }
 

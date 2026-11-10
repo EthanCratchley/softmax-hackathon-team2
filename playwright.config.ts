@@ -33,5 +33,5 @@ export default defineConfig({
         timeout: 120_000,
         env: { PIEZAS_API_KEY: process.env.PIEZAS_TEST_API_KEY ?? '' },
       },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) } }],
 });

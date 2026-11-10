@@ -1,107 +1,25 @@
 {
   "version": 1,
-  "pending": {
-    "scanId": "ac6c2d6774e5",
-    "nonce": "qs-4df4b69c50a32c912c",
-    "round": 1,
-    "cycle": "860d65435954",
-    "packetHash": "8eaff7ced035d4c07a9c469b2e20a458fb70e07d187a29eb42c4db8061165bf3",
-    "sourceFingerprint": "ad54e3de088a4214f85d70eee3a982d382a9ec3ce1866ecc217c5f21f192efc0",
-    "previous": [
-      {
-        "n": 1,
-        "key": "9b9e80cacb1a83f79ee0d32d",
-        "plain": "After signing in, parents, instructors, desk staff, patrol and Hana land on a summary card whose \"Open my workspace\" button leads to a page that does not exist, so none of the four approved safety journeys can be carried out yet."
-      },
-      {
-        "n": 2,
-        "key": "b3303e27906dce660bd514cf",
-        "plain": "Private pickup links for a named adult, the check-in and release emails to parents, the 30-minute headcount prompts with overdue flags, and the \"Instructor not responding\" warning are all still missing entirely, even though the owner approved them."
-      },
-      {
-        "n": 3,
-        "key": "31b72af8dfdf9e18b67e69d9",
-        "plain": "All 41 approved safety checks are still empty placeholders that fail on purpose, and no full test run has been recorded, so nothing the owner approved has been shown to work on screen."
-      },
-      {
-        "n": 4,
-        "key": "48474c206fb72047ccb6301c",
-        "plain": "Every demo account still shares one password, so anyone given it to try the parent screens could also sign in as Hana or ski patrol and see children's medical and emergency details."
-      },
-      {
-        "n": 5,
-        "key": "8ff5ab95f9e4d42a6caa4f15",
-        "plain": "Everything parents and staff enter is still held only in the running server's memory, so a restart or redeploy wipes allergies, pickup adults, release records and the audit trail."
-      },
-      {
-        "n": 6,
-        "key": "886427c3f1fe38298031eb48",
-        "plain": "Hana can move children between groups but has no way to assign an instructor to a group, which the owner approved as part of managing groups."
-      }
-    ],
-    "createdAt": "2026-11-07T23:47:34.984Z"
-  },
+  "pending": null,
   "cycle": {
     "id": "860d65435954",
     "startedAt": "2026-11-07T23:47:34.984Z",
-    "rounds": 0,
-    "ended": false,
+    "rounds": 3,
+    "ended": true,
     "budgetReported": false
   },
   "consentAskedAt": null,
-  "hold": {
-    "key": "scan:ac6c2d6774e5",
-    "count": 3,
-    "gaveUp": true,
-    "at": "2026-11-07T23:48:56.873Z"
-  },
+  "hold": null,
   "deployWanted": null,
   "shownList": {
-    "scanId": "ea4098c52ce9",
-    "items": [
-      {
-        "n": 1,
-        "key": "9b9e80cacb1a83f79ee0d32d",
-        "plain": "After signing in, parents, instructors, desk staff, patrol and Hana land on a summary card whose \"Open my workspace\" button leads to a page that does not exist, so none of the four approved safety journeys can be carried out yet.",
-        "severity": "high"
-      },
-      {
-        "n": 2,
-        "key": "b3303e27906dce660bd514cf",
-        "plain": "Private pickup links for a named adult, the check-in and release emails to parents, the 30-minute headcount prompts with overdue flags, and the \"Instructor not responding\" warning are all still missing entirely, even though the owner approved them.",
-        "severity": "high"
-      },
-      {
-        "n": 3,
-        "key": "31b72af8dfdf9e18b67e69d9",
-        "plain": "All 41 approved safety checks are still empty placeholders that fail on purpose, and no full test run has been recorded, so nothing the owner approved has been shown to work on screen.",
-        "severity": "medium"
-      },
-      {
-        "n": 4,
-        "key": "48474c206fb72047ccb6301c",
-        "plain": "Every demo account still shares one password, so anyone given it to try the parent screens could also sign in as Hana or ski patrol and see children's medical and emergency details.",
-        "severity": "medium"
-      },
-      {
-        "n": 5,
-        "key": "8ff5ab95f9e4d42a6caa4f15",
-        "plain": "Everything parents and staff enter is still held only in the running server's memory, so a restart or redeploy wipes allergies, pickup adults, release records and the audit trail.",
-        "severity": "medium"
-      },
-      {
-        "n": 6,
-        "key": "886427c3f1fe38298031eb48",
-        "plain": "Hana can move children between groups but has no way to assign an instructor to a group, which the owner approved as part of managing groups.",
-        "severity": "medium"
-      }
-    ]
+    "scanId": "74fa64a26f09",
+    "items": []
   },
   "waits": null,
   "deployScanTries": null,
   "lastStop": {
-    "event": "196e9198c3cf82372bd62969f94be76eec6784d2",
-    "at": "2026-11-07T23:51:35.555Z",
+    "event": "be7b92bea660ffec753829b951ea1d1f83a4dfa1",
+    "at": "2026-11-10T03:36:38.433Z",
     "answer": null
   },
   "deployHold": null,

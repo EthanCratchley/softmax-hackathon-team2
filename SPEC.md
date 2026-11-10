@@ -116,6 +116,11 @@ Every role check happens on the server against the signed-in person. There is no
 
 ## Data
 
+### Nordic interface redesign
+
+- R-051: [Stated] All existing role dashboards use Nordic winter colors, locally hosted Geist typography, readable safety alerts, visible keyboard focus, and responsive cards. Body text meets WCAG AA contrast; the instructor and patrol workflows retain their existing behavior. (Owner redesign request, November 9, 2026)
+
+
 - Pickup link: child, parent, authorized adult, lesson date, hidden link code, cancelled at, last opened at
 - Alert message: child, parent, type (check-in, release), sent or failed, time
 - Parent activity view: child, event type (check-in, release, denied pickup), event time, adult name where applicable; derived from existing records and filtered by the signed-in parent's child links
@@ -502,5 +507,13 @@ When the pass matches the child, lesson day and purpose
 Then the desk sees only the child and required pass details; pickup remains blocked until staff match the active authorized adult and confirm photo ID
 
 ## Open Conflicts
+
+### S-045: Nordic screens stay readable on phones and desktops
+
+covers: R-051
+Given a signed-in parent, instructor, desk worker, patroller or admin
+When they open their dashboard at phone and desktop widths and use the workspace navigation
+Then content fits the viewport, text meets AA contrast, the locally hosted Geist font loads, and keyboard focus is visible
+
 
 none

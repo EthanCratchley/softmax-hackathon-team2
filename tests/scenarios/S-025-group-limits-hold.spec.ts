@@ -15,6 +15,8 @@ import type { VerifiedUser } from '../../lib/domain/types';
 import { CHILD_IDS, createDemoState, GROUP_IDS, USER_IDS } from '../../lib/fixtures';
 import { createMockServices } from '../../lib/services/mock';
 import { signIn } from '../sign-in';
+import { Piezas } from '@piezas/sdk';
+import { entityDefinitionsFor, slugsFor } from '../../lib/piezas-schema';
 
 async function move(page: Page, childId: string, groupId: string, expected: string | RegExp) {
   await page.getByTestId('assign-child-select').selectOption(childId);
@@ -24,8 +26,8 @@ async function move(page: Page, childId: string, groupId: string, expected: stri
 }
 
 // The demo has exactly six children, so the UI can fill a group to six but has
-// no seventh child to try. The refusal is checked through the same service
-// logic the app runs, on a private copy of the seed with one extra child.
+// no seventh child to try. Keep this service-level check alongside the real
+// admin-screen refusal below, which adds one temporary child to the TEST copy.
 test('S-025: a seventh child is refused by the group service and the group stays at six', async () => {
   const state = createDemoState();
   state.children.push({ ...structuredClone(state.children[0]), id: 'chd_seventh', firstName: 'Test', lastName: 'Seventh' });
@@ -58,5 +60,39 @@ test('S-025: Hana fills a group to six through the admin screen and the roster s
     await page.goto('/admin');
     for (const [id, name] of [[CHILD_IDS.ava, 'Ava Shah'], [CHILD_IDS.owen, 'Owen Parr'], [CHILD_IDS.ella, 'Ella Haddad']] as const)
       await move(page, id, GROUP_IDS.group14, `Moved ${name} to Group 14.`);
+  }
+});
+
+test('S-025: Hana cannot move a seventh child into a full group through the admin screen', async ({ page }) => {
+  const key = process.env.PIEZAS_TEST_API_KEY;
+  if (!key?.startsWith('sk_test_') || key === process.env.PIEZAS_API_KEY)
+    throw new Error('This check requires a separate Piezas test copy.');
+  const piezas = new Piezas({ apiKey: key, apiBaseUrl: process.env.PIEZAS_API_URL });
+  const slug = slugsFor(key).children;
+  const children = (await piezas.defineEntities({ [slug]: entityDefinitionsFor(key)[slug] }))[slug];
+  const seventh = { ...structuredClone(createDemoState().children[0]), id: 'chd_seventh_ui', firstName: 'Test', lastName: 'Seventh', groupId: GROUP_IDS.group14 };
+  const record = await children.create({ title: seventh.id, data: { key: seventh.id, payload: JSON.stringify(seventh) } });
+  try {
+    await signIn(page, 'hana.sato@example.test');
+    await page.goto('/admin');
+    for (const [id, name] of [[CHILD_IDS.ava, 'Ava Shah'], [CHILD_IDS.owen, 'Owen Parr'], [CHILD_IDS.ella, 'Ella Haddad']] as const)
+      await move(page, id, GROUP_IDS.group9, `Moved ${name} to Group 9.`);
+    await expect(page.getByTestId(`group-count-${GROUP_IDS.group9}`)).toHaveText('6 of 6 places');
+
+    await move(page, seventh.id, GROUP_IDS.group9, 'Group 9 already has 6 children.');
+    await page.reload();
+    await expect(page.getByTestId(`group-count-${GROUP_IDS.group9}`)).toHaveText('6 of 6 places');
+    await expect(page.getByTestId(`group-children-${GROUP_IDS.group9}`)).not.toContainText('Test Seventh');
+    await expect(page.getByTestId(`group-count-${GROUP_IDS.group14}`)).toHaveText('1 of 6 places');
+    await expect(page.getByTestId(`group-children-${GROUP_IDS.group14}`)).toHaveText('Test Seventh');
+  } finally {
+    try {
+      await signIn(page, 'hana.sato@example.test');
+      await page.goto('/admin');
+      for (const [id, name] of [[CHILD_IDS.ava, 'Ava Shah'], [CHILD_IDS.owen, 'Owen Parr'], [CHILD_IDS.ella, 'Ella Haddad']] as const)
+        await move(page, id, GROUP_IDS.group14, `Moved ${name} to Group 14.`);
+    } finally {
+      await children.delete(record.id);
+    }
   }
 });

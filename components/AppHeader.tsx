@@ -10,10 +10,12 @@ export async function AppHeader() {
   return (
     <header className="app-header" data-testid="app-header">
       <Link href="/" className="brand">
-        Kestrel Kids
+        <svg className="brand-mountain" width="36" height="32" viewBox="0 0 36 32" fill="none" aria-hidden="true"><path d="M2 27 14 5l7 13 5-8 9 17H2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/><path d="m9 14 5 3 4-4" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>
+        <span>Kestrel Kids<span className="brand-caption">Mountain safety</span></span>
       </Link>
       {user && (
         <div className="who">
+          <nav aria-label="Main navigation"><Link className="workspace-link" href={`/${user.role}`}>{ROLE_LABEL[user.role]} workspace</Link></nav>
           <span data-testid="current-user">
             {user.displayName} · {ROLE_LABEL[user.role]}
           </span>

@@ -19,7 +19,7 @@ const resetsTestCopy = process.env.KESTREL_DATA !== 'mock' && Boolean(process.en
 export const test = base.extend<{ freshTestData: void }>({
   freshTestData: [
     async ({}, use) => {
-      if (resetsTestCopy) execFileSync('npx', ['tsx', 'scripts/seed.ts'], { stdio: 'ignore', env: { ...process.env, SEED_TARGET: '' } });
+      if (resetsTestCopy) execFileSync(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/seed.ts'], { stdio: 'pipe', env: { ...process.env, SEED_TARGET: '' } });
       await use();
     },
     { auto: true },
