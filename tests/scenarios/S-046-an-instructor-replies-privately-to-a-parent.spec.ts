@@ -1,5 +1,5 @@
 // piezas-scenario: S-046 v=1
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { signIn } from '../sign-in';
 
 test('an instructor replies privately to a parent', async ({ page }) => {

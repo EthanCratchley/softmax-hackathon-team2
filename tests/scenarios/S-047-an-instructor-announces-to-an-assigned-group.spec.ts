@@ -1,5 +1,5 @@
 // piezas-scenario: S-047 v=1
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { signIn } from '../sign-in';
 
 test('an instructor announces to an assigned group and parents reply privately', async ({ page }) => {

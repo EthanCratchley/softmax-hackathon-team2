@@ -1,5 +1,6 @@
 import 'server-only';
-import { createDemoState } from '../fixtures';
+import { createDemoState, type DemoState } from '../fixtures';
+import { communicationsTestSeed } from '../communications-test-fixtures';
 import type { KestrelServices } from './contract';
 import { createMockServices } from './mock';
 import { commitState, loadState } from './piezas-store';
@@ -38,8 +39,28 @@ function createPiezasServices(): KestrelServices {
 // KESTREL_DATA=mock keeps everything in server memory for local UI work
 // without a Piezas key. Never allowed in a production build.
 const useMock = process.env.KESTREL_DATA === 'mock' && process.env.NODE_ENV !== 'production';
-const store = globalThis as typeof globalThis & { __kestrelServices?: KestrelServices };
+const store = globalThis as typeof globalThis & {
+  __kestrelServices?: KestrelServices;
+  __kestrelMockState?: DemoState;
+};
+
+function createMockState(withCommunications = false): DemoState {
+  const state = createDemoState();
+  if (withCommunications) Object.assign(state, structuredClone(communicationsTestSeed));
+  return state;
+}
+
+const mockState = useMock ? (store.__kestrelMockState ??= createMockState()) : undefined;
 
 export const services: KestrelServices = (store.__kestrelServices ??= useMock
-  ? createMockServices(createDemoState())
+  ? createMockServices(mockState!)
   : createPiezasServices());
+
+/** Reset only the in-memory mock store between local Playwright cases. */
+export function resetMockServiceState(withCommunications = false): void {
+  if (!useMock || !mockState) throw new Error('The mock service store is unavailable.');
+  const fresh = createMockState(withCommunications);
+  const mutable = mockState as unknown as Record<string, unknown>;
+  for (const key of Object.keys(mutable)) delete mutable[key];
+  Object.assign(mockState, fresh);
+}

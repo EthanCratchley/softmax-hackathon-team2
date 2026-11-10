@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './scenario-test';
 
 // The one test every app has. A red smoke test means nothing below it is worth
 // reading: the page either renders or it does not.

@@ -85,6 +85,8 @@
   --ring: 0 0 0 2px var(--bg), 0 0 0 5px var(--teal);
   --shadow-card: 0 4px 18px rgb(22 50 71 / 5%);
   --ease: 120ms cubic-bezier(0.2, 0, 0.2, 1);
+  --motion-fast: 140ms cubic-bezier(0.2, 0, 0.2, 1);
+  --motion-smooth: 200ms cubic-bezier(0.2, 0, 0.2, 1);
 
   --gutter: clamp(16px, 4vw, 32px);
 }
@@ -2330,5 +2332,70 @@ summary:focus-visible,
     transition-duration: 1ms !important;
     animation-duration: 1ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Shared interaction polish: quick feedback without moving safety controls. */
+.button,
+.workspace-link,
+.messages-nav-link,
+.pickupLink,
+.backLink,
+.action,
+.actionDanger,
+.actionQuiet,
+.conversation-filter,
+.pass-tabs button {
+  transition:
+    color var(--motion-fast),
+    background-color var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    transform var(--motion-fast);
+}
+
+.badge,
+.status,
+.complete,
+.warning {
+  transition:
+    color var(--motion-fast),
+    background-color var(--motion-fast),
+    border-color var(--motion-fast);
+}
+
+.app-header .brand {
+  transition: color var(--motion-fast);
+}
+
+.card,
+.child-card,
+.welcome-card,
+.journey-panel,
+.desk-scan-card,
+.panel,
+.child,
+.group,
+.protected {
+  transition: border-color var(--motion-smooth), box-shadow var(--motion-smooth), transform var(--motion-smooth);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:not(:disabled):active,
+  .action:not(:disabled):active,
+  .actionDanger:not(:disabled):active,
+  .actionQuiet:not(:disabled):active {
+    transform: translateY(1px);
+  }
+
+  .child-card:hover,
+  .welcome-card:hover,
+  .journey-panel:hover,
+  .desk-scan-card:hover,
+  .panel:hover,
+  .group:hover,
+  .protected:hover {
+    border-color: #bfd0d9;
+    box-shadow: 0 7px 22px rgb(22 50 71 / 8%);
   }
 }

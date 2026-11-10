@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './scenario-test';
 import { demoPassword } from '../lib/piezas-schema';
 import { ADULT_IDS, CHILD_IDS, DEMO_LESSON_DATE } from '../lib/fixtures';
 
@@ -52,7 +52,7 @@ test('desk mutations are service-validated and appear in the roster and admin sn
   await expect(adminPage.getByTestId('admin-count-checkedIn')).toHaveText('2');
   await expect(adminPage.getByTestId('admin-count-released')).toHaveText('1');
   await expect(adminPage.getByTestId('admin-denials')).toContainText('Mark Whitfield');
-  await expect(adminPage.getByTestId('admin-denials')).toContainText(CHILD_IDS.lily);
+  await expect(adminPage.getByTestId('admin-denials')).toContainText('Lily Whitfield');
 
   await adminPage.context().close();
   await deskContext.close();

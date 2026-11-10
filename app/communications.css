@@ -6,33 +6,35 @@
 .communications-section { display: grid; gap: 12px; margin: 0 0 30px; }
 .communications-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 2px; }
 .communications-section-heading h2 { margin: 2px 0 0; font-size: 22px; letter-spacing: -.02em; }
-.communication-card { min-width: 0; overflow: clip; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-card); }
-.communication-card.urgent { border: 2px solid var(--danger); background: #fffdfd; box-shadow: 0 5px 20px #b4231814; }
-.communication-notice { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; padding: 12px 14px; }
+.communication-card { min-width: 0; overflow: clip; border: 1px solid var(--line); border-radius: var(--r-card, var(--radius-card)); background: var(--surface); box-shadow: var(--shadow-card); transition: border-color var(--motion-smooth, 200ms ease), box-shadow var(--motion-smooth, 200ms ease); }
+.communication-card.urgent { border: 2px solid var(--danger); border-top-width: 4px; background: #fffdfd; box-shadow: 0 5px 20px #b4231814; }
+.communication-card:focus-within { border-color: var(--brand); }
+.communication-card.urgent:focus-within { border-color: var(--danger); box-shadow: 0 7px 24px #b4231824; }
+.communication-notice { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; padding: 12px 14px; animation: communication-notice-enter 180ms ease-out both; }
 .communication-notice::before { display: none; }
 .communication-notice-icon { width: 20px; height: 20px; flex: 0 0 20px; }
-.communication-toggle { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 68px; padding: 14px 18px; border: 0; color: var(--ink); background: transparent; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.communication-toggle { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 68px; padding: 14px 18px; border: 0; color: var(--ink); background: transparent; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: background-color var(--motion-fast, 140ms ease); }
 .communication-toggle:hover { background: var(--brand-soft); }
-.urgent .communication-toggle { grid-template-columns: auto minmax(0, 1fr) auto; background: var(--danger-bg); }
+.urgent .communication-toggle { grid-template-columns: minmax(0, 1fr) auto; background: var(--danger-bg); }
 .urgent .communication-toggle:hover { background: #fee8e6; }
-.communication-card-copy { display: grid; min-width: 0; gap: 2px; }
+.communication-card-copy { display: grid; min-width: 0; justify-items: start; gap: 4px; }
 .communication-card-copy strong { overflow-wrap: anywhere; font-size: 16px; }
 .communication-card-copy span { color: var(--muted); font-size: 13px; }
-.communication-chevron { width: 22px; height: 22px; flex: 0 0 22px; color: var(--brand); transition: transform 220ms ease; }
+.communication-chevron { width: 22px; height: 22px; flex: 0 0 22px; color: var(--brand); transition: transform var(--motion-smooth, 200ms ease); }
 .urgent .communication-chevron { color: var(--danger); }
 .communication-chevron.is-open { transform: rotate(180deg); }
-.urgent-badge { display: inline-flex; align-items: center; min-height: 30px; padding: 4px 9px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 750; letter-spacing: .035em; text-transform: uppercase; }
-.communication-disclosure { display: grid; grid-template-rows: 0fr; visibility: hidden; opacity: 0; border-top: 0 solid transparent; transition: grid-template-rows 240ms ease, opacity 180ms ease, visibility 240ms; }
+.urgent-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 9px; border: 1px solid var(--danger); border-radius: 999px; background: var(--danger); color: #fff !important; font-size: 12px !important; font-weight: 700; letter-spacing: 0; }
+.communication-disclosure { display: grid; grid-template-rows: 0fr; visibility: hidden; opacity: 0; border-top: 0 solid transparent; transition: grid-template-rows var(--motion-smooth, 200ms ease), opacity 160ms ease, visibility var(--motion-smooth, 200ms ease); }
 .communication-disclosure.expanded { grid-template-rows: 1fr; visibility: visible; opacity: 1; border-top: 1px solid var(--line); }
 .urgent .communication-disclosure.expanded { border-top-color: var(--danger-line); }
 .communication-disclosure-inner { min-height: 0; overflow: hidden; padding: 0 18px; }
 .communication-disclosure.expanded .communication-disclosure-inner { padding-top: 16px; padding-bottom: 18px; }
 .alert-details { display: grid; gap: 12px; }
 .alert-details p { display: grid; gap: 2px; margin: 0; overflow-wrap: anywhere; }
-.alert-details p strong { color: var(--muted); font-size: 12px; letter-spacing: .025em; text-transform: uppercase; }
+.alert-details p strong { color: var(--muted); font-size: 13px; font-weight: 650; }
 .alert-details .button { justify-self: start; margin-top: 2px; }
 .acknowledged { color: var(--ok) !important; font-size: 14px !important; font-weight: 650; }
-.communications-empty { margin: 0; padding: 18px; border: 1px dashed var(--line-strong); border-radius: var(--radius-control); color: var(--muted); background: #ffffff80; }
+.communications-empty { margin: 0; padding: 18px; border: 1px dashed var(--line-strong); border-radius: var(--r-control, var(--radius-control)); color: var(--muted); background: #ffffff80; }
 .communication-compose { display: grid; gap: 14px; padding: clamp(16px, 3vw, 24px); border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-card); }
 .communication-field { display: grid; min-width: 0; gap: 6px; color: var(--ink); font-size: 14px; font-weight: 650; }
 .communication-field input, .communication-field select, .communication-field textarea, .communication-reply textarea { width: 100%; min-width: 0; min-height: var(--tap); padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 9px; color: var(--ink); background: var(--surface); font: inherit; font-weight: 400; resize: vertical; }
@@ -73,9 +75,14 @@
 .app-header .messages-nav-link { color: #fff; }
 .messages-nav-link:hover, .messages-nav-link:focus-visible { color: var(--brand); background: var(--brand-soft); }
 .app-header .messages-nav-link:hover, .app-header .messages-nav-link:focus-visible { color: var(--navy); background: #e5f3ec; }
-.messages-nav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; color: #fff; background: var(--danger); font-size: 11px; font-weight: 750; line-height: 1; }
+.messages-nav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 21px; height: 21px; padding: 0 6px; border: 1px solid rgb(255 255 255 / 70%); border-radius: 999px; color: #fff; background: var(--danger); font-size: 11px; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; }
 .admin-communications-link { padding-bottom: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+
+@keyframes communication-notice-enter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 @media (max-width: 600px) {
   .communications-page { padding-right: 14px; padding-left: 14px; }
@@ -87,6 +94,8 @@
   .communication-reply, .private-announcement-reply { grid-template-columns: minmax(0, 1fr); }
   .communication-reply .button { width: 100%; }
   .communication-compose > .button { width: 100%; }
+  .alert-details .button { width: 100%; }
+  .communications-section { gap: 10px; margin-bottom: 26px; }
   .message-thread li { width: min(96%, 600px); }
   .messages-nav-link { padding-right: 5px; padding-left: 5px; font-size: 13px; }
 }

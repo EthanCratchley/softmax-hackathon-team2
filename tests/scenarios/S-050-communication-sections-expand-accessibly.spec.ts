@@ -1,5 +1,5 @@
 // piezas-scenario: S-050 v=1
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { signIn } from '../sign-in';
 
 test('communication sections expand with keyboard and respect reduced motion', async ({ page }) => {

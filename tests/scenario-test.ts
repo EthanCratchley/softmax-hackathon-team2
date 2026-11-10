@@ -18,8 +18,14 @@ const resetsTestCopy = process.env.KESTREL_DATA !== 'mock' && Boolean(process.en
 
 export const test = base.extend<{ freshTestData: void }>({
   freshTestData: [
-    async ({}, use) => {
-      if (resetsTestCopy) execFileSync(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/seed.ts'], { stdio: 'pipe', env: { ...process.env, SEED_TARGET: '' } });
+    async ({ request }, use, testInfo) => {
+      if (process.env.KESTREL_DATA === 'mock') {
+        const needsCommunications = /S-045-|S-046-|S-047-|S-048-|S-050-/.test(testInfo.file);
+        const response = await request.post('/api/test/reset', { data: { communications: needsCommunications } });
+        if (!response.ok()) throw new Error(`Mock data reset failed (${response.status()}).`);
+      } else if (resetsTestCopy) {
+        execFileSync(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/seed.ts'], { stdio: 'pipe', env: { ...process.env, SEED_TARGET: '' } });
+      }
       await use();
     },
     { auto: true },

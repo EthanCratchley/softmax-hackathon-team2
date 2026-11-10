@@ -189,3 +189,62 @@
 .command [data-testid='packet-last-seen-at'], .command [data-testid='packet-last-seen-location'] { font-size: 18px; font-weight: 700; }
 @media (max-width: 600px) { .facts { grid-template-columns: 1fr; gap: 4px; } .facts dd { margin-bottom: 12px; } .card { padding: 20px; } .dayForm { gap: 12px; } }
 @media print { .hero::before { display: none; } .card { box-shadow: none; } .hero { background: white; } }
+
+/* Nordic operations polish: calm, short feedback that never obscures actions. */
+.card,
+.groupHead,
+.timeline li,
+.action,
+.actionDanger,
+.actionQuiet,
+.status {
+  transition:
+    background-color var(--motion-fast, 140ms ease),
+    border-color var(--motion-fast, 140ms ease),
+    box-shadow var(--motion-fast, 140ms ease),
+    color var(--motion-fast, 140ms ease),
+    transform var(--motion-fast, 140ms ease);
+}
+
+.action,
+.actionDanger,
+.actionQuiet {
+  min-height: 48px;
+  border-radius: 10px;
+  touch-action: manipulation;
+}
+
+.action:active,
+.actionDanger:active,
+.actionQuiet:active { transform: translateY(1px); }
+
+.card:focus-within { border-color: #9db8c5; box-shadow: 0 6px 20px rgb(22 50 71 / 8%); }
+.incidentLink:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { border-color: #b9cbd5; box-shadow: 0 7px 22px rgb(22 50 71 / 8%); }
+  .incidentLink:hover { transform: translateY(-1px); }
+  .action:hover,
+  .actionDanger:hover,
+  .actionQuiet:hover { transform: translateY(-1px); }
+}
+
+@media (max-width: 560px) {
+  .command { padding: 12px 12px 0; }
+  .hero { gap: 12px; padding: 20px 16px; border-radius: 14px; }
+  .hero h1 { max-width: 18ch; font-size: clamp(26px, 8vw, 32px); }
+  .hero p { font-size: 15px; }
+  .dayForm { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
+  .dayForm label { min-width: 0; }
+  .dayForm input { width: 100%; min-width: 0; }
+  .dayForm button { min-width: 68px; }
+  .radioNotice { padding: 12px 0; font-size: 13px; }
+  .group { margin: 18px 0; }
+  .groupHead { padding: 14px 16px; }
+  .grid { gap: 12px; margin: 12px 0; }
+  .card { padding: 18px; }
+  .card h2, .card h3 { font-size: 20px; }
+  .sectionTitle { margin-top: 20px; }
+  .packetHead h2 { font-size: 25px; }
+  .row > * { flex-basis: 100%; }
+}

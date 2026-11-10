@@ -64,6 +64,7 @@ test('S-025: Hana fills a group to six through the admin screen and the roster s
 });
 
 test('S-025: Hana cannot move a seventh child into a full group through the admin screen', async ({ page }) => {
+  test.skip(process.env.KESTREL_DATA === 'mock', 'This scenario writes a temporary record to the Piezas test copy.');
   const key = process.env.PIEZAS_TEST_API_KEY;
   if (!key?.startsWith('sk_test_') || key === process.env.PIEZAS_API_KEY)
     throw new Error('This check requires a separate Piezas test copy.');

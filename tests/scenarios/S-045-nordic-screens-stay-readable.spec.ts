@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../scenario-test';
 import { signIn } from '../sign-in';
 
 // Read-only checks against the same Piezas TEST copy as the existing suite.
@@ -48,7 +48,10 @@ for (const width of [375, 1280]) {
       expect(result.failures, `${role} contrast`).toEqual([]);
       expect(result.font).toMatch(/geist/i);
       expect(result.loaded, 'Geist loaded locally').toBe(true);
-      const workspaceLink = page.getByRole('navigation').getByRole('link');
+      const workspaceLink = page.getByRole('navigation').getByRole('link', {
+        name: `${role === 'parent' ? 'Parent' : role[0].toUpperCase() + role.slice(1)} workspace`,
+        exact: true,
+      });
       await page.keyboard.press('Tab');
       await workspaceLink.focus();
       expect(await workspaceLink.evaluate(el => getComputedStyle(el).outlineStyle)).toBe('solid');

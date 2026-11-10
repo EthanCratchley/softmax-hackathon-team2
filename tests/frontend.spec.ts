@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './scenario-test';
 import { demoPassword } from '../lib/piezas-schema';
 import { signIn } from './sign-in';
 
@@ -57,6 +57,7 @@ test('a parent and assigned instructor exchange a private message that survives 
   await page.getByTestId('message-child-select').selectOption('chd_ava');
   await page.getByTestId('new-message-input').fill('Synthetic persistence check from parent.');
   await page.getByTestId('new-conversation-form').getByRole('button', { name: 'Start private conversation' }).click();
+  await expect(page.getByRole('status')).toHaveText('Private message sent.');
   const thread = page.locator('[data-testid^="conversation-conv_"]').first();
   await expect(thread).toBeVisible();
 
@@ -101,7 +102,8 @@ test('group announcements reach only parents in the group and replies stay priva
   const replyNotice = page.getByRole('status').filter({ hasText: 'Private reply sent to your instructor.' });
   await expect(replyNotice).toBeVisible();
   await expect(replyNotice).toHaveClass(/ok/);
-  const privateThread = page.getByTestId(/conversation-conv_/).filter({ hasText: 'Synthetic private follow-up.' }).first();
+  const privateThread = page.locator('[data-testid^="conversation-conv_"]').first();
+  await privateThread.locator(':scope > .communication-toggle').click();
   await expect(privateThread).toContainText('Synthetic private follow-up.');
   const conversationId = (await privateThread.getAttribute('data-testid'))!.replace('conversation-', '');
 
@@ -169,6 +171,7 @@ test('messaging disclosures fit a phone and respect keyboard and reduced-motion 
   await page.goto('/instructor/communications');
   await page.getByTestId('announcement-input').fill('Synthetic mobile disclosure check.');
   await page.getByRole('button', { name: 'Post announcement' }).click();
+  await expect(page.getByRole('status')).toHaveText('Announcement posted to the selected lesson groups.');
   await signIn(page, 'priya.shah@example.test');
   await page.setViewportSize({ width: 375, height: 812 });
   await page.emulateMedia({ reducedMotion: 'reduce' });

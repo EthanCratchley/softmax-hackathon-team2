@@ -3,6 +3,7 @@
 .brand-mountain { flex: 0 0 auto; }
 .brand-caption { display: block; margin-top: 2px; font-size: 14px; font-weight: 450; color: #d6e2e8; }
 .app-header .who { color: white; flex-wrap: wrap; }
+.app-header .who nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .app-header .button.ghost { min-height: 48px; color: white; border: 1px solid #7b94a5; background: transparent; }
 .app-header .button.ghost:hover { background: #284b62; color: white; }
 .workspace-link { display: inline-flex; align-items: center; min-height: 48px; padding: 0 14px; border-radius: 10px; color: white; font-weight: 600; text-decoration: none; }
@@ -32,8 +33,9 @@ input[aria-invalid='true'], textarea[aria-invalid='true'], select[aria-invalid='
 @media (max-width: 700px) {
   .app-header { position: relative; flex-wrap: wrap; padding: 14px 16px; gap: 12px; }
   .app-header .who { flex-basis: 100%; justify-content: space-between; gap: 8px 12px; }
-  .app-header nav { order: 3; flex-basis: 100%; border-top: 1px solid #355369; padding-top: 8px; }
-  .workspace-link { width: 100%; padding-left: 0; }
+  .app-header .who nav { order: 3; flex-basis: 100%; border-top: 1px solid #355369; padding-top: 8px; }
+  .workspace-link { width: auto; padding: 0 10px; }
+  .messages-nav-link { min-height: 48px; }
   .app-header [data-testid='current-user'] { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 }
 @media (forced-colors: active) { :focus-visible { outline: 3px solid Highlight; } }
