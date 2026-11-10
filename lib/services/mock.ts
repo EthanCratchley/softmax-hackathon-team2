@@ -83,6 +83,35 @@ export function createMockServices(
     .filter((message) => message.conversationId === conversationId)
     .slice()
     .sort((a, b) => Date.parse(a.sentAt) - Date.parse(b.sentAt));
+  const notifyParentsOfAttendance = (child: Child, input: {
+    eventKey: string;
+    eventType: 'checked_in' | 'released';
+    occurredAt: string;
+    lessonDate: LessonDate;
+    pickupAdultName?: string;
+  }) => {
+    for (const recipientUserId of child.parentUserIds) {
+      const exists = state.messages.some((message) => message.attendanceNotice?.eventKey === input.eventKey
+        && message.attendanceNotice.recipientUserId === recipientUserId);
+      if (exists) continue;
+      const attendanceNotice = {
+        ...input,
+        recipientUserId,
+        childId: child.id,
+        childName: child.firstName,
+      };
+      state.messages.push({
+        id: `attendance_${input.eventKey}_${recipientUserId}`,
+        conversationId: '',
+        senderUserId: 'system',
+        body: input.eventType === 'checked_in'
+          ? `${child.firstName} was checked in.`
+          : `${child.firstName} was released to ${input.pickupAdultName ?? 'an authorized adult'}.`,
+        sentAt: input.occurredAt,
+        attendanceNotice,
+      });
+    }
+  };
   const canReadConversation = (conversationId: Id, user: VerifiedUser) => {
     const conversation = state.conversations.find((entry) => entry.id === conversationId);
     const child = conversation && findChild(conversation.childId);
@@ -173,6 +202,10 @@ export function createMockServices(
       groups: assignedGroups.map(({ id, groupNumber, instructorUserId }) => ({ id, groupNumber, instructorUserId })),
       children: user.role === 'parent' ? childRows : [],
       conversations,
+      attendanceNotifications: state.messages
+        .flatMap((message) => message.attendanceNotice ? [message.attendanceNotice] : [])
+        .filter((notice) => user.role === 'parent' && notice.recipientUserId === user.id)
+        .sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt)),
       announcements,
       alerts,
     });
@@ -616,11 +649,14 @@ export function createMockServices(
       if (!child || !attendance) return NOT_FOUND;
       if (Date.parse(pass.expiresAt) <= now().getTime()) return fail('blocked', 'This pass has expired.');
       if (pass.redeemedAt) return fail('blocked', 'This pass has already been used once.');
+      let occurredAt: string;
       if (pass.purpose === 'dropoff') {
         if (attendance.status !== 'Expected') return fail('blocked', 'This child is already checked in or released.');
         if (!input.bibNumber?.trim()) return fail('invalid', 'Enter the child’s bib number.', { bibNumber: 'Enter the child’s bib number.' });
-        Object.assign(attendance, { status: 'CheckedIn', bibNumber: input.bibNumber.trim(), checkedInAt: stamp(), checkedInBy: user.id });
+        occurredAt = stamp();
+        Object.assign(attendance, { status: 'CheckedIn', bibNumber: input.bibNumber.trim(), checkedInAt: occurredAt, checkedInBy: user.id });
         audit(user, 'child_checked_in', 'Attendance', attendance.id, 'Checked in using a lesson pass');
+        notifyParentsOfAttendance(child, { eventKey: `checkin:${attendance.id}`, eventType: 'checked_in', occurredAt, lessonDate: pass.lessonDate });
       } else {
         if (!input.idChecked) return fail('invalid', 'Confirm that you checked the adult’s photo ID.');
         if (attendance.status !== 'CheckedIn') return fail('blocked', 'The child must be checked in before pick-up.');
@@ -628,16 +664,18 @@ export function createMockServices(
         const adult = pass.adultId ? state.adults.find((item) => item.id === pass.adultId && item.childId === child.id && item.isActive) : null;
         if (!adult) return fail('blocked', 'That adult is no longer on the active pick-up list.');
         if (state.pickups.some((item) => item.childId === child.id && item.lessonDate === pass.lessonDate)) return fail('blocked', 'This child has already been picked up.');
-        const pickup = { id: newId('pkp'), childId: child.id, lessonDate: pass.lessonDate, authorizedAdultId: adult.id, adultNameSnapshot: adult.name, verifiedByUserId: user.id, idChecked: true as const, releasedAt: stamp() };
+        const releasedAt = occurredAt = stamp();
+        const pickup = { id: newId('pkp'), childId: child.id, lessonDate: pass.lessonDate, authorizedAdultId: adult.id, adultNameSnapshot: adult.name, verifiedByUserId: user.id, idChecked: true as const, releasedAt };
         state.pickups.push(pickup);
         attendance.status = 'Released';
         audit(user, 'child_released', 'PickupLog', pickup.id, 'Released using a lesson pass after an ID check');
+        notifyParentsOfAttendance(child, { eventKey: `release:${pickup.id}`, eventType: 'released', occurredAt: releasedAt, lessonDate: pass.lessonDate, pickupAdultName: adult.name });
       }
       pass.redeemedAt = stamp();
       pass.redeemedByStaffId = user.id;
       pass.idChecked = input.idChecked;
       audit(user, 'pass_redeemed', 'LessonPass', pass.id, `Redeemed ${pass.purpose} pass`);
-      return ok({ redeemedAt: pass.redeemedAt, adultName: pass.adultName });
+      return ok({ redeemedAt: pass.redeemedAt, occurredAt, adultName: pass.purpose === 'pickup' ? pass.adultName : null, childName: `${child.firstName} ${child.lastName}`, eventType: pass.purpose === 'pickup' ? 'released' as const : 'checked_in' as const });
     },
 
     async listParentActivity(childId, user) {
@@ -705,8 +743,10 @@ export function createMockServices(
       if (!child || !att) return NOT_FOUND;
       if (!bibNumber.trim()) return fail('invalid', 'Enter the bib number.', { bibNumber: 'Enter the bib number.' });
       if (att.status !== 'Expected') return fail('blocked', `Already ${att.status === 'CheckedIn' ? 'checked in' : 'released'}.`);
-      Object.assign(att, { status: 'CheckedIn', bibNumber: bibNumber.trim(), checkedInAt: stamp(), checkedInBy: user.id });
+      const occurredAt = stamp();
+      Object.assign(att, { status: 'CheckedIn', bibNumber: bibNumber.trim(), checkedInAt: occurredAt, checkedInBy: user.id });
       audit(user, 'child_checked_in', 'Attendance', att.id, `Checked in with bib ${att.bibNumber}`);
+      notifyParentsOfAttendance(child, { eventKey: `checkin:${att.id}`, eventType: 'checked_in', occurredAt, lessonDate });
       return ok(deskEntry(child, lessonDate)!);
     },
 
@@ -729,10 +769,12 @@ export function createMockServices(
       if (!adult)
         return fail('blocked', 'Release blocked: this adult is not on the active pickup list. Contact an authorized parent or the ski school admin.');
       if (idChecked !== true) return fail('invalid', 'Confirm you checked photo ID.', { idChecked: 'Confirm you checked photo ID.' });
-      const log = { id: newId('pkp'), childId, lessonDate, authorizedAdultId: adult.id, adultNameSnapshot: adult.name, verifiedByUserId: user.id, idChecked: true as const, releasedAt: stamp() };
+      const releasedAt = stamp();
+      const log = { id: newId('pkp'), childId, lessonDate, authorizedAdultId: adult.id, adultNameSnapshot: adult.name, verifiedByUserId: user.id, idChecked: true as const, releasedAt };
       state.pickups.push(log);
       att.status = 'Released';
       audit(user, 'child_released', 'PickupLog', log.id, `Released to authorized adult ${adult.id} after ID check`);
+      notifyParentsOfAttendance(child, { eventKey: `release:${log.id}`, eventType: 'released', occurredAt: releasedAt, lessonDate, pickupAdultName: adult.name });
       return ok({ ...log });
     },
 

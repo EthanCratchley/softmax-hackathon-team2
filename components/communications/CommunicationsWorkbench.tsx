@@ -205,6 +205,14 @@ export function CommunicationsWorkbench({ workspace }: { workspace: Communicatio
 
     {workspace?.role === 'parent' && <>
       <ParentUrgentAlerts workspace={workspace} />
+      <section className="communications-section" aria-labelledby="attendance-notifications-title" data-testid="attendance-notifications">
+        <div className="communications-section-heading"><div><p className="eyebrow">Lesson activity</p><h2 id="attendance-notifications-title">Drop-Off and Pick-Up Notifications</h2></div></div>
+        {workspace.attendanceNotifications.length ? workspace.attendanceNotifications.map((notice) => <article className="communication-card" key={`${notice.eventKey}:${notice.recipientUserId}`} data-testid={`attendance-notification-${notice.eventKey}`}>
+          <h3>{notice.childName} · {notice.eventType === 'checked_in' ? 'Checked In' : 'Released'}</h3>
+          {notice.eventType === 'released' && notice.pickupAdultName && <p>Picked up by {notice.pickupAdultName}.</p>}
+          <p className="small muted"><time dateTime={notice.occurredAt}>{when(notice.occurredAt)}</time></p>
+        </article>) : <p className="communications-empty">No drop-off or pick-up notifications yet.</p>}
+      </section>
       <section className="communications-section" aria-labelledby="announcements-title"><div className="communications-section-heading"><div><p className="eyebrow">For your lesson group</p><h2 id="announcements-title">Announcements</h2></div></div>
         {workspace.announcements.map((announcement) => <Disclosure key={announcement.id} title={`Group ${announcement.groupNumbers.join(', ')} announcement`} meta={`${announcement.instructorName} · ${when(announcement.sentAt)}`} testId={`announcement-${announcement.id}`} onToggle={(open) => { if (open) markAnnouncementRead(announcement.id); }}>
           <p className="announcement-body">{announcement.body}</p><PrivateReplyForm announcement={announcement} children={workspace.children} onSend={privateAnnouncementReply} pending={pending} />

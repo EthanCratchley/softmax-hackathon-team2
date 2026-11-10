@@ -76,7 +76,7 @@ export interface KestrelServices {
   issueLessonPass(childId: Id, input: { lessonDate: LessonDate; purpose: 'dropoff' | 'pickup'; adultId?: Id }, user: VerifiedUser): Promise<Result<LessonPass>>;
   listLessonPasses(childId: Id, lessonDate: LessonDate, user: VerifiedUser): Promise<Result<LessonPass[]>>;
   resolveLessonPass(value: string, lessonDate: LessonDate, user: VerifiedUser): Promise<Result<PassLookupView>>;
-  redeemLessonPass(passId: Id, input: { idChecked: boolean; bibNumber?: string }, user: VerifiedUser): Promise<Result<{ redeemedAt: string; adultName: string | null }>>;
+  redeemLessonPass(passId: Id, input: { idChecked: boolean; bibNumber?: string }, user: VerifiedUser): Promise<Result<{ redeemedAt: string; occurredAt: string; adultName: string | null; childName: string; eventType: 'checked_in' | 'released' }>>;
   listParentActivity(childId: Id, user: VerifiedUser): Promise<Result<ParentActivityEvent[]>>;
 
   // Instructor --------------------------------------------------------------

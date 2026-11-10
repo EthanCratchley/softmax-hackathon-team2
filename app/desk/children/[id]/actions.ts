@@ -17,6 +17,10 @@ function refreshDeskViews(childId: string) {
   revalidatePath(`/desk/children/${encodeURIComponent(childId)}`);
 }
 
+function refreshParentNotifications() {
+  revalidatePath('/parent/communications');
+}
+
 export async function checkInAction(childId: string, lessonDate: string, formData: FormData): Promise<ActionResult> {
   const user = await requireUser('desk');
   if (!validLessonDate(lessonDate)) return { ok: false, message: 'Choose a valid lesson date.' };
@@ -24,6 +28,7 @@ export async function checkInAction(childId: string, lessonDate: string, formDat
   const result = await services.checkInChild(childId, lessonDate, bibNumber, user);
   if (!result.ok) return { ok: false, message: result.error.message };
   refreshDeskViews(childId);
+  refreshParentNotifications();
   return { ok: true, message: `Checked in ${result.data.firstName} ${result.data.lastName}.` };
 }
 
@@ -33,6 +38,7 @@ export async function pickupAction(childId: string, lessonDate: string, authoriz
   const result = await services.recordPickup(childId, authorizedAdultId, idChecked, lessonDate, user);
   if (!result.ok) return { ok: false, message: result.error.message };
   refreshDeskViews(childId);
+  refreshParentNotifications();
   return { ok: true, message: `Released to ${result.data.adultNameSnapshot}.` };
 }
 

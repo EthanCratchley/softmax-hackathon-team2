@@ -249,6 +249,10 @@ test.describe('desk and pickup (S-009 to S-014)', () => {
     expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: false, bibNumber: '8' }, desk))).toBe('blocked');
     expect(state.attendance.find((item) => item.childId === CHILD_IDS.ava)?.status).toBe('CheckedIn');
     expect(data(await svc.listParentActivity(CHILD_IDS.ava, parent))).toMatchObject([{ kind: 'checked_in', lessonDate: DAY }]);
+    const notices = data(await svc.getCommunicationWorkspace(parent)).attendanceNotifications;
+    expect(notices).toMatchObject([{ eventKey: `checkin:att_ava`, childName: 'Ava', eventType: 'checked_in', lessonDate: DAY }]);
+    expect(notices).toHaveLength(1);
+    expect(state.messages.filter((message) => message.attendanceNotice?.eventKey === 'checkin:att_ava')).toHaveLength(1);
     expect(errCode(await svc.listParentActivity(CHILD_IDS.lily, parent))).toBe('not_found');
   });
 
@@ -265,7 +269,39 @@ test.describe('desk and pickup (S-009 to S-014)', () => {
     }
     data(await svc.redeemLessonPass(pass.id, { idChecked: true }, desk));
     expect(state.pickups.at(-1)).toMatchObject({ childId: CHILD_IDS.lily, adultNameSnapshot: 'Tom Whitfield', idChecked: true });
+    expect(data(await svc.getCommunicationWorkspace(parent)).attendanceNotifications).toMatchObject([
+      { eventKey: `release:${state.pickups.at(-1)!.id}`, childName: 'Lily', eventType: 'released', pickupAdultName: 'Tom Whitfield' },
+    ]);
+    expect(state.messages.filter((message) => message.attendanceNotice?.eventType === 'released')).toHaveLength(1);
     expect(data(await svc.listParentActivity(CHILD_IDS.lily, parent)).at(0)).toMatchObject({ kind: 'released', adultName: 'Tom Whitfield' });
+  });
+
+  test('failed, unauthorized, and repeated release attempts create no extra parent notices', async () => {
+    const parent = as(USER_IDS.parentLily);
+    const desk = as(USER_IDS.desk);
+    state.attendance.find((attendance) => attendance.childId === CHILD_IDS.lily && attendance.lessonDate === DAY)!.status = 'Expected';
+    const pass = data(await svc.issueLessonPass(CHILD_IDS.lily, { lessonDate: DAY, purpose: 'pickup', adultId: ADULT_IDS.lilyFather }, parent));
+    expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: true }, as(USER_IDS.parentLily)))).toBe('forbidden');
+    expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: false }, desk))).toBe('invalid');
+    expect(state.messages.filter((message) => message.attendanceNotice)).toHaveLength(0);
+
+    data(await svc.checkInChild(CHILD_IDS.lily, DAY, '6', desk));
+    data(await svc.redeemLessonPass(pass.id, { idChecked: true }, desk));
+    expect(errCode(await svc.recordPickup(CHILD_IDS.lily, ADULT_IDS.lilyFather, true, DAY, desk))).toBe('blocked');
+    expect(errCode(await svc.redeemLessonPass(pass.id, { idChecked: true }, desk))).toBe('blocked');
+    const notices = data(await svc.getCommunicationWorkspace(parent)).attendanceNotifications;
+    expect(notices.map((notice) => notice.eventType).sort()).toEqual(['checked_in', 'released']);
+    expect(state.messages.filter((message) => message.attendanceNotice?.eventType === 'released')).toHaveLength(1);
+  });
+
+  test('attendance notices are delivered only to linked parents', async () => {
+    const parent = as(USER_IDS.parentAva);
+    state.children.find((child) => child.id === CHILD_IDS.ava)!.parentUserIds.push(USER_IDS.parentOther);
+    data(await svc.checkInChild(CHILD_IDS.ava, DAY, '3', as(USER_IDS.desk)));
+    expect(data(await svc.getCommunicationWorkspace(parent)).attendanceNotifications).toHaveLength(1);
+    expect(data(await svc.getCommunicationWorkspace(as(USER_IDS.parentOther))).attendanceNotifications).toHaveLength(1);
+    expect(data(await svc.getCommunicationWorkspace(as(USER_IDS.parentLily))).attendanceNotifications).toHaveLength(0);
+    expect(state.messages.filter((message) => message.attendanceNotice?.eventKey === 'checkin:att_ava')).toHaveLength(2);
   });
 
   test('deactivated pick-up adult cannot redeem an already issued pass', async () => {
@@ -332,6 +368,8 @@ test.describe('desk and pickup (S-009 to S-014)', () => {
 
   test("an adult from another child's list cannot release this child", async () => {
     expect(errCode(await svc.recordPickup(CHILD_IDS.lily, ADULT_IDS.avaMother, true, DAY, as(USER_IDS.desk)))).toBe('blocked');
+    expect(state.pickups).toHaveLength(0);
+    expect(state.messages.filter((message) => message.attendanceNotice)).toHaveLength(0);
   });
 
   test('a child not checked in cannot be released', async () => {

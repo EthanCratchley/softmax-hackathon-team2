@@ -7,6 +7,17 @@ export type CommMessage = {
   sentAt: string;
   /** Optional for compatibility with messages persisted before announcement replies were linked. */
   announcementId?: string;
+  /** Server-generated attendance notice stored in the existing message record stream. */
+  attendanceNotice?: {
+    eventKey: string;
+    recipientUserId: string;
+    childId: string;
+    childName: string;
+    eventType: 'checked_in' | 'released';
+    occurredAt: string;
+    lessonDate: string;
+    pickupAdultName?: string;
+  };
 };
 
 export type CommConversation = {
@@ -73,6 +84,7 @@ export type CommunicationWorkspace = {
       announcementContext: { id: string; title: string; excerpt: string; sentAt: string } | null;
     })[];
   }[];
+  attendanceNotifications: NonNullable<CommMessage['attendanceNotice']>[];
   announcements: {
     id: string; instructorUserId: string; instructorName: string; groupIds: string[];
     groupNumbers: number[]; body: string; sentAt: string;

@@ -35,7 +35,8 @@ test('S-044: Desk verifies a lesson pass with a safe fallback', async ({ page })
   await expect(page.getByTestId('scan-result')).toContainText('Ava Shah · Drop-off');
   await page.getByTestId('pass-bib-number').fill('7');
   await page.getByTestId('pass-redeem').click();
-  await expect(page.getByTestId('desk-notice')).toHaveText('Drop-off recorded.');
+  await expect(page.getByTestId('scan-confirmation')).toContainText('Drop-Off Confirmed');
+  await expect(page.getByTestId('scan-confirmation')).toContainText('Ava');
   await signOut(page);
 
   await signIn(page, 'priya.shah@example.test');
@@ -57,7 +58,8 @@ test('S-044: Desk verifies a lesson pass with a safe fallback', async ({ page })
   await page.getByTestId('pass-id-check').check();
   await expect(redeem).toBeEnabled();
   await redeem.click();
-  await expect(page.getByTestId('desk-notice')).toHaveText('Pick-up recorded for Priya Shah.');
+  await expect(page.getByTestId('scan-confirmation')).toContainText('Pick-Up Confirmed');
+  await expect(page.getByTestId('scan-confirmation')).toContainText('Released to Priya Shah');
 
   await signOut(page);
   await signIn(page, 'priya.shah@example.test');
