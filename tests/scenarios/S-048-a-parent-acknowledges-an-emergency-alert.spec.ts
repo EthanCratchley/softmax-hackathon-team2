@@ -1,5 +1,5 @@
 // piezas-scenario: S-048 v=1
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../scenario-test';
 import { signIn } from '../sign-in';
 
 test('a parent expands and acknowledges an emergency alert', async ({ page }) => {

@@ -16,7 +16,8 @@ const safeFailureReason = (message: string, code?: string) => {
   if (lower.includes('expired')) return 'This pass has expired.';
   if (lower.includes('already') || lower.includes('used') || lower.includes('picked up')) return 'This pass has already been used or the child’s attendance has changed.';
   if (lower.includes('adult') || lower.includes('authorized') || lower.includes('photo id')) return 'Pickup could not be confirmed. Staff must verify an active authorized adult and photo ID.';
-  if (lower.includes('patrol') || lower.includes('incident')) return 'Release is paused while staff resolve a safety incident.';
+  if (lower.includes('patrol') || lower.includes('incident')) return 'Release blocked: call patrol. A missing-child incident is open.';
+  if (lower.includes('too many')) return 'Too many incorrect codes. Wait five minutes, then try again.';
   if (lower.includes('matches that number more than one')) return 'This code is not unique. Scan the QR code or ask staff for help.';
   if (lower.includes('8-digit')) return 'Enter the 8-digit code or scan the QR code.';
   return 'This pass could not be confirmed. Ask staff for help.';

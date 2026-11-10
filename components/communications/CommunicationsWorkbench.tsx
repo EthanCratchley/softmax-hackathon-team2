@@ -98,7 +98,7 @@ export function ParentUrgentAlerts({ workspace }: { workspace: CommunicationWork
 
 type MessageThread = CommunicationWorkspace['conversations'][number];
 function ThreadCard({ conversation, userId, onSend, onRead, pending }: {
-  conversation: MessageThread; userId: string; onSend: (id: string, body: string) => void; onRead: (conversationId: string, lastVisibleMessageId: string) => void; pending: boolean;
+  conversation: MessageThread; userId: string; onSend: (id: string, body: string, onSent: () => void) => void; onRead: (conversationId: string, lastVisibleMessageId: string) => void; pending: boolean;
 }) {
   const [body, setBody] = useState('');
   const latest = conversation.messages.at(-1);
@@ -113,7 +113,7 @@ function ThreadCard({ conversation, userId, onSend, onRead, pending }: {
       </aside>}
       <strong>{message.senderName}</strong><p>{message.body}</p><time dateTime={message.sentAt}>{when(message.sentAt)}</time>
     </li>)}</ol>
-    <form className="communication-reply" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (body.trim()) { onSend(conversation.id, body.trim()); setBody(''); } }}>
+    <form className="communication-reply" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (body.trim()) onSend(conversation.id, body.trim(), () => setBody('')); }}>
       <label className="sr-only" htmlFor={`reply-${conversation.id}`}>Reply privately</label>
       <textarea id={`reply-${conversation.id}`} value={body} onChange={(event) => setBody(event.target.value)} rows={2} maxLength={1000} placeholder="Write a private reply…" data-testid={`reply-input-${conversation.id}`} />
       <button className="button primary" type="submit" disabled={!body.trim() || pending} data-testid={`reply-send-${conversation.id}`}>{pending ? 'Sending…' : 'Send privately'}</button>
@@ -122,12 +122,12 @@ function ThreadCard({ conversation, userId, onSend, onRead, pending }: {
 }
 
 function PrivateReplyForm({ announcement, children, onSend, pending }: {
-  announcement: CommAnnouncement; children: CommunicationWorkspace['children']; onSend: (announcementId: string, childId: string, body: string) => void; pending: boolean;
+  announcement: CommAnnouncement; children: CommunicationWorkspace['children']; onSend: (announcementId: string, childId: string, body: string, onSent: () => void) => void; pending: boolean;
 }) {
   const [body, setBody] = useState('');
   const [childId, setChildId] = useState(children.find((child) => announcement.groupIds.includes(child.groupId))?.id ?? '');
   const eligibleChildren = children.filter((child) => announcement.groupIds.includes(child.groupId));
-  return <form className="communication-reply private-announcement-reply" onSubmit={(event) => { event.preventDefault(); if (body.trim() && childId) { onSend(announcement.id, childId, body.trim()); setBody(''); } }}>
+  return <form className="communication-reply private-announcement-reply" onSubmit={(event) => { event.preventDefault(); if (body.trim() && childId) onSend(announcement.id, childId, body.trim(), () => setBody('')); }}>
     {eligibleChildren.length > 1 && <label className="communication-field">For child<select value={childId} onChange={(event) => setChildId(event.target.value)}>{eligibleChildren.map((child) => <option value={child.id} key={child.id}>{child.name} · Group {child.groupNumber}</option>)}</select></label>}
     <label className="sr-only" htmlFor={`announcement-reply-${announcement.id}`}>Reply privately to instructor</label>
     <textarea id={`announcement-reply-${announcement.id}`} value={body} onChange={(event) => setBody(event.target.value)} rows={2} maxLength={1000} placeholder="Reply privately to your instructor…" data-testid={`announcement-private-reply-${announcement.id}`} />
@@ -149,20 +149,23 @@ export function CommunicationsWorkbench({ workspace }: { workspace: Communicatio
     const isAnnouncementReply = conversation.messages.some((message) => message.announcementContext !== null);
     return instructorThreadFilter === 'all' || (instructorThreadFilter === 'announcement' ? isAnnouncementReply : !isAnnouncementReply);
   });
-  const run = (action: () => Promise<{ ok: boolean; message: string }>) => startTransition(async () => {
+  // Forms clear only after a successful send, so a failed message or alert keeps what was typed.
+  const run = (action: () => Promise<{ ok: boolean; message: string }>, onSuccess?: () => void) => startTransition(async () => {
     setNotice(null);
     const result = await action();
     setNotice({ message: result.message, success: result.ok });
-    if (result.ok) router.refresh();
+    if (!result.ok) return;
+    onSuccess?.();
+    router.refresh();
   });
   const sendPrivate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const body = String(new FormData(event.currentTarget).get('message') ?? '').trim();
     if (!selectedChild || !body) return;
-    run(() => startConversationAction(selectedChild, body));
-    event.currentTarget.reset();
+    const form = event.currentTarget;
+    run(() => startConversationAction(selectedChild, body), () => form.reset());
   };
-  const reply = (id: string, body: string) => run(() => replyToConversationAction(id, body));
+  const reply = (id: string, body: string, onSent: () => void) => run(() => replyToConversationAction(id, body), onSent);
   const markConversationRead = (id: string, lastVisibleMessageId: string) => startTransition(async () => {
     const result = await markConversationReadAction(id, lastVisibleMessageId);
     if (result.ok) router.refresh();
@@ -173,13 +176,13 @@ export function CommunicationsWorkbench({ workspace }: { workspace: Communicatio
     if (result.ok) router.refresh();
     else setNotice({ message: result.message, success: false });
   });
-  const privateAnnouncementReply = (id: string, childId: string, body: string) => run(() => replyToAnnouncementAction(id, childId, body));
+  const privateAnnouncementReply = (id: string, childId: string, body: string, onSent: () => void) => run(() => replyToAnnouncementAction(id, childId, body), onSent);
   const postAnnouncement = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const body = String(new FormData(event.currentTarget).get('announcement') ?? '').trim();
     if (!body || !selectedGroups.length) return;
-    run(() => postAnnouncementAction(selectedGroups, body));
-    event.currentTarget.reset();
+    const form = event.currentTarget;
+    run(() => postAnnouncementAction(selectedGroups, body), () => form.reset());
   };
   const createAlert = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -194,8 +197,8 @@ export function CommunicationsWorkbench({ workspace }: { workspace: Communicatio
       allParents: audience === 'all',
       groupIds: audience === 'all' ? [] : Array.from(data.getAll('groupIds')).map(String),
     };
-    run(() => issueEmergencyAlertAction(input));
-    event.currentTarget.reset();
+    const form = event.currentTarget;
+    run(() => issueEmergencyAlertAction(input), () => form.reset());
   };
 
   return <main className="page communications-page" data-testid={`communications-${role}`}>
