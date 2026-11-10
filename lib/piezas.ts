@@ -1,5 +1,6 @@
 import 'server-only';
 import { Piezas, PiezasError, type EntityClient } from '@piezas/sdk';
+import manifest from '../piezas.manifest.json';
 import { entityDefinitionsFor, slugsFor, type Collection } from './piezas-schema';
 
 // The one server-side Piezas client. PIEZAS_API_KEY never leaves the server.
@@ -8,15 +9,51 @@ const store = globalThis as typeof globalThis & {
   __kestrelEntities?: Promise<Record<Collection, EntityClient>>;
 };
 
-function apiKey(): string {
-  // Development servers use the TEST copy so local work never touches live data.
-  const key = process.env.NODE_ENV === 'production' ? process.env.PIEZAS_API_KEY : (process.env.PIEZAS_TEST_API_KEY ?? process.env.PIEZAS_API_KEY);
-  if (!key) throw new Error('PIEZAS_API_KEY is not set on the server.');
-  return key;
+interface PiezasConfiguration {
+  apiKey: string;
+  appId: string;
+}
+
+function configuration(): PiezasConfiguration {
+  const production = process.env.NODE_ENV === 'production';
+  const testKeyConfigured = !production && process.env.PIEZAS_TEST_API_KEY !== undefined;
+  const key = production
+    ? process.env.PIEZAS_API_KEY
+    : (testKeyConfigured ? process.env.PIEZAS_TEST_API_KEY : process.env.PIEZAS_API_KEY);
+
+  if (!key) {
+    throw new Error(testKeyConfigured
+      ? 'PIEZAS_TEST_API_KEY is configured but empty.'
+      : 'PIEZAS_API_KEY is not set on the server.');
+  }
+
+  const keyIsTest = key.startsWith('sk_test_');
+  const keyIsLive = key.startsWith('sk_live_');
+  if (!keyIsTest && !keyIsLive) {
+    throw new Error('Piezas configuration error: the selected API key must use the sk_test_ or sk_live_ key format.');
+  }
+  if (production && keyIsTest) {
+    throw new Error('Piezas configuration error: production requires a live PIEZAS_API_KEY.');
+  }
+  if (testKeyConfigured && !keyIsTest) {
+    throw new Error('Piezas configuration error: PIEZAS_TEST_API_KEY must be a test key.');
+  }
+
+  const appId = keyIsTest ? manifest.testApp?.appId : manifest.deploy?.appId;
+  if (!appId) {
+    throw new Error(keyIsTest
+      ? 'Piezas configuration error: no test app ID is set in piezas.manifest.json.'
+      : 'Piezas configuration error: no live app ID is set in piezas.manifest.json.');
+  }
+
+  return { apiKey: key, appId };
 }
 
 export function piezas(): Piezas {
-  return (store.__kestrelPiezas ??= new Piezas({ apiKey: apiKey(), apiBaseUrl: process.env.PIEZAS_API_URL }));
+  return (store.__kestrelPiezas ??= (() => {
+    const config = configuration();
+    return new Piezas({ apiKey: config.apiKey, appId: config.appId, apiBaseUrl: process.env.PIEZAS_API_URL });
+  })());
 }
 
 /**
@@ -43,9 +80,10 @@ async function adoptExisting(slugs: Record<Collection, string>): Promise<Record<
 
 /** Defines the record kinds once per server process (idempotent) and returns their clients. */
 export function entities(): Promise<Record<Collection, EntityClient>> {
-  const slugs = slugsFor(apiKey());
+  const config = configuration();
+  const slugs = slugsFor(config.apiKey);
   store.__kestrelEntities ??= piezas()
-    .defineEntities(entityDefinitionsFor(apiKey()))
+    .defineEntities(entityDefinitionsFor(config.apiKey))
     .then(
       (clients) => Object.fromEntries(Object.entries(slugs).map(([name, slug]) => [name, clients[slug]])) as Record<Collection, EntityClient>,
       (error: unknown) => {
