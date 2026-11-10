@@ -15,6 +15,9 @@ import { communicationsTestSeed } from '../lib/communications-test-fixtures';
 import { demoPassword, entityDefinitionsFor, keyOf, slugsFor, type AccountPayload, type Collection } from '../lib/piezas-schema';
 
 const live = process.env.SEED_TARGET === 'live';
+// SEED_RESET=yes with the live target puts every demo record back to the fixtures
+// (before a presentation). Sign-in accounts are kept as they are.
+const resetRecords = !live || process.env.SEED_RESET === 'yes';
 const apiKey = live ? process.env.PIEZAS_API_KEY : process.env.PIEZAS_TEST_API_KEY;
 const secret = process.env.DEMO_ACCOUNT_SECRET;
 if (!apiKey) {
@@ -67,9 +70,9 @@ async function syncCollection(name: Collection, client: EntityClient, desired: o
     const payload = JSON.stringify(item);
     const record = existing.get(key);
     if (!record) await client.create({ title: key, data: { key, payload } });
-    else if (!live && record.data.payload !== payload) await client.update(record.id, { data: { key, payload } });
+    else if (resetRecords && record.data.payload !== payload) await client.update(record.id, { data: { key, payload } });
   }
-  if (live) return;
+  if (!resetRecords) return;
   for (const [key, record] of existing) if (!wanted.has(key)) await client.delete(record.id);
 }
 
