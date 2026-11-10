@@ -65,8 +65,8 @@ test('S-025: Hana fills a group to six through the admin screen and the roster s
 
 test('S-025: Hana cannot move a seventh child into a full group through the admin screen', async ({ page }) => {
   const key = process.env.PIEZAS_TEST_API_KEY;
-  if (!key?.startsWith('sk_test_') || key === process.env.PIEZAS_API_KEY)
-    throw new Error('This check requires a separate Piezas test copy.');
+  // A test key (sk_test_) can only reach the test copy, never live data.
+  if (!key?.startsWith('sk_test_')) throw new Error('This check requires the Piezas test copy (a sk_test_ key).');
   const piezas = new Piezas({ apiKey: key, apiBaseUrl: process.env.PIEZAS_API_URL });
   const slug = slugsFor(key).children;
   const children = (await piezas.defineEntities({ [slug]: entityDefinitionsFor(key)[slug] }))[slug];
