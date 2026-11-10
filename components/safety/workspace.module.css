@@ -154,6 +154,8 @@
 .alert strong { color: #66320d; font-size: 17px; }
 .alert p { color: #66320d; font-size: 16px; }
 .missing { background: var(--red); border-radius: 10px; font-size: 16px; }
+/* Card paragraphs are greyed out above; the missing label must stay white on red. */
+.card p.missing { color: #ffffff; }
 .action, .actionDanger, .actionQuiet { border-radius: 10px; font-size: 16px; font-weight: 600; min-height: 52px; line-height: 1.4; padding: 12px 18px; }
 .actionDanger { color: var(--red); border: 2px solid var(--red); background: white; }
 .actionDanger:hover { color: #8e1c28; background: #fff0f2; }

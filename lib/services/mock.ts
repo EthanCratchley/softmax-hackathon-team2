@@ -66,7 +66,14 @@ export function createMockServices(
   };
   const attendanceFor = (childId: Id, date: LessonDate) =>
     state.attendance.find((a) => a.childId === childId && a.lessonDate === date);
-  const medicalFor = (childId: Id) => state.medical.find((m) => m.childId === childId)!;
+  // A child with no medical record yet (e.g. just imported) counts as "not answered", never a crash.
+  const medicalFor = (childId: Id) => {
+    const found = state.medical.find((m) => m.childId === childId);
+    if (found) return found;
+    const blank = { childId, allergies: null, conditions: null, medications: null, safetyInstructions: '', updatedBy: null, updatedAt: null };
+    state.medical.push(blank);
+    return blank;
+  };
   const incidentsFor = (childId: Id, date: LessonDate) =>
     state.incidents.filter((i) => i.childId === childId && i.lessonDate === date);
 
